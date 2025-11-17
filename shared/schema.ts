@@ -29,6 +29,28 @@ export interface User {
   createdAt: string;
 }
 
+export const invoiceTemplateSchema = z.object({
+  primaryColor: z.string().regex(/^#[0-9A-F]{6}$/i).optional(),
+  companyLogo: z.string().url().optional(),
+  companyAddress: z.string().optional(),
+  companyPhone: z.string().optional(),
+  footerText: z.string().optional(),
+});
+
+export type InvoiceTemplate = z.infer<typeof invoiceTemplateSchema>;
+
+export interface UserSettings {
+  id: string;
+  userId: string;
+  primaryColor?: string;
+  companyLogo?: string;
+  companyAddress?: string;
+  companyPhone?: string;
+  footerText?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Invoice Schema
 export const insertInvoiceSchema = z.object({
   invoiceNumber: z.string(),

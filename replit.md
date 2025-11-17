@@ -2,9 +2,9 @@
 
 ## Overview
 
-Peppol Light Backend is a RESTful API built with Node.js and Express that provides a complete invoicing SaaS platform. The system manages user authentication, invoice creation and management, and PDF file uploads. It uses Airtable as a cloud-based database solution for data persistence, making it easy to deploy and scale without managing traditional database infrastructure.
+Peppol Light Backend is a RESTful API built with Node.js and Express that provides a complete invoicing SaaS platform. The system manages user authentication, invoice creation and management, PDF generation with customizable templates, and file uploads. It uses Airtable as a cloud-based database solution for data persistence, making it easy to deploy and scale without managing traditional database infrastructure.
 
-The application follows a standard MVC-style architecture with clear separation between routes, controllers, and configuration. It includes a React frontend with shadcn/ui components, though the primary focus is on the backend API functionality.
+The application follows a standard MVC-style architecture with clear separation between routes, controllers, and configuration. Key features include JWT authentication, invoice status filtering, PDF generation with PDFKit, and customizable invoice templates with company branding.
 
 ## User Preferences
 

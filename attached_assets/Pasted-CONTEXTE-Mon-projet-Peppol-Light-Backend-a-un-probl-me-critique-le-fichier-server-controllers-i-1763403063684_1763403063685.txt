@@ -1,0 +1,65 @@
+CONTEXTE :
+Mon projet Peppol Light Backend a un problème critique : le fichier server/controllers/invoiceController.ts contient du code pour un "générateur de factures" (avec clientName, clientEmail, amount, currency, etc.) alors que mon vrai projet est un "vérificateur de factures Peppol" qui analyse des PDF uploadés.
+
+MA TABLE AIRTABLE "Invoices" - STRUCTURE COMPLÈTE :
+Voici TOUTES les colonnes exactes (noms avec majuscules et espaces) :
+
+1. File Name (Single line text)
+2. User (Link to another record → table Users)
+3. Invoice ID (Number ou Single line text)
+4. File URL (URL)
+5. Status (Single select)
+6. Conformity Score (Number - score entre 0 et 100)
+7. Errors List (Long text)
+8. UBL File URL (URL)
+9. Sent to Accountant (Checkbox)
+10. Created At (Date)
+11. Checked At (Date)
+12. Converted At (Date)
+13. Days to Check (Formula ou Number)
+14. Days to Convert (Formula ou Number)
+15. Is Late (Formula ou Checkbox)
+16. User Company Name (Lookup ou Formula)
+17. Invoice Summary (AI) (Long text)
+18. Invoice Errors (Long text)
+
+MISSION PRÉCISE :
+Remplace ENTIÈREMENT le code de server/controllers/invoiceController.ts par un code adapté à mon projet de vérification de factures.
+
+Le nouveau code doit contenir :
+
+1. Une fonction analyzeInvoice(filename: string) qui simule l'analyse :
+   - Génère un score aléatoire entre 60 et 100
+   - Retourne : { score, status, errors }
+   - Si score < 80 : status = "uploaded", errors = "TVA manquante, Date invalide"
+   - Si score >= 80 : status = "checked", errors = "Aucune erreur détectée"
+
+2. Une fonction registerUploadedInvoice(userId: string, fileData: any) qui :
+   - Appelle analyzeInvoice()
+   - Crée un enregistrement dans Airtable table "Invoices" avec :
+     * "User": [userId] (array avec l'ID du user)
+     * "File Name": fileData.originalname
+     * "File URL": URL publique du fichier
+     * "Status": résultat de l'analyse
+     * "Conformity Score": score de l'analyse
+     * "Errors List": erreurs détectées
+     * "Created At": new Date().toISOString()
+   - Retourne le record créé
+
+3. Une fonction getInvoices(req: AuthRequest, res: Response) qui :
+   - Récupère toutes les factures de l'utilisateur connecté
+   - Filtre par le champ "User" (lien vers Users)
+   - Retourne un array avec : id, fileName, status, score, errors, fileUrl, createdAt
+
+4. Une fonction deleteInvoice(req: AuthRequest, res: Response) qui :
+   - Vérifie que la facture appartient au user
+   - Supprime l'enregistrement dans Airtable
+
+CONTRAINTES IMPORTANTES :
+- Utilise EXACTEMENT les noms de colonnes Airtable comme je les ai donnés (avec majuscules et espaces)
+- N'utilise JAMAIS : clientName, clientEmail, amount, currency, dueDate, items, notes, pdfUrl
+- Garde tous les imports existants : base, TABLES, AuthRequest, buildSafeFilterFormula
+- Utilise base("Invoices") pour accéder à la table
+- Pour le champ "User", utilise un array : ["recXXXXX"]
+
+Remplace TOUT le fichier server/controllers/invoiceController.ts maintenant.

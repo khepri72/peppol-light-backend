@@ -7,6 +7,8 @@ import { authenticateToken } from "./middlewares/auth";
 import * as authController from "./controllers/authController";
 import * as invoiceController from "./controllers/invoiceController";
 import * as userController from "./controllers/userController";
+import * as pdfController from "./controllers/pdfController";
+import * as templateController from "./controllers/templateController";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -60,6 +62,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/invoices/:id', authenticateToken, invoiceController.getInvoice);
   app.patch('/api/invoices/:id', authenticateToken, invoiceController.updateInvoice);
   app.delete('/api/invoices/:id', authenticateToken, invoiceController.deleteInvoice);
+  
+  // PDF generation route
+  app.get('/api/invoices/:id/pdf', authenticateToken, pdfController.generateInvoicePDFEndpoint);
+
+  // Template customization routes
+  app.get('/api/template/settings', authenticateToken, templateController.getTemplateSettings);
+  app.patch('/api/template/settings', authenticateToken, templateController.updateTemplateSettings);
 
   // File upload route
   app.post('/api/upload/pdf', authenticateToken, upload.single('pdf'), (req, res) => {

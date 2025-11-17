@@ -6,7 +6,10 @@ Backend API REST Node.js/Express pour un SaaS de facturation avec intégration A
 
 - ✅ **Authentification sécurisée** avec JWT et hashage bcrypt
 - ✅ **CRUD complet** pour les factures et utilisateurs
+- ✅ **Génération de PDF** pour factures avec personnalisation
 - ✅ **Upload de PDF** avec authentification
+- ✅ **Filtrage par statut** de facture (draft, sent, paid, overdue)
+- ✅ **Personnalisation des templates** avec branding entreprise
 - ✅ **Base de données Airtable** pour la persistance
 - ✅ **Validation des données** avec Zod
 - ✅ **Protection contre les injections** de formules Airtable
@@ -60,7 +63,7 @@ Les secrets suivants sont configurés dans Replit Secrets :
 
 ## 📊 Configuration Airtable
 
-Créez deux tables dans votre base Airtable :
+Créez trois tables dans votre base Airtable :
 
 ### Table "Users"
 | Champ | Type | Description |
@@ -87,13 +90,27 @@ Créez deux tables dans votre base Airtable :
 | createdAt | Single line text | Date de création (ISO) |
 | updatedAt | Single line text | Date de modification (ISO) |
 
+### Table "UserSettings"
+| Champ | Type | Description |
+|-------|------|-------------|
+| userId | Single line text | ID de l'utilisateur propriétaire |
+| primaryColor | Single line text | Couleur primaire (hex format) |
+| companyLogo | URL | URL du logo entreprise (optionnel) |
+| companyAddress | Long text | Adresse de l'entreprise (optionnel) |
+| companyPhone | Single line text | Téléphone entreprise (optionnel) |
+| footerText | Long text | Texte du pied de page (optionnel) |
+| createdAt | Single line text | Date de création (ISO) |
+| updatedAt | Single line text | Date de modification (ISO) |
+
 ## 📚 Documentation API
 
 Consultez [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) pour la documentation complète des endpoints :
 
 - **Authentification** : `/api/auth/register`, `/api/auth/login`, `/api/auth/me`
-- **Utilisateurs** : `/api/users/profile`
-- **Factures** : `/api/invoices` (CRUD complet)
+- **Utilisateurs** : `/api/users/profile` (GET, PATCH)
+- **Factures** : `/api/invoices` (CRUD complet + filtrage par statut)
+- **Génération PDF** : `/api/invoices/:id/pdf`
+- **Templates** : `/api/template/settings` (GET, PATCH)
 - **Upload** : `/api/upload/pdf`, `/api/uploads/:filename`
 
 ## 🔒 Sécurité
@@ -114,6 +131,7 @@ Consultez [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) pour la documentation c
 - **JWT** - JSON Web Tokens pour l'authentification
 - **Bcrypt** - Hashage sécurisé des mots de passe
 - **Zod** - Validation des schémas
+- **PDFKit** - Génération de PDF
 - **Multer** - Upload de fichiers
 - **CORS** - Cross-Origin Resource Sharing
 - **TypeScript** - Typage statique

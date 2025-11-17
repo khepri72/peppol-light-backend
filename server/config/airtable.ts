@@ -17,4 +17,5 @@ export const base = Airtable.base(baseId);
 export const TABLES = {
   USERS: 'Users',
   INVOICES: 'Invoices',
+  USER_SETTINGS: 'UserSettings',
 };
