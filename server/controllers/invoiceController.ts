@@ -43,16 +43,13 @@ export const registerUploadedInvoice = async (req: AuthRequest, res: Response) =
     const invoice = records[0];
 
     res.status(201).json({
-      message: 'Invoice registered successfully',
-      invoice: {
-        id: invoice.id,
-        fileName: invoice.fields['File Name'],
-        fileUrl: invoice.fields['File URL'],
-        status: invoice.fields['Status'],
-        conformityScore: invoice.fields['Conformity Score'],
-        errorsList: invoice.fields['Errors List'],
-        createdAt: invoice.fields['Created At'],
-      },
+      id: invoice.id,
+      fileName: invoice.fields['File Name'],
+      fileUrl: invoice.fields['File URL'],
+      status: invoice.fields['Status'],
+      conformityScore: invoice.fields['Conformity Score'],
+      errorsList: invoice.fields['Errors List'],
+      createdAt: invoice.fields['Created At'],
     });
   } catch (error: any) {
     console.error('Register invoice error:', error);

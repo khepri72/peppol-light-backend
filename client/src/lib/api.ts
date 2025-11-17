@@ -99,12 +99,15 @@ class ApiClient {
   }
 
   async uploadInvoice(file: File): Promise<Invoice> {
-    const formData = new FormData();
-    formData.append('file', file);
+    const data = {
+      fileName: file.name,
+      fileUrl: `https://storage.example.com/${file.name}`,
+      status: 'uploaded',
+    };
 
     return this.request<Invoice>('/api/invoices', {
       method: 'POST',
-      body: formData,
+      body: JSON.stringify(data),
     });
   }
 

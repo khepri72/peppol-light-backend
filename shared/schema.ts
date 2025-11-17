@@ -2,14 +2,14 @@ import { z } from "zod";
 
 // User Schema
 export const insertUserSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
-  companyName: z.string().optional(),
+  email: z.string().email("Invalid email format"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  companyName: z.string().min(1, "Company name is required"),
 });
 
 export const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string(),
+  email: z.string().email("Invalid email format"),
+  password: z.string().min(1, "Password is required"),
 });
 
 export const updateUserProfileSchema = z.object({
@@ -51,22 +51,13 @@ export interface UserSettings {
   updatedAt: string;
 }
 
-// Invoice Schema
+// Invoice Schema for Peppol Verification
 export const insertInvoiceSchema = z.object({
-  invoiceNumber: z.string(),
-  clientName: z.string(),
-  clientEmail: z.string().email(),
-  amount: z.number().positive(),
-  currency: z.string().default("EUR"),
-  status: z.enum(["draft", "sent", "paid", "overdue"]).default("draft"),
-  dueDate: z.string(),
-  items: z.array(z.object({
-    description: z.string(),
-    quantity: z.number().positive(),
-    unitPrice: z.number().positive(),
-  })),
-  notes: z.string().optional(),
-  pdfUrl: z.string().optional(),
+  fileName: z.string().min(1, "File name is required"),
+  fileUrl: z.string().url("Invalid URL format"),
+  status: z.enum(["uploaded", "checked", "converted", "sent"]).optional().default("uploaded"),
+  conformityScore: z.number().min(0).max(100).optional(),
+  errorsList: z.string().optional(),
 });
 
 export const updateInvoiceSchema = insertInvoiceSchema.partial();
@@ -76,21 +67,11 @@ export type UpdateInvoice = z.infer<typeof updateInvoiceSchema>;
 
 export interface Invoice {
   id: string;
-  userId: string;
-  invoiceNumber: string;
-  clientName: string;
-  clientEmail: string;
-  amount: number;
-  currency: string;
-  status: "draft" | "sent" | "paid" | "overdue";
-  dueDate: string;
-  items: Array<{
-    description: string;
-    quantity: number;
-    unitPrice: number;
-  }>;
-  notes?: string;
-  pdfUrl?: string;
-  createdAt: string;
-  updatedAt: string;
+  userId?: string;
+  fileName: string;
+  fileUrl?: string;
+  status?: "uploaded" | "checked" | "converted" | "sent";
+  conformityScore?: number;
+  errorsList?: string;
+  createdAt?: string;
 }
