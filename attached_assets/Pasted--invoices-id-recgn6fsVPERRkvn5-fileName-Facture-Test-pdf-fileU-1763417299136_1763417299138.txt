@@ -1,0 +1,82 @@
+{
+  "invoices": [{
+    "id": "recgn6fsVPERRkvn5",
+    "fileName": "Facture_Test.pdf",
+    "fileUrl": "https://test.com/f.pdf",
+    "status": "uploaded",
+    "conformityScore": 90,
+    "errorsList": "Test auto"
+  }],
+  "count": 1
+}
+```
+
+**✅ Le backend est validé pour la Phase 3 !**
+
+---
+
+## 🚀 **PHASE 3 : CONSTRUCTION DU FRONTEND**
+
+### **ÉTAPE 1 : Ouvrir le chat Agent Replit**
+
+Dans Replit :
+- Cliquez sur **"Agent tools"** (en bas à gauche)
+- OU cliquez sur le bouton **"Continue building"** si vous le voyez
+
+---
+
+### **ÉTAPE 2 : Copier-coller ce prompt COMPLET**
+```
+PHASE 3 : Construire le Frontend React
+
+CONTEXTE : Notre backend API fonctionne (auth + invoices). Nous devons maintenant créer l'interface utilisateur.
+
+MISSION : Crée une application React complète dans le dossier src/ avec :
+
+STACK TECHNIQUE :
+- React + Vite (déjà configuré)
+- React Router pour la navigation
+- Tailwind CSS (déjà configuré)
+- Lucide React pour les icônes
+- Axios pour les appels API
+
+COULEURS BRAND :
+- Primaire : #1E5AA8 (Bleu)
+- Accent : #FF6B35 (Orange)
+- Succès : #10B981
+- Erreur : #EF4444
+
+PAGES À CRÉER :
+
+1. PAGE /register (Inscription)
+   - Formulaire : email, password, companyName
+   - POST vers /api/auth/register
+   - Validation : email valide, password min 8 caractères
+   - Après succès : auto-login puis redirection vers /dashboard
+
+2. PAGE /login (Connexion)
+   - Formulaire : email, password
+   - POST vers /api/auth/login
+   - Stocker le token JWT dans localStorage
+   - Redirection vers /dashboard
+
+3. PAGE /dashboard (Protégée)
+   - Vérifier token (sinon redirect /login)
+   - Header : Logo "Peppol Light" + nom entreprise + bouton déconnexion
+   - Bouton "Uploader une facture" (ouvre modal ou input file)
+   - Tableau des factures : GET /api/invoices
+   - Colonnes : Nom fichier, Statut (badge coloré), Score, Erreurs, Actions (supprimer)
+
+FONCTIONNALITÉS :
+- Upload : POST multipart/form-data vers /api/invoices
+- Suppression : DELETE /api/invoices/:id
+- Messages de succès/erreur (toasts)
+- États de chargement (spinners)
+- Design professionnel SaaS B2B
+
+IMPORTANT :
+- Base URL API : utilise les variables d'environnement ou détecte automatiquement l'URL backend
+- Gestion d'erreurs complète
+- Responsive design
+
+Commence maintenant !
