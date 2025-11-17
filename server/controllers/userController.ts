@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { base, TABLES } from '../config/airtable';
 import { AuthRequest } from '../middlewares/auth';
+import { updateUserProfileSchema } from '../../shared/schema';
+import { buildSafeFilterFormula } from '../utils/airtableHelpers';
 
 export const getUserProfile = async (req: AuthRequest, res: Response) => {
   try {
@@ -23,18 +25,40 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
 export const updateUserProfile = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId!;
-    const { companyName } = req.body;
+    const validatedData = updateUserProfileSchema.parse(req.body);
 
-    if (companyName === undefined) {
+    if (Object.keys(validatedData).length === 0) {
       return res.status(400).json({ error: 'No update data provided' });
+    }
+
+    // If email is being updated, check if it's already in use
+    if (validatedData.email) {
+      const existingUsers = await base(TABLES.USERS)
+        .select({
+          filterByFormula: buildSafeFilterFormula('email', validatedData.email),
+          maxRecords: 2,
+        })
+        .firstPage();
+
+      // Check if another user already has this email
+      const otherUserWithEmail = existingUsers.find(u => u.id !== userId);
+      if (otherUserWithEmail) {
+        return res.status(400).json({ error: 'Email already in use by another user' });
+      }
+    }
+
+    const fieldsToUpdate: any = {};
+    if (validatedData.email !== undefined) {
+      fieldsToUpdate.email = validatedData.email;
+    }
+    if (validatedData.companyName !== undefined) {
+      fieldsToUpdate.companyName = validatedData.companyName || '';
     }
 
     const updatedRecords = await base(TABLES.USERS).update([
       {
         id: userId,
-        fields: {
-          companyName: companyName || '',
-        },
+        fields: fieldsToUpdate,
       },
     ]);
 
@@ -48,8 +72,11 @@ export const updateUserProfile = async (req: AuthRequest, res: Response) => {
         companyName: updatedUser.fields.companyName || '',
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Update user profile error:', error);
+    if (error.name === 'ZodError') {
+      return res.status(400).json({ error: 'Invalid input data', details: error.errors });
+    }
     res.status(500).json({ error: 'Failed to update user profile' });
   }
 };

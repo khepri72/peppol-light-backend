@@ -51,10 +51,55 @@ export const createInvoice = async (req: AuthRequest, res: Response) => {
 export const getInvoices = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId!;
+    const { status } = req.query;
+
+    // Build filter formula
+    let filterFormula = buildSafeFilterFormula('userId', userId);
+    
+    // Add status filter if provided
+    if (status !== undefined) {
+      const validStatuses = ['draft', 'sent', 'paid', 'overdue'];
+      const statusArray = Array.isArray(status) ? status : [status];
+      
+      // Validate all status values - reject nested arrays/objects
+      const validatedStatuses: string[] = [];
+      for (const s of statusArray) {
+        // Strict type check: must be a plain string, not array or object
+        if (typeof s !== 'string' || Array.isArray(s)) {
+          return res.status(400).json({ 
+            error: 'Invalid status parameter. All status values must be plain strings.' 
+          });
+        }
+        if (!validStatuses.includes(s)) {
+          return res.status(400).json({ 
+            error: `Invalid status "${s}". Must be one of: draft, sent, paid, overdue` 
+          });
+        }
+        // Only add if not already in the array (deduplicate)
+        if (!validatedStatuses.includes(s)) {
+          validatedStatuses.push(s);
+        }
+      }
+      
+      // Ensure we have at least one valid status after validation
+      if (validatedStatuses.length === 0) {
+        return res.status(400).json({ 
+          error: 'At least one valid status must be provided' 
+        });
+      }
+      
+      // Build OR formula for multiple statuses
+      if (validatedStatuses.length === 1) {
+        filterFormula = `AND(${filterFormula}, ${buildSafeFilterFormula('status', validatedStatuses[0])})`;
+      } else {
+        const statusFilters = validatedStatuses.map(s => buildSafeFilterFormula('status', s));
+        filterFormula = `AND(${filterFormula}, OR(${statusFilters.join(',')}))`;
+      }
+    }
 
     const records = await base(TABLES.INVOICES)
       .select({
-        filterByFormula: buildSafeFilterFormula('userId', userId),
+        filterByFormula: filterFormula,
         sort: [{ field: 'createdAt', direction: 'desc' }],
       })
       .all();
@@ -65,7 +110,7 @@ export const getInvoices = async (req: AuthRequest, res: Response) => {
       items: JSON.parse((record.fields.items as string) || '[]'),
     }));
 
-    res.json({ invoices });
+    res.json({ invoices, count: invoices.length });
   } catch (error) {
     console.error('Get invoices error:', error);
     res.status(500).json({ error: 'Failed to fetch invoices' });

@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { config } from "./config/env";
+import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -65,13 +66,11 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+  // 404 handler for undefined routes
+  app.use(notFoundHandler);
 
-    res.status(status).json({ message });
-    throw err;
-  });
+  // Global error handler (must be last)
+  app.use(errorHandler);
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route

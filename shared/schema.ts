@@ -12,8 +12,14 @@ export const loginSchema = z.object({
   password: z.string(),
 });
 
+export const updateUserProfileSchema = z.object({
+  email: z.string().email().optional(),
+  companyName: z.string().optional(),
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type LoginUser = z.infer<typeof loginSchema>;
+export type UpdateUserProfile = z.infer<typeof updateUserProfileSchema>;
 
 export interface User {
   id: string;
