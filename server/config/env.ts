@@ -1,11 +1,13 @@
+import type { Secret, SignOptions } from 'jsonwebtoken';
+
 export const config = {
   airtable: {
     apiKey: process.env.AIRTABLE_API_KEY!,
     baseId: process.env.AIRTABLE_BASE_ID!,
   },
   jwt: {
-    secret: process.env.JWT_SECRET!,
-    expiresIn: '7d' as string,
+    secret: process.env.JWT_SECRET! as Secret,
+    expiresIn: '7d' as SignOptions['expiresIn'],
   },
   server: {
     port: process.env.PORT || 5000,
