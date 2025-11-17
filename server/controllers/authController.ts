@@ -43,9 +43,11 @@ export const register = async (req: Request, res: Response) => {
     const userId = user.id;
 
     // Generate JWT token
-    const token = jwt.sign({ userId }, config.jwt.secret, {
-      expiresIn: config.jwt.expiresIn,
-    });
+    const token = jwt.sign(
+      { userId }, 
+      config.jwt.secret,
+      { expiresIn: config.jwt.expiresIn }
+    );
 
     res.status(201).json({
       message: 'User registered successfully',
@@ -93,9 +95,11 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Generate JWT token
-    const token = jwt.sign({ userId }, config.jwt.secret, {
-      expiresIn: config.jwt.expiresIn,
-    });
+    const token = jwt.sign(
+      { userId }, 
+      config.jwt.secret,
+      { expiresIn: config.jwt.expiresIn }
+    );
 
     res.json({
       message: 'Login successful',

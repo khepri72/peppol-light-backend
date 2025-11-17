@@ -5,7 +5,7 @@ export const config = {
   },
   jwt: {
     secret: process.env.JWT_SECRET!,
-    expiresIn: '7d',
+    expiresIn: '7d' as string,
   },
   server: {
     port: process.env.PORT || 5000,
