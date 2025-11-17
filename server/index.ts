@@ -1,14 +1,30 @@
 import express, { type Request, Response, NextFunction } from "express";
+import cors from "cors";
+import path from "path";
+import { fileURLToPath } from 'url';
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { config } from "./config/env";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
+
+// CORS configuration
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.FRONTEND_URL || '*' 
+    : '*',
+  credentials: true,
+}));
 
 declare module 'http' {
   interface IncomingMessage {
     rawBody: unknown
   }
 }
+
 app.use(express.json({
   verify: (req, _res, buf) => {
     req.rawBody = buf;
@@ -76,6 +92,7 @@ app.use((req, res, next) => {
     host: "0.0.0.0",
     reusePort: true,
   }, () => {
-    log(`serving on port ${port}`);
+    log(`✅ peppol-light-backend API en ligne sur le port ${port}`);
+    log(`📋 Health check disponible sur http://0.0.0.0:${port}/health`);
   });
 })();
