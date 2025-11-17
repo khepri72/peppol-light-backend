@@ -68,6 +68,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Template customization routes
   app.get('/api/template/settings', authenticateToken, templateController.getTemplateSettings);
+  app.post('/api/template/settings', authenticateToken, templateController.updateTemplateSettings);
   app.patch('/api/template/settings', authenticateToken, templateController.updateTemplateSettings);
 
   // File upload route
