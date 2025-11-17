@@ -126,10 +126,11 @@ export const getCurrentUser = async (req: Request, res: Response) => {
     const user = await base(TABLES.USERS).find(userId);
 
     res.json({
-      id: user.id,
-      email: user.fields.email,
-      companyName: user.fields.companyName || '',
-      createdAt: user.fields.createdAt,
+      user: {
+        id: user.id,
+        email: user.fields.email,
+        companyName: user.fields.companyName || '',
+      },
     });
   } catch (error) {
     console.error('Get current user error:', error);
