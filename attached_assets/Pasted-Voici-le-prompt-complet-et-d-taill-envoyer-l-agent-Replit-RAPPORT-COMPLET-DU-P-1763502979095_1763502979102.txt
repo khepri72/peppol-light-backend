@@ -1,0 +1,114 @@
+Voici le prompt complet et détaillé à envoyer à l'agent Replit :
+
+---
+
+**🔴 RAPPORT COMPLET DU PROBLÈME - Boutons non fonctionnels sans F12**
+
+**CONTEXTE INITIAL :**
+Page `/login` avec des boutons de traduction (FR / NL / EN) et bouton "Se connecter" qui ne répondent pas aux clics.
+
+---
+
+**✅ RÉPONSES À TON DIAGNOSTIC SUR LE BOUTON TEST :**
+
+1. **Le bouton rouge "TEST CLIC ICI" est-il visible ?**
+   → ✅ OUI, parfaitement visible en haut à gauche de `/login`
+
+2. **Quand vous cliquez dessus, l'alert() s'affiche ?**
+   → ✅ OUI, l'alert fonctionne parfaitement : "Test OK – Les clics fonctionnent !"
+
+3. **Dans la console (F12), y a-t-il des erreurs rouges ?**
+   → ⚠️ OUI, warnings et erreurs liées à :
+   - Content Security Policy
+   - Sandbox attributes invalides
+   - Features non reconnues (ambient-light-sensor, battery, etc.)
+   - **MAIS aucune erreur rouge spécifique à mon code React**
+
+---
+
+**🔴 COMPORTEMENT CRITIQUE OBSERVÉ :**
+
+### **QUAND F12 EST FERMÉ :**
+- ❌ Le **grand fond bleu à gauche** est visible et occupe une large partie de l'écran
+- ❌ Les boutons **FR / NL / EN** ne réagissent **PAS du tout** au clic
+- ❌ Le bouton **"Se connecter"** ne réagit **PAS du tout** au clic
+- ❌ Le lien **"Créez-en un"** ne réagit **PAS du tout** au clic
+- ✅ Le bouton **TEST rouge** fonctionne normalement
+
+### **QUAND F12 EST OUVERT :**
+- ✅ Le **fond bleu disparaît ou se réduit**
+- ✅ **TOUS les boutons** (FR/NL/EN + "Se connecter" + "Créez-en un") **fonctionnent parfaitement**
+- ✅ Le bouton TEST continue de fonctionner
+
+---
+
+**🧩 DIAGNOSTIC UTILISATEUR (ChatGPT) :**
+
+> **Conclusion côté utilisateur :** Il y a très probablement un **problème de layout / CSS responsive** (breakpoint Tailwind ou autre) où **le bloc bleu recouvre la zone des boutons** quand la fenêtre a une certaine largeur, et **bloque les clics**.
+> 
+> Quand j'ouvre F12, **la largeur de la fenêtre change** → la mise en page change → le bloc bleu ne recouvre plus les boutons → **les clics redeviennent OK**.
+
+---
+
+**⚠️ MODIFICATIONS QUE J'AI FAIT AJOUTER À TON CODE (possiblement superflues) :**
+
+Suite aux diagnostics précédents, j'ai demandé d'ajouter plusieurs correctifs CSS qui peuvent avoir **compliqué la situation** :
+
+```css
+/* Désactiver l'overlay HMR de Replit */
+#replit-overlay,
+.replit-ui-kit-overlay,
+[class*="hmr"] {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+/* Force z-index élevé sur les boutons */
+button, a, .lang-btn {
+  position: relative;
+  z-index: 50;
+}
+
+/* Force les éléments interactifs au-dessus des overlays */
+textarea {
+  position: relative;
+  z-index: 50;
+}
+```
+
+**Ces ajouts peuvent être superflus ou conflictuels.** Merci de vérifier s'ils ne créent pas plus de problèmes qu'ils n'en résolvent.
+
+---
+
+**🎯 CE QUE JE TE DEMANDE MAINTENANT :**
+
+1. **Inspecter la structure de la page `/login`** (component Login + layout global) pour voir :
+   - Quel `div` ou `section` porte ce **grand fond bleu** (bg-blue, etc.)
+   - Comment sont gérés les **breakpoints** (`md:`, `lg:`...) entre la colonne bleue et la carte de login
+
+2. **Vérifier s'il n'y a pas** :
+   - Un container bleu en `position: absolute/fixed`
+   - Ou avec un `z-index` élevé qui **chevauche la partie droite** de la page pour certaines largeurs
+
+3. **Corriger le layout** pour que :
+   - Le fond bleu reste visuel
+   - **Mais ne recouvre JAMAIS** la zone des formulaires (login / register) et des boutons
+   - Et/ou utiliser `pointer-events: none` sur le calque bleu décoratif si c'est juste un background
+
+4. **Nettoyer les modifications CSS superflues** que j'ai fait ajouter si elles compliquent le problème
+
+5. **Une fois la correction faite, merci de** :
+   - Tester toi-même **en mode fenêtre normale sans DevTools ouverts**
+   - Me confirmer que les boutons **FR/NL/EN** et **"Se connecter"** fonctionnent bien
+
+---
+
+**📌 RÉSUMÉ POUR TOI :**
+- ✅ Le bouton TEST fonctionne → donc les clics JS fonctionnent
+- ❌ Les autres boutons sont **physiquement bloqués** par un élément visuel (probablement le fond bleu)
+- 🔧 Le problème est très probablement **CSS/Layout responsive**, pas JS/React
+- ⚠️ J'ai peut-être ajouté du code superflu qui complique ton diagnostic
+
+---
+
+Merci de m'indiquer quand tu as identifié et corrigé le problème ! 🙏

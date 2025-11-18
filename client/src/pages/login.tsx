@@ -55,41 +55,22 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex">
-      {/* BOUTON DE TEST - À SUPPRIMER */}
-      <button
-        onClick={() => alert('✅ Test OK - Les clics fonctionnent!')}
-        style={{
-          position: 'fixed',
-          top: '10px',
-          left: '10px',
-          zIndex: 9999,
-          padding: '10px 20px',
-          background: 'red',
-          color: 'white',
-          border: 'none',
-          borderRadius: '5px',
-          cursor: 'pointer',
-          fontWeight: 'bold'
-        }}
-        data-testid="button-test-click"
-      >
-        🔴 TEST CLIC ICI
-      </button>
-      
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#1E5AA8] to-[#0F3D7A] p-12 flex-col justify-between">
+      {/* Left side - Blue background (hidden on mobile, 1/2 width on large screens) */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#1E5AA8] to-[#0F3D7A] p-12 flex-col justify-between relative">
         <div>
           <h1 className="text-4xl font-bold text-white mb-4">{t('common.peppolLight')}</h1>
           <p className="text-white/90 text-lg">
             {t('dashboard.subtitle')}
           </p>
         </div>
-        <div className="absolute top-8 right-8">
+        <div className="absolute top-8 right-8 z-10">
           <LanguageSwitcher />
         </div>
       </div>
 
+      {/* Right side - Login form (full width on mobile, 1/2 on large screens) */}
       <div className="flex-1 flex items-center justify-center p-8 relative">
-        <div className="absolute top-8 right-8 lg:hidden">
+        <div className="absolute top-8 right-8 lg:hidden z-10">
           <LanguageSwitcher />
         </div>
         <Card className="w-full max-w-md">
