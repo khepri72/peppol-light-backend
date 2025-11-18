@@ -1,6 +1,7 @@
 import { useLocation } from 'wouter';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -17,10 +18,12 @@ import { api } from '@/lib/api';
 import { authStorage } from '@/lib/auth';
 import { loginSchema, LoginUser } from '@shared/schema';
 import { Loader2 } from 'lucide-react';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 export default function Login() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const form = useForm<LoginUser>({
     resolver: zodResolver(loginSchema),
@@ -36,15 +39,15 @@ export default function Login() {
       authStorage.setToken(response.token);
       
       toast({
-        title: 'Welcome back!',
-        description: `Logged in as ${response.user.email}`,
+        title: t('login.title'),
+        description: `${response.user.email}`,
       });
 
       setLocation('/dashboard');
     } catch (error) {
       toast({
-        title: 'Login failed',
-        description: error instanceof Error ? error.message : 'Invalid credentials',
+        title: t('login.errorInvalid'),
+        description: error instanceof Error ? error.message : t('login.errorInvalid'),
         variant: 'destructive',
       });
     }
@@ -54,23 +57,25 @@ export default function Login() {
     <div className="min-h-screen flex">
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#1E5AA8] to-[#0F3D7A] p-12 flex-col justify-between">
         <div>
-          <h1 className="text-4xl font-bold text-white mb-4">Peppol Light</h1>
+          <h1 className="text-4xl font-bold text-white mb-4">{t('common.peppolLight')}</h1>
           <p className="text-white/90 text-lg">
-            Professional invoice verification for modern businesses
+            {t('dashboard.subtitle')}
           </p>
         </div>
-        <div className="text-white/80 text-sm">
-          <p>Verify Peppol invoices with confidence</p>
-          <p className="mt-2">Get instant conformity scores and error detection</p>
+        <div className="absolute top-8 right-8">
+          <LanguageSwitcher />
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="flex-1 flex items-center justify-center p-8 relative">
+        <div className="absolute top-8 right-8 lg:hidden">
+          <LanguageSwitcher />
+        </div>
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle className="text-2xl">Welcome back</CardTitle>
+            <CardTitle className="text-2xl">{t('login.title')}</CardTitle>
             <CardDescription>
-              Sign in to your Peppol Light account
+              {t('login.subtitle')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -81,11 +86,11 @@ export default function Login() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel data-testid="label-email">Email</FormLabel>
+                      <FormLabel data-testid="label-email">{t('login.email')}</FormLabel>
                       <FormControl>
                         <Input
                           type="email"
-                          placeholder="your.email@company.com"
+                          placeholder={t('login.emailPlaceholder')}
                           data-testid="input-email"
                           {...field}
                         />
@@ -100,11 +105,11 @@ export default function Login() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel data-testid="label-password">Password</FormLabel>
+                      <FormLabel data-testid="label-password">{t('login.password')}</FormLabel>
                       <FormControl>
                         <Input
                           type="password"
-                          placeholder="••••••••"
+                          placeholder={t('login.passwordPlaceholder')}
                           data-testid="input-password"
                           {...field}
                         />
@@ -123,22 +128,22 @@ export default function Login() {
                   {form.formState.isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Signing in...
+                      {t('login.signingIn')}
                     </>
                   ) : (
-                    'Sign in'
+                    t('login.signIn')
                   )}
                 </Button>
 
                 <div className="text-center text-sm">
-                  Don't have an account?{' '}
+                  {t('login.noAccount')}{' '}
                   <button
                     type="button"
                     onClick={() => setLocation('/register')}
                     className="text-[#1E5AA8] hover:underline font-medium"
                     data-testid="link-register"
                   >
-                    Create one
+                    {t('login.createOne')}
                   </button>
                 </div>
               </form>
