@@ -55,6 +55,27 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex">
+      {/* BOUTON DE TEST - À SUPPRIMER */}
+      <button
+        onClick={() => alert('✅ Test OK - Les clics fonctionnent!')}
+        style={{
+          position: 'fixed',
+          top: '10px',
+          left: '10px',
+          zIndex: 9999,
+          padding: '10px 20px',
+          background: 'red',
+          color: 'white',
+          border: 'none',
+          borderRadius: '5px',
+          cursor: 'pointer',
+          fontWeight: 'bold'
+        }}
+        data-testid="button-test-click"
+      >
+        🔴 TEST CLIC ICI
+      </button>
+      
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#1E5AA8] to-[#0F3D7A] p-12 flex-col justify-between">
         <div>
           <h1 className="text-4xl font-bold text-white mb-4">{t('common.peppolLight')}</h1>
