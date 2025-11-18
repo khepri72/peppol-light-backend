@@ -2,9 +2,9 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 
 const languages = [
-  { code: 'fr', label: 'FR', flag: '🇫🇷' },
-  { code: 'nl', label: 'NL', flag: '🇳🇱' },
-  { code: 'en', label: 'EN', flag: '🇬🇧' }
+  { code: 'fr', label: 'FR' },
+  { code: 'nl', label: 'NL' },
+  { code: 'en', label: 'EN' }
 ];
 
 export function LanguageSwitcher() {
@@ -21,7 +21,6 @@ export function LanguageSwitcher() {
           className="min-w-[70px]"
           data-testid={`button-lang-${lang.code}`}
         >
-          <span className="mr-1">{lang.flag}</span>
           {lang.label}
         </Button>
       ))}

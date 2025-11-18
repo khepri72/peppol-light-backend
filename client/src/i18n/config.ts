@@ -15,13 +15,13 @@ i18n
       en: { translation: en }
     },
     fallbackLng: 'fr',
-    lng: 'fr',
     interpolation: {
       escapeValue: false
     },
     detection: {
-      order: ['localStorage', 'navigator'],
-      caches: ['localStorage']
+      order: ['localStorage'],
+      caches: ['localStorage'],
+      lookupLocalStorage: 'i18nextLng'
     }
   });
 

@@ -117,6 +117,7 @@ This separation ensures each controller has a single responsibility and makes th
 - `@radix-ui/*`: Accessible UI component primitives
 - `tailwindcss`: Utility-first CSS framework
 - `class-variance-authority`: Component variant management
+- `react-i18next`, `i18next`, `i18next-browser-languagedetector`: Internationalization (i18n) for multi-language support
 
 **Development Tools**:
 - `vite`: Frontend build tool and development server
@@ -132,6 +133,33 @@ The application requires the following environment variables:
 - `JWT_SECRET`: Secret key for signing JWT tokens
 - `FRONTEND_URL` (optional): CORS origin restriction in production
 - `PORT` (optional): Server port, defaults to 5000
+
+### Internationalization (i18n)
+
+**Multi-Language Support**: The application supports three languages tailored for the Belgian market:
+- French (FR) - Default language
+- Dutch/Nederlands (NL)
+- English (EN)
+
+**Implementation**: Uses react-i18next with the following architecture:
+- **Configuration**: `client/src/i18n/config.ts` sets up language detection and persistence
+- **Translation Files**: JSON files in `client/src/i18n/locales/` (fr.json, nl.json, en.json)
+- **Language Switcher**: Component in header allows instant language switching with visual feedback
+- **Persistence**: User's language choice is stored in localStorage (key: `i18nextLng`) and persists across sessions and page navigation
+- **Detection Strategy**: Uses only localStorage (not browser language) to ensure French default for Belgian market
+
+**Pages Translated**: All user-facing pages are fully translated:
+- Login page (`/login`)
+- Registration page (`/register`)
+- Dashboard page (`/dashboard`)
+
+**Translation Keys Structure**:
+- `common.*`: Shared elements (app title, loading states, etc.)
+- `login.*`: Login page specific texts
+- `register.*`: Registration page specific texts
+- `dashboard.*`: Dashboard page specific texts including upload section and invoice list
+- `status.*`: Invoice status labels
+- `nav.*`: Navigation elements
 
 ### Database Migration Note
 
