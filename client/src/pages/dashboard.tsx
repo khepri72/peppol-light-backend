@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,10 +28,12 @@ import { api, Invoice } from '@/lib/api';
 import { authStorage, logout } from '@/lib/auth';
 import { Upload, FileText, Trash2, LogOut, Loader2, AlertCircle } from 'lucide-react';
 import { queryClient } from '@/lib/queryClient';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [isUploading, setIsUploading] = useState(false);
   const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -50,15 +53,15 @@ export default function Dashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
       toast({
-        title: 'Invoice deleted',
-        description: 'The invoice has been removed successfully.',
+        title: t('dashboard.invoiceList.deleteSuccess'),
+        description: t('dashboard.invoiceList.deleteSuccess'),
       });
       setDeleteInvoiceId(null);
     },
     onError: (error) => {
       toast({
-        title: 'Delete failed',
-        description: error instanceof Error ? error.message : 'An error occurred',
+        title: t('dashboard.invoiceList.deleteError'),
+        description: error instanceof Error ? error.message : t('common.error'),
         variant: 'destructive',
       });
     },
@@ -70,8 +73,8 @@ export default function Dashboard() {
 
     if (!file.name.toLowerCase().endsWith('.pdf')) {
       toast({
-        title: 'Invalid file type',
-        description: 'Please upload a PDF file',
+        title: t('common.error'),
+        description: t('dashboard.uploadSection.onlyPdf'),
         variant: 'destructive',
       });
       return;
@@ -84,8 +87,8 @@ export default function Dashboard() {
       queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
       
       toast({
-        title: 'Invoice uploaded',
-        description: 'Your invoice has been uploaded and is being verified.',
+        title: t('dashboard.uploadSection.uploadSuccess'),
+        description: t('dashboard.uploadSection.uploadSuccess'),
       });
       
       if (fileInputRef.current) {
@@ -93,8 +96,8 @@ export default function Dashboard() {
       }
     } catch (error) {
       toast({
-        title: 'Upload failed',
-        description: error instanceof Error ? error.message : 'An error occurred',
+        title: t('dashboard.uploadSection.uploadError'),
+        description: error instanceof Error ? error.message : t('common.error'),
         variant: 'destructive',
       });
     } finally {
@@ -105,15 +108,15 @@ export default function Dashboard() {
   const getStatusBadge = (status?: string) => {
     switch (status?.toLowerCase()) {
       case 'checked':
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100" data-testid={`badge-status-${status}`}>Verified</Badge>;
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100" data-testid={`badge-status-${status}`}>{t('status.checked')}</Badge>;
       case 'uploaded':
-        return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100" data-testid={`badge-status-${status}`}>Pending</Badge>;
+        return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100" data-testid={`badge-status-${status}`}>{t('status.uploaded')}</Badge>;
       case 'converted':
-        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100" data-testid={`badge-status-${status}`}>Converted</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100" data-testid={`badge-status-${status}`}>{t('status.converted')}</Badge>;
       case 'sent':
-        return <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100" data-testid={`badge-status-${status}`}>Sent</Badge>;
+        return <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100" data-testid={`badge-status-${status}`}>{t('status.sent')}</Badge>;
       default:
-        return <Badge variant="outline" data-testid="badge-status-unknown">{status || 'Unknown'}</Badge>;
+        return <Badge variant="outline" data-testid="badge-status-unknown">{status || t('status.pending')}</Badge>;
     }
   };
 
@@ -137,7 +140,7 @@ export default function Dashboard() {
             <FileText className="h-8 w-8 text-[#1E5AA8]" />
             <div>
               <h1 className="text-2xl font-bold text-gray-900" data-testid="text-app-title">
-                Peppol Light
+                {t('common.peppolLight')}
               </h1>
               {profile && (
                 <p className="text-sm text-muted-foreground" data-testid="text-company-name">
@@ -146,32 +149,35 @@ export default function Dashboard() {
               )}
             </div>
           </div>
-          <Button
-            variant="outline"
-            onClick={logout}
-            data-testid="button-logout"
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign out
-          </Button>
+          <div className="flex items-center gap-4">
+            <LanguageSwitcher />
+            <Button
+              variant="outline"
+              onClick={logout}
+              data-testid="button-logout"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              {t('nav.logout')}
+            </Button>
+          </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-8 py-8">
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Invoice Verification
+            {t('dashboard.title')}
           </h2>
           <p className="text-muted-foreground">
-            Upload and manage your Peppol invoices
+            {t('dashboard.subtitle')}
           </p>
         </div>
 
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Upload Invoice</CardTitle>
+            <CardTitle>{t('dashboard.uploadSection.title')}</CardTitle>
             <CardDescription>
-              Upload a PDF invoice to verify its Peppol conformity
+              {t('dashboard.uploadSection.subtitle')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -192,17 +198,17 @@ export default function Dashboard() {
                 {isUploading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Uploading...
+                    {t('dashboard.uploadSection.uploading')}
                   </>
                 ) : (
                   <>
                     <Upload className="mr-2 h-4 w-4" />
-                    Choose PDF File
+                    {t('dashboard.uploadSection.chooseFile')}
                   </>
                 )}
               </Button>
               <span className="text-sm text-muted-foreground">
-                Only PDF files are accepted
+                {t('dashboard.uploadSection.onlyPdf')}
               </span>
             </div>
           </CardContent>
@@ -210,9 +216,9 @@ export default function Dashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Your Invoices</CardTitle>
+            <CardTitle>{t('dashboard.invoiceList.title')}</CardTitle>
             <CardDescription>
-              {invoicesData ? `${invoicesData.count} invoice${invoicesData.count !== 1 ? 's' : ''} total` : 'Loading...'}
+              {invoicesData ? t('dashboard.invoiceList.total', { count: invoicesData.count }) : t('common.loading')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -224,11 +230,11 @@ export default function Dashboard() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>File Name</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Conformity Score</TableHead>
-                    <TableHead>Errors</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t('dashboard.invoiceList.columns.fileName')}</TableHead>
+                    <TableHead>{t('dashboard.invoiceList.columns.status')}</TableHead>
+                    <TableHead>{t('dashboard.invoiceList.columns.conformityScore')}</TableHead>
+                    <TableHead>{t('dashboard.invoiceList.columns.errors')}</TableHead>
+                    <TableHead className="text-right">{t('dashboard.invoiceList.columns.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -258,7 +264,7 @@ export default function Dashboard() {
                             </span>
                           </div>
                         ) : (
-                          <span className="text-muted-foreground text-sm">No errors</span>
+                          <span className="text-muted-foreground text-sm">{t('dashboard.invoiceList.columns.errors')}</span>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
@@ -279,10 +285,10 @@ export default function Dashboard() {
               <div className="text-center py-12">
                 <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground mb-4" data-testid="text-no-invoices">
-                  No invoices yet
+                  {t('dashboard.invoiceList.empty')}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Upload your first PDF invoice to get started
+                  {t('dashboard.uploadSection.subtitle')}
                 </p>
               </div>
             )}
@@ -293,19 +299,19 @@ export default function Dashboard() {
       <AlertDialog open={!!deleteInvoiceId} onOpenChange={() => setDeleteInvoiceId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Invoice</AlertDialogTitle>
+            <AlertDialogTitle>{t('dashboard.invoiceList.deleteConfirm')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this invoice? This action cannot be undone.
+              {t('dashboard.invoiceList.deleteConfirm')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+            <AlertDialogCancel data-testid="button-cancel-delete">{t('dashboard.invoiceList.columns.actions')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteInvoiceId && deleteMutation.mutate(deleteInvoiceId)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               data-testid="button-confirm-delete"
             >
-              Delete
+              {t('dashboard.invoiceList.deleteSuccess')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
