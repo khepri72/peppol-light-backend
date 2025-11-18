@@ -1,0 +1,79 @@
+{
+  "common": {
+    "peppolLight": "Peppol Light",
+    "loading": "Laden...",
+    "error": "Fout",
+    "success": "Succes"
+  },
+  "nav": {
+    "logout": "Afmelden"
+  },
+  "dashboard": {
+    "title": "Factuurverificatie",
+    "subtitle": "Upload en beheer uw Peppol-facturen",
+    "companyName": "{{name}}",
+    "uploadSection": {
+      "title": "Factuur uploaden",
+      "subtitle": "Upload een PDF-factuur om de Peppol-conformiteit te verifiëren",
+      "chooseFile": "Kies PDF-bestand",
+      "onlyPdf": "Alleen PDF-bestanden worden geaccepteerd",
+      "uploading": "Uploaden...",
+      "uploadSuccess": "Factuur succesvol geüpload",
+      "uploadError": "Fout bij uploaden"
+    },
+    "invoiceList": {
+      "title": "Uw facturen",
+      "total_one": "{{count}} factuur totaal",
+      "total_other": "{{count}} facturen totaal",
+      "empty": "Nog geen facturen",
+      "columns": {
+        "fileName": "Bestandsnaam",
+        "status": "Status",
+        "conformityScore": "Conformiteitsscore",
+        "errors": "Fouten",
+        "actions": "Acties"
+      },
+      "deleteConfirm": "Weet u zeker dat u deze factuur wilt verwijderen?",
+      "deleteSuccess": "Factuur verwijderd",
+      "deleteError": "Fout bij verwijderen"
+    }
+  },
+  "status": {
+    "uploaded": "In afwachting",
+    "checked": "Geverifieerd",
+    "converted": "Geconverteerd",
+    "sent": "Verzonden",
+    "pending": "In afwachting"
+  },
+  "login": {
+    "title": "Welkom terug",
+    "subtitle": "Meld u aan bij uw Peppol Light-account",
+    "email": "E-mail",
+    "emailPlaceholder": "uw.email@bedrijf.com",
+    "password": "Wachtwoord",
+    "passwordPlaceholder": "••••••••",
+    "signIn": "Aanmelden",
+    "signingIn": "Aanmelden...",
+    "noAccount": "Heeft u geen account?",
+    "createOne": "Maak er een aan",
+    "errorInvalid": "Onjuist e-mailadres of wachtwoord",
+    "errorNetwork": "Verbindingsfout met server"
+  },
+  "register": {
+    "title": "Account aanmaken",
+    "subtitle": "Begin met het verifiëren van uw Peppol-facturen",
+    "companyName": "Bedrijfsnaam",
+    "companyPlaceholder": "Uw Bedrijf BV",
+    "email": "E-mail",
+    "emailPlaceholder": "uw.email@bedrijf.com",
+    "password": "Wachtwoord",
+    "passwordPlaceholder": "Minimaal 8 tekens",
+    "signUp": "Registreren",
+    "signingUp": "Registreren...",
+    "hasAccount": "Heeft u al een account?",
+    "signIn": "Aanmelden",
+    "errorEmailExists": "Dit e-mailadres wordt al gebruikt",
+    "errorNetwork": "Verbindingsfout met server",
+    "successMessage": "Account succesvol aangemaakt"
+  }
+}

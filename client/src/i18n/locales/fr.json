@@ -1,0 +1,79 @@
+{
+  "common": {
+    "peppolLight": "Peppol Light",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès"
+  },
+  "nav": {
+    "logout": "Se déconnecter"
+  },
+  "dashboard": {
+    "title": "Vérification des factures",
+    "subtitle": "Téléchargez et gérez vos factures Peppol",
+    "companyName": "{{name}}",
+    "uploadSection": {
+      "title": "Télécharger la facture",
+      "subtitle": "Téléchargez une facture PDF pour vérifier sa conformité Peppol",
+      "chooseFile": "Choisissez le fichier PDF",
+      "onlyPdf": "Seuls les fichiers PDF sont acceptés",
+      "uploading": "Envoi en cours...",
+      "uploadSuccess": "Facture téléchargée avec succès",
+      "uploadError": "Erreur lors du téléchargement"
+    },
+    "invoiceList": {
+      "title": "Vos factures",
+      "total_one": "{{count}} facture totale",
+      "total_other": "{{count}} factures totales",
+      "empty": "Aucune facture pour le moment",
+      "columns": {
+        "fileName": "Nom de fichier",
+        "status": "Statut",
+        "conformityScore": "Score de conformité",
+        "errors": "Erreurs",
+        "actions": "Actions"
+      },
+      "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette facture ?",
+      "deleteSuccess": "Facture supprimée",
+      "deleteError": "Erreur lors de la suppression"
+    }
+  },
+  "status": {
+    "uploaded": "En attente",
+    "checked": "Vérifié",
+    "converted": "Converti",
+    "sent": "Envoyé",
+    "pending": "En attente"
+  },
+  "login": {
+    "title": "Bon retour",
+    "subtitle": "Connectez-vous à votre compte Peppol Light",
+    "email": "Email",
+    "emailPlaceholder": "votre.email@entreprise.com",
+    "password": "Mot de passe",
+    "passwordPlaceholder": "••••••••",
+    "signIn": "Se connecter",
+    "signingIn": "Connexion...",
+    "noAccount": "Vous n'avez pas de compte ?",
+    "createOne": "Créez-en un",
+    "errorInvalid": "Email ou mot de passe incorrect",
+    "errorNetwork": "Erreur de connexion au serveur"
+  },
+  "register": {
+    "title": "Créer un compte",
+    "subtitle": "Commencez à vérifier vos factures Peppol",
+    "companyName": "Nom de l'entreprise",
+    "companyPlaceholder": "Votre Entreprise SPRL",
+    "email": "Email",
+    "emailPlaceholder": "votre.email@entreprise.com",
+    "password": "Mot de passe",
+    "passwordPlaceholder": "Minimum 8 caractères",
+    "signUp": "S'inscrire",
+    "signingUp": "Inscription...",
+    "hasAccount": "Vous avez déjà un compte ?",
+    "signIn": "Connectez-vous",
+    "errorEmailExists": "Cet email est déjà utilisé",
+    "errorNetwork": "Erreur de connexion au serveur",
+    "successMessage": "Compte créé avec succès"
+  }
+}
