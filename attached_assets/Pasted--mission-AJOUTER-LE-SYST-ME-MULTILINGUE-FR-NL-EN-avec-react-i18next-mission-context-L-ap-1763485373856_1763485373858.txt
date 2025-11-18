@@ -1,0 +1,453 @@
+<mission>
+AJOUTER LE SYSTÈME MULTILINGUE FR/NL/EN avec react-i18next
+</mission>
+
+<context>
+L'application Peppol Light fonctionne parfaitement (upload testé ✅). 
+Elle est actuellement en anglais par défaut.
+Marché cible : Belgique → 3 langues obligatoires : Français, Nederlands, English.
+</context>
+
+<technical_stack>
+- React 18 + TypeScript
+- Vite (déjà configuré)
+- Tailwind CSS
+- react-i18next pour l'internationalisation
+</technical_stack>
+
+<!-- ============================================ -->
+<!-- ÉTAPE 1 : INSTALLATION DES PACKAGES -->
+<!-- ============================================ -->
+
+<step number="1" title="Installation">
+Exécute cette commande :
+```bash
+npm install react-i18next i18next i18next-browser-languagedetector
+```
+
+Attends la fin de l'installation avant de continuer.
+</step>
+
+<!-- ============================================ -->
+<!-- ÉTAPE 2 : CONFIGURATION i18n -->
+<!-- ============================================ -->
+
+<step number="2" title="Configuration i18n">
+Crée le fichier : src/i18n/config.ts
+```typescript
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
+import fr from './locales/fr.json';
+import nl from './locales/nl.json';
+import en from './locales/en.json';
+
+i18n
+  .use(LanguageDetector) // Détecte la langue du navigateur
+  .use(initReactI18next) // Intégration React
+  .init({
+    resources: {
+      fr: { translation: fr },
+      nl: { translation: nl },
+      en: { translation: en }
+    },
+    fallbackLng: 'fr', // Langue par défaut
+    lng: 'fr', // Langue initiale
+    interpolation: {
+      escapeValue: false // React échappe déjà les XSS
+    },
+    detection: {
+      order: ['localStorage', 'navigator'], // Priorité : localStorage puis navigateur
+      caches: ['localStorage'] // Persiste le choix
+    }
+  });
+
+export default i18n;
+```
+</step>
+
+<!-- ============================================ -->
+<!-- ÉTAPE 3 : FICHIERS DE TRADUCTION -->
+<!-- ============================================ -->
+
+<step number="3" title="Fichiers de traduction">
+
+Crée src/i18n/locales/fr.json :
+```json
+{
+  "common": {
+    "peppolLight": "Peppol Light",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès"
+  },
+  "nav": {
+    "logout": "Se déconnecter"
+  },
+  "dashboard": {
+    "title": "Vérification des factures",
+    "subtitle": "Téléchargez et gérez vos factures Peppol",
+    "companyName": "{{name}}",
+    "uploadSection": {
+      "title": "Télécharger la facture",
+      "subtitle": "Téléchargez une facture PDF pour vérifier sa conformité Peppol",
+      "chooseFile": "Choisissez le fichier PDF",
+      "onlyPdf": "Seuls les fichiers PDF sont acceptés",
+      "uploading": "Envoi en cours...",
+      "uploadSuccess": "Facture téléchargée avec succès",
+      "uploadError": "Erreur lors du téléchargement"
+    },
+    "invoiceList": {
+      "title": "Vos factures",
+      "total_one": "{{count}} facture totale",
+      "total_other": "{{count}} factures totales",
+      "empty": "Aucune facture pour le moment",
+      "columns": {
+        "fileName": "Nom de fichier",
+        "status": "Statut",
+        "conformityScore": "Score de conformité",
+        "errors": "Erreurs",
+        "actions": "Actions"
+      },
+      "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette facture ?",
+      "deleteSuccess": "Facture supprimée",
+      "deleteError": "Erreur lors de la suppression"
+    }
+  },
+  "status": {
+    "uploaded": "En attente",
+    "checked": "Vérifié",
+    "converted": "Converti",
+    "sent": "Envoyé",
+    "pending": "En attente"
+  },
+  "login": {
+    "title": "Bon retour",
+    "subtitle": "Connectez-vous à votre compte Peppol Light",
+    "email": "Email",
+    "emailPlaceholder": "votre.email@entreprise.com",
+    "password": "Mot de passe",
+    "passwordPlaceholder": "••••••••",
+    "signIn": "Se connecter",
+    "signingIn": "Connexion...",
+    "noAccount": "Vous n'avez pas de compte ?",
+    "createOne": "Créez-en un",
+    "errorInvalid": "Email ou mot de passe incorrect",
+    "errorNetwork": "Erreur de connexion au serveur"
+  },
+  "register": {
+    "title": "Créer un compte",
+    "subtitle": "Commencez à vérifier vos factures Peppol",
+    "companyName": "Nom de l'entreprise",
+    "companyPlaceholder": "Votre Entreprise SPRL",
+    "email": "Email",
+    "emailPlaceholder": "votre.email@entreprise.com",
+    "password": "Mot de passe",
+    "passwordPlaceholder": "Minimum 8 caractères",
+    "signUp": "S'inscrire",
+    "signingUp": "Inscription...",
+    "hasAccount": "Vous avez déjà un compte ?",
+    "signIn": "Connectez-vous",
+    "errorEmailExists": "Cet email est déjà utilisé",
+    "errorNetwork": "Erreur de connexion au serveur",
+    "successMessage": "Compte créé avec succès"
+  }
+}
+```
+
+Crée src/i18n/locales/nl.json :
+```json
+{
+  "common": {
+    "peppolLight": "Peppol Light",
+    "loading": "Laden...",
+    "error": "Fout",
+    "success": "Succes"
+  },
+  "nav": {
+    "logout": "Afmelden"
+  },
+  "dashboard": {
+    "title": "Factuurverificatie",
+    "subtitle": "Upload en beheer uw Peppol-facturen",
+    "companyName": "{{name}}",
+    "uploadSection": {
+      "title": "Factuur uploaden",
+      "subtitle": "Upload een PDF-factuur om de Peppol-conformiteit te verifiëren",
+      "chooseFile": "Kies PDF-bestand",
+      "onlyPdf": "Alleen PDF-bestanden worden geaccepteerd",
+      "uploading": "Uploaden...",
+      "uploadSuccess": "Factuur succesvol geüpload",
+      "uploadError": "Fout bij uploaden"
+    },
+    "invoiceList": {
+      "title": "Uw facturen",
+      "total_one": "{{count}} factuur totaal",
+      "total_other": "{{count}} facturen totaal",
+      "empty": "Nog geen facturen",
+      "columns": {
+        "fileName": "Bestandsnaam",
+        "status": "Status",
+        "conformityScore": "Conformiteitsscore",
+        "errors": "Fouten",
+        "actions": "Acties"
+      },
+      "deleteConfirm": "Weet u zeker dat u deze factuur wilt verwijderen?",
+      "deleteSuccess": "Factuur verwijderd",
+      "deleteError": "Fout bij verwijderen"
+    }
+  },
+  "status": {
+    "uploaded": "In afwachting",
+    "checked": "Geverifieerd",
+    "converted": "Geconverteerd",
+    "sent": "Verzonden",
+    "pending": "In afwachting"
+  },
+  "login": {
+    "title": "Welkom terug",
+    "subtitle": "Meld u aan bij uw Peppol Light-account",
+    "email": "E-mail",
+    "emailPlaceholder": "uw.email@bedrijf.com",
+    "password": "Wachtwoord",
+    "passwordPlaceholder": "••••••••",
+    "signIn": "Aanmelden",
+    "signingIn": "Aanmelden...",
+    "noAccount": "Heeft u geen account?",
+    "createOne": "Maak er een aan",
+    "errorInvalid": "Onjuist e-mailadres of wachtwoord",
+    "errorNetwork": "Verbindingsfout met server"
+  },
+  "register": {
+    "title": "Account aanmaken",
+    "subtitle": "Begin met het verifiëren van uw Peppol-facturen",
+    "companyName": "Bedrijfsnaam",
+    "companyPlaceholder": "Uw Bedrijf BV",
+    "email": "E-mail",
+    "emailPlaceholder": "uw.email@bedrijf.com",
+    "password": "Wachtwoord",
+    "passwordPlaceholder": "Minimaal 8 tekens",
+    "signUp": "Registreren",
+    "signingUp": "Registreren...",
+    "hasAccount": "Heeft u al een account?",
+    "signIn": "Aanmelden",
+    "errorEmailExists": "Dit e-mailadres wordt al gebruikt",
+    "errorNetwork": "Verbindingsfout met server",
+    "successMessage": "Account succesvol aangemaakt"
+  }
+}
+```
+
+Crée src/i18n/locales/en.json :
+```json
+{
+  "common": {
+    "peppolLight": "Peppol Light",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
+  },
+  "nav": {
+    "logout": "Sign out"
+  },
+  "dashboard": {
+    "title": "Invoice Verification",
+    "subtitle": "Upload and manage your Peppol invoices",
+    "companyName": "{{name}}",
+    "uploadSection": {
+      "title": "Upload Invoice",
+      "subtitle": "Upload a PDF invoice to verify its Peppol conformity",
+      "chooseFile": "Choose PDF File",
+      "onlyPdf": "Only PDF files are accepted",
+      "uploading": "Uploading...",
+      "uploadSuccess": "Invoice uploaded successfully",
+      "uploadError": "Upload error"
+    },
+    "invoiceList": {
+      "title": "Your Invoices",
+      "total_one": "{{count}} invoice total",
+      "total_other": "{{count}} invoices total",
+      "empty": "No invoices yet",
+      "columns": {
+        "fileName": "File Name",
+        "status": "Status",
+        "conformityScore": "Conformity Score",
+        "errors": "Errors",
+        "actions": "Actions"
+      },
+      "deleteConfirm": "Are you sure you want to delete this invoice?",
+      "deleteSuccess": "Invoice deleted",
+      "deleteError": "Delete error"
+    }
+  },
+  "status": {
+    "uploaded": "Pending",
+    "checked": "Verified",
+    "converted": "Converted",
+    "sent": "Sent",
+    "pending": "Pending"
+  },
+  "login": {
+    "title": "Welcome back",
+    "subtitle": "Sign in to your Peppol Light account",
+    "email": "Email",
+    "emailPlaceholder": "your.email@company.com",
+    "password": "Password",
+    "passwordPlaceholder": "••••••••",
+    "signIn": "Sign in",
+    "signingIn": "Signing in...",
+    "noAccount": "Don't have an account?",
+    "createOne": "Create one",
+    "errorInvalid": "Invalid email or password",
+    "errorNetwork": "Server connection error"
+  },
+  "register": {
+    "title": "Create account",
+    "subtitle": "Start verifying your Peppol invoices",
+    "companyName": "Company Name",
+    "companyPlaceholder": "Your Company Ltd",
+    "email": "Email",
+    "emailPlaceholder": "your.email@company.com",
+    "password": "Password",
+    "passwordPlaceholder": "Minimum 8 characters",
+    "signUp": "Sign up",
+    "signingUp": "Signing up...",
+    "hasAccount": "Already have an account?",
+    "signIn": "Sign in",
+    "errorEmailExists": "This email is already in use",
+    "errorNetwork": "Server connection error",
+    "successMessage": "Account created successfully"
+  }
+}
+```
+</step>
+
+<!-- ============================================ -->
+<!-- ÉTAPE 4 : INITIALISATION DANS MAIN.TSX -->
+<!-- ============================================ -->
+
+<step number="4" title="Initialisation">
+Modifie src/main.tsx - Ajoute l'import i18n AVANT ReactDOM :
+```typescript
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './index.css';
+import './i18n/config'; // ← AJOUTE CETTE LIGNE
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+```
+</step>
+
+<!-- ============================================ -->
+<!-- ÉTAPE 5 : SÉLECTEUR DE LANGUE (HEADER) -->
+<!-- ============================================ -->
+
+<step number="5" title="Sélecteur de langue">
+Crée src/components/LanguageSwitcher.tsx :
+```typescript
+import { useTranslation } from 'react-i18next';
+
+const languages = [
+  { code: 'fr', label: 'FR', flag: '🇫🇷' },
+  { code: 'nl', label: 'NL', flag: '🇳🇱' },
+  { code: 'en', label: 'EN', flag: '🇬🇧' }
+];
+
+export function LanguageSwitcher() {
+  const { i18n } = useTranslation();
+
+  return (
+    <div className="flex items-center gap-2">
+      {languages.map((lang) => (
+        <button
+          key={lang.code}
+          onClick={() => i18n.changeLanguage(lang.code)}
+          className={`
+            px-3 py-1.5 rounded-md text-sm font-medium transition-colors
+            ${i18n.language === lang.code
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }
+          `}
+          title={lang.label}
+        >
+          <span className="mr-1">{lang.flag}</span>
+          {lang.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+```
+
+Ajoute ce composant dans le Header du Dashboard (à gauche du bouton logout).
+</step>
+
+<!-- ============================================ -->
+<!-- ÉTAPE 6 : REMPLACER LES TEXTES HARDCODÉS -->
+<!-- ============================================ -->
+
+<step number="6" title="Traduction des composants">
+Dans CHAQUE composant (Login, Register, Dashboard), remplace les textes hardcodés :
+
+AVANT :
+```typescript
+<h1>Welcome back</h1>
+```
+
+APRÈS :
+```typescript
+import { useTranslation } from 'react-i18next';
+
+function Login() {
+  const { t } = useTranslation();
+  
+  return <h1>{t('login.title')}</h1>;
+}
+```
+
+Applique ce pattern à TOUS les textes visibles.
+</step>
+
+<!-- ============================================ -->
+<!-- ÉTAPE 7 : VALIDATION -->
+<!-- ============================================ -->
+
+<step number="7" title="Tests de validation">
+Après implémentation, vérifie :
+
+1. Le changement de langue fonctionne au clic
+2. La langue persiste après refresh de la page
+3. Tous les textes changent (pas de texte en dur restant)
+4. Les 3 langues affichent correctement
+5. Aucune erreur console
+
+Si un de ces points échoue, debug avant de continuer.
+</step>
+
+<!-- ============================================ -->
+<!-- CONSIGNES DE SÉCURITÉ -->
+<!-- ============================================ -->
+
+<critical_requirements>
+- NE MODIFIE PAS la logique métier existante
+- NE TOUCHE PAS aux appels API
+- GARDE tous les composants fonctionnels
+- Si une erreur apparaît, ARRÊTE et signale
+- TESTE après chaque étape majeure
+</critical_requirements>
+
+<success_criteria>
+✅ 3 langues fonctionnelles (FR/NL/EN)
+✅ Sélecteur visible et fonctionnel
+✅ Persistance du choix après refresh
+✅ Aucune régression fonctionnelle
+✅ Pas d'erreurs console
+</success_criteria>
+
+Commence maintenant l'implémentation !
