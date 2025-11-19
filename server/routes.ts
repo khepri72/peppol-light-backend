@@ -25,10 +25,17 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'application/pdf') {
+    // Accept PDF and Excel files
+    const allowedTypes = [
+      'application/pdf',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ];
+    
+    if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Only PDF files are allowed'));
+      cb(new Error('Only PDF and Excel files are allowed'));
     }
   },
   limits: {
@@ -58,6 +65,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/invoices', authenticateToken, invoiceController.registerUploadedInvoice);
   app.get('/api/invoices', authenticateToken, invoiceController.getInvoices);
   app.delete('/api/invoices/:id', authenticateToken, invoiceController.deleteInvoice);
+  
+  // Analyze invoice with Peppol engine (PDF or Excel)
+  app.post('/api/invoices/analyze', authenticateToken, upload.single('file'), invoiceController.analyzeInvoice);
 
   // File upload route
   app.post('/api/upload/pdf', authenticateToken, upload.single('pdf'), (req, res) => {

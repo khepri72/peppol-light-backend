@@ -1,0 +1,555 @@
+🎯 MISSION MVP : Créer le moteur Peppol Light réel (Phase 4A.2)
+
+CONTEXTE PROJET :
+- SaaS "Peppol Light" pour préparation factures électroniques Belgique
+- Obligation Peppol janvier 2026
+- Positionnement : PRÉPARATEUR (pas Access Point)
+- Je suis SEUL, pas dev pro, utilise Replit Agent
+- Rapport Perplexity complet disponible avec spécifications
+
+ÉTAT ACTUEL :
+- Frontend React trilingue (FR/NL/EN) ✅
+- Dashboard avec upload factures ✅
+- Backend Node/Express ✅
+- analyzeInvoice() actuel = MOCK (score aléatoire) ❌
+
+OBJECTIF : Remplacer le mock par un VRAI moteur d'analyse
+
+═══════════════════════════════════════════════════════════
+
+📦 PACKAGES À INSTALLER :
+
+npm install pdf-parse xlsx @pixeldrive/peppol-toolkit validator
+
+═══════════════════════════════════════════════════════════
+
+🏗️ ARCHITECTURE À CRÉER :
+
+server/utils/peppolAnalyzer/
+├── types.ts              // Interfaces TypeScript
+├── extractPdf.ts         // Extraction PDF (pdf-parse)
+├── extractExcel.ts       // Extraction Excel (xlsx)
+├── validate.ts           // 6 règles validation Peppol
+├── score.ts              // Calcul score conformité
+└── generateUbl.ts        // Génération XML UBL (@pixeldrive/peppol-toolkit)
+
+═══════════════════════════════════════════════════════════
+
+📋 SPÉCIFICATIONS DÉTAILLÉES :
+
+1️⃣ types.ts - Définir interfaces
+
+export interface InvoiceData {
+  // En-tête
+  invoiceNumber: string;
+  issueDate: string;           // Format libre initial
+  issueDateISO?: string;       // Converti en YYYY-MM-DD
+  currency: string;            // "EUR" par défaut
+  
+  // Fournisseur
+  seller: {
+    name: string;
+    vatNumber: string;         // Format BE + 10 chiffres
+    bceNumber?: string;        // 10 chiffres
+    address: {
+      street?: string;
+      city?: string;
+      postalCode?: string;
+      country: string;         // "BE" par défaut
+    };
+  };
+  
+  // Client
+  buyer: {
+    name: string;
+    vatNumber?: string;
+    address?: {
+      street?: string;
+      city?: string;
+      postalCode?: string;
+      country?: string;
+    };
+  };
+  
+  // Références
+  buyerReference?: string;
+  orderReference?: string;
+  
+  // Lignes
+  lines: InvoiceLine[];
+  
+  // Totaux
+  totals: {
+    netAmount: number;         // HT
+    taxAmount: number;         // TVA
+    grossAmount: number;       // TTC
+  };
+}
+
+export interface InvoiceLine {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  vatRate: number;             // 21 par défaut (21%)
+  lineTotal: number;
+}
+
+export interface ValidationResult {
+  field: string;
+  code: string;                // Ex: "VAT_INVALID"
+  severity: "error" | "warning";
+  message: string;
+}
+
+═══════════════════════════════════════════════════════════
+
+2️⃣ extractPdf.ts - Extraction PDF texte
+
+import pdfParse from 'pdf-parse';
+import { InvoiceData } from './types';
+
+export async function extractPdfData(pdfPath: string): Promise<InvoiceData> {
+  const dataBuffer = fs.readFileSync(pdfPath);
+  const pdfData = await pdfParse(dataBuffer);
+  const text = pdfData.text;
+  
+  // Extraction par regex (patterns simples)
+  const invoiceNumber = text.match(/(?:Facture|Invoice)\s*n?[°o]?\s*:?\s*([A-Z0-9\-\/]+)/i)?.[1] || '';
+  
+  const dateMatch = text.match(/(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})/);
+  const issueDate = dateMatch?.[1] || '';
+  
+  const vatMatch = text.match(/BE\s*0?\d{9,10}/i);
+  const sellerVat = vatMatch?.[0]?.replace(/\s/g, '') || '';
+  
+  // Extraction montants (chercher "Total HT", "TVA", "Total TTC")
+  const netAmountMatch = text.match(/(?:Total\s*HT|Net\s*Amount)[:\s]*([0-9.,]+)/i);
+  const taxAmountMatch = text.match(/(?:TVA|VAT|Tax)[:\s]*([0-9.,]+)/i);
+  const grossAmountMatch = text.match(/(?:Total\s*TTC|Gross\s*Amount|Total)[:\s]*([0-9.,]+)/i);
+  
+  return {
+    invoiceNumber,
+    issueDate,
+    currency: 'EUR',
+    seller: {
+      name: '', // À améliorer avec parsing plus avancé
+      vatNumber: sellerVat,
+      address: { country: 'BE' }
+    },
+    buyer: {
+      name: ''
+    },
+    lines: [], // Extraction lignes = complexe, à améliorer
+    totals: {
+      netAmount: parseFloat(netAmountMatch?.[1]?.replace(',', '.') || '0'),
+      taxAmount: parseFloat(taxAmountMatch?.[1]?.replace(',', '.') || '0'),
+      grossAmount: parseFloat(grossAmountMatch?.[1]?.replace(',', '.') || '0')
+    }
+  };
+}
+
+IMPORTANT : Cette extraction est BASIQUE. Retourner les champs trouvés, 
+laisser vides les champs non trouvés. La validation détectera les manques.
+
+═══════════════════════════════════════════════════════════
+
+3️⃣ extractExcel.ts - Extraction Excel
+
+import XLSX from 'xlsx';
+import { InvoiceData } from './types';
+
+export function extractExcelData(excelPath: string): InvoiceData {
+  const workbook = XLSX.readFile(excelPath);
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(sheet);
+  
+  // Supposer colonnes type :
+  // "Numéro facture", "Date", "Client", "Description", "Quantité", "Prix unitaire", "TVA %", "Total HT", "Total TTC"
+  
+  const firstRow = rows[0] as any;
+  
+  return {
+    invoiceNumber: firstRow['Numéro facture'] || firstRow['Invoice Number'] || '',
+    issueDate: firstRow['Date'] || '',
+    currency: 'EUR',
+    seller: {
+      name: '',
+      vatNumber: firstRow['TVA Fournisseur'] || '',
+      address: { country: 'BE' }
+    },
+    buyer: {
+      name: firstRow['Client'] || ''
+    },
+    lines: rows.map((row: any, index) => ({
+      id: String(index + 1),
+      description: row['Description'] || '',
+      quantity: parseFloat(row['Quantité'] || row['Quantity'] || '1'),
+      unitPrice: parseFloat(row['Prix unitaire'] || row['Unit Price'] || '0'),
+      vatRate: parseFloat(row['TVA %'] || row['VAT %'] || '21'),
+      lineTotal: parseFloat(row['Total ligne'] || '0')
+    })),
+    totals: {
+      netAmount: parseFloat(firstRow['Total HT'] || '0'),
+      taxAmount: parseFloat(firstRow['TVA'] || '0'),
+      grossAmount: parseFloat(firstRow['Total TTC'] || '0')
+    }
+  };
+}
+
+═══════════════════════════════════════════════════════════
+
+4️⃣ validate.ts - 6 règles critiques Peppol
+
+import validator from 'validator';
+import { InvoiceData, ValidationResult } from './types';
+
+export function validatePeppolRules(data: InvoiceData): ValidationResult[] {
+  const errors: ValidationResult[] = [];
+  
+  // Règle 1 : Date convertible YYYY-MM-DD
+  if (!data.issueDate) {
+    errors.push({
+      field: 'issueDate',
+      code: 'DATE_MISSING',
+      severity: 'error',
+      message: 'Date de facture manquante'
+    });
+  } else {
+    try {
+      // Tenter conversion simple (à améliorer)
+      const dateISO = convertToISO(data.issueDate);
+      if (!validator.isISO8601(dateISO)) {
+        errors.push({
+          field: 'issueDate',
+          code: 'DATE_INVALID_FORMAT',
+          severity: 'error',
+          message: 'Date doit être au format YYYY-MM-DD'
+        });
+      }
+    } catch {
+      errors.push({
+        field: 'issueDate',
+        code: 'DATE_CONVERSION_ERROR',
+        severity: 'error',
+        message: 'Impossible de convertir la date'
+      });
+    }
+  }
+  
+  // Règle 2 : TVA fournisseur format BE + 10 chiffres
+  const vatRegex = /^BE[0-9]{10}$/;
+  if (!data.seller.vatNumber) {
+    errors.push({
+      field: 'seller.vatNumber',
+      code: 'VAT_MISSING',
+      severity: 'error',
+      message: 'Numéro TVA fournisseur manquant'
+    });
+  } else if (!vatRegex.test(data.seller.vatNumber)) {
+    errors.push({
+      field: 'seller.vatNumber',
+      code: 'VAT_INVALID_FORMAT',
+      severity: 'error',
+      message: 'Numéro TVA doit être au format BE + 10 chiffres'
+    });
+  }
+  
+  // Règle 3 : Au moins 1 ligne valide
+  const validLines = data.lines.filter(line => 
+    line.quantity > 0 && line.unitPrice > 0
+  );
+  if (validLines.length === 0) {
+    errors.push({
+      field: 'lines',
+      code: 'NO_VALID_LINES',
+      severity: 'error',
+      message: 'Aucune ligne de facturation valide (quantité et prix > 0)'
+    });
+  }
+  
+  // Règle 4 : Cohérence montants (tolérance 0.01€)
+  const calculatedGross = data.totals.netAmount + data.totals.taxAmount;
+  const diff = Math.abs(calculatedGross - data.totals.grossAmount);
+  if (diff > 0.01) {
+    errors.push({
+      field: 'totals',
+      code: 'AMOUNTS_INCONSISTENT',
+      severity: 'error',
+      message: `Incohérence montants : HT(${data.totals.netAmount}) + TVA(${data.totals.taxAmount}) ≠ TTC(${data.totals.grossAmount})`
+    });
+  }
+  
+  // Règle 5 : BuyerReference OU OrderReference
+  if (!data.buyerReference && !data.orderReference) {
+    errors.push({
+      field: 'references',
+      code: 'REFERENCE_MISSING',
+      severity: 'error',
+      message: 'BuyerReference ou OrderReference obligatoire (règle Peppol R003)'
+    });
+  }
+  
+  // Règle 6 : BCE fournisseur (10 chiffres) - Warning si manquant
+  if (!data.seller.bceNumber || !/^\d{10}$/.test(data.seller.bceNumber)) {
+    errors.push({
+      field: 'seller.bceNumber',
+      code: 'BCE_MISSING',
+      severity: 'warning',
+      message: 'Numéro BCE fournisseur manquant ou invalide (10 chiffres)'
+    });
+  }
+  
+  return errors;
+}
+
+function convertToISO(dateStr: string): string {
+  // Fonction simplifiée (à améliorer avec day.js ou date-fns)
+  // Gérer 19/11/2025, 19-11-2025, etc. → 2025-11-19
+  const parts = dateStr.split(/[\/\-\.]/);
+  if (parts.length === 3) {
+    const [day, month, year] = parts;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+  return dateStr;
+}
+
+═══════════════════════════════════════════════════════════
+
+5️⃣ score.ts - Calcul score conformité
+
+import { ValidationResult } from './types';
+
+export function calculateConformityScore(validations: ValidationResult[]): number {
+  let score = 100;
+  
+  for (const validation of validations) {
+    if (validation.severity === 'error') {
+      score -= 10;
+    } else if (validation.severity === 'warning') {
+      score -= 5;
+    }
+  }
+  
+  return Math.max(0, Math.min(100, score));
+}
+
+═══════════════════════════════════════════════════════════
+
+6️⃣ generateUbl.ts - Génération XML UBL Peppol
+
+import { PeppolToolkit } from '@pixeldrive/peppol-toolkit';
+import { InvoiceData } from './types';
+
+export function generatePeppolUBL(data: InvoiceData): string {
+  const toolkit = new PeppolToolkit();
+  
+  const ublData = {
+    customizationID: 'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0',
+    profileID: 'urn:fdc:peppol.eu:2017:poacc:billing:01:1.0',
+    id: data.invoiceNumber,
+    issueDate: data.issueDateISO || data.issueDate,
+    invoiceTypeCode: '380',
+    documentCurrencyCode: data.currency,
+    
+    accountingSupplierParty: {
+      endpointID: { scheme: '0208', value: data.seller.bceNumber || '0000000000' },
+      partyName: data.seller.name || 'Fournisseur',
+      postalAddress: {
+        streetName: data.seller.address.street || 'Rue inconnue',
+        cityName: data.seller.address.city || 'Bruxelles',
+        postalZone: data.seller.address.postalCode || '1000',
+        country: data.seller.address.country
+      },
+      partyTaxScheme: {
+        companyID: data.seller.vatNumber,
+        taxScheme: 'VAT'
+      }
+    },
+    
+    accountingCustomerParty: {
+      partyName: data.buyer.name || 'Client',
+      postalAddress: {
+        country: data.buyer.address?.country || 'BE'
+      }
+    },
+    
+    buyerReference: data.buyerReference || data.orderReference || 'N/A',
+    
+    invoiceLines: data.lines.map(line => ({
+      id: line.id,
+      invoicedQuantity: { value: line.quantity, unitCode: 'C62' },
+      lineExtensionAmount: line.lineTotal,
+      item: {
+        name: line.description,
+        classifiedTaxCategory: {
+          id: 'S',
+          percent: line.vatRate,
+          taxScheme: 'VAT'
+        }
+      },
+      price: {
+        priceAmount: line.unitPrice
+      }
+    })),
+    
+    taxTotal: {
+      taxAmount: data.totals.taxAmount,
+      taxSubtotals: [{
+        taxableAmount: data.totals.netAmount,
+        taxAmount: data.totals.taxAmount,
+        taxCategory: { id: 'S', percent: 21 }
+      }]
+    },
+    
+    legalMonetaryTotal: {
+      lineExtensionAmount: data.totals.netAmount,
+      taxExclusiveAmount: data.totals.netAmount,
+      taxInclusiveAmount: data.totals.grossAmount,
+      payableAmount: data.totals.grossAmount
+    }
+  };
+  
+  return toolkit.invoiceToPeppolUBL(ublData);
+}
+
+═══════════════════════════════════════════════════════════
+
+7️⃣ invoiceController.ts - Mettre à jour controller
+
+import { extractPdfData } from '../utils/peppolAnalyzer/extractPdf';
+import { extractExcelData } from '../utils/peppolAnalyzer/extractExcel';
+import { validatePeppolRules } from '../utils/peppolAnalyzer/validate';
+import { calculateConformityScore } from '../utils/peppolAnalyzer/score';
+import { generatePeppolUBL } from '../utils/peppolAnalyzer/generateUbl';
+
+export const analyzeInvoice = async (req, res) => {
+  try {
+    const filePath = req.file.path;
+    const fileType = req.file.mimetype;
+    
+    // 1. Extraction selon type
+    let invoiceData;
+    if (fileType === 'application/pdf') {
+      invoiceData = await extractPdfData(filePath);
+    } else if (fileType.includes('spreadsheet') || fileType.includes('excel')) {
+      invoiceData = extractExcelData(filePath);
+    } else {
+      return res.status(400).json({ error: 'Type de fichier non supporté' });
+    }
+    
+    // 2. Validation
+    const validationResults = validatePeppolRules(invoiceData);
+    
+    // 3. Score
+    const score = calculateConformityScore(validationResults);
+    
+    // 4. Génération UBL
+    let ublXml = '';
+    try {
+      ublXml = generatePeppolUBL(invoiceData);
+      
+      // Sauvegarder XML
+      const xmlPath = `${filePath}.xml`;
+      fs.writeFileSync(xmlPath, ublXml);
+    } catch (ublError) {
+      console.error('Erreur génération UBL:', ublError);
+    }
+    
+    // 5. Réponse
+    res.json({
+      success: true,
+      score,
+      errors: validationResults.filter(v => v.severity === 'error'),
+      warnings: validationResults.filter(v => v.severity === 'warning'),
+      xmlPath: ublXml ? `${req.file.filename}.xml` : null,
+      extractedData: invoiceData
+    });
+    
+  } catch (error) {
+    console.error('Erreur analyse:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Erreur lors de l\'analyse de la facture' 
+    });
+  }
+};
+
+═══════════════════════════════════════════════════════════
+
+🎨 FRONTEND - Ajouter disclaimer
+
+Dans le composant qui affiche les résultats (ex: AnalysisResults.tsx),
+ajouter après l'affichage du score :
+
+<div className="disclaimer">
+  ⚠️ Ce diagnostic est automatique et indicatif. 
+  Vérifiez toujours les données extraites avec votre comptable.
+  Pour les PDF scannés, une correction manuelle peut être nécessaire.
+</div>
+
+Style CSS suggéré :
+.disclaimer {
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  padding: 12px;
+  margin-top: 16px;
+  font-size: 14px;
+  color: #856404;
+}
+
+═══════════════════════════════════════════════════════════
+
+📖 DOCUMENTATION - Page aide minimale
+
+Créer page /help ou section dans dashboard avec :
+
+## Comment utiliser Peppol Light ?
+
+**1. Uploader votre facture**
+- Formats acceptés : PDF (texte) ou Excel (.xlsx)
+- Taille max : 5 MB
+
+**2. Comprendre votre score**
+- 90-100 : Excellent, facture prête pour Peppol
+- 70-89 : Bon, quelques ajustements mineurs
+- 50-69 : Attention, corrections nécessaires
+- 0-49 : Facture non conforme, révision complète
+
+**3. Télécharger votre XML**
+- Cliquez sur "Télécharger XML Peppol"
+- Envoyez ce fichier à votre comptable
+- Il l'enverra via son Access Point Peppol
+
+**Questions fréquentes**
+- Mon comptable doit-il changer d'outil ? Non, nous préparons uniquement vos factures.
+- Mes données sont-elles sécurisées ? Oui, suppression automatique après 30 jours.
+- Puis-je annuler mon abonnement ? Oui, à tout moment sans frais.
+
+═══════════════════════════════════════════════════════════
+
+✅ TESTS À EFFECTUER MANUELLEMENT :
+
+1. Créer 3 fichiers test :
+   - test-conforme.pdf (toutes règles OK)
+   - test-erreurs.pdf (TVA invalide, totaux incohérents)
+   - test-excel.xlsx (données basiques)
+
+2. Upload via dashboard
+3. Vérifier :
+   - Score cohérent avec erreurs
+   - Erreurs listées clairement
+   - XML téléchargeable
+   - Disclaimer affiché
+
+═══════════════════════════════════════════════════════════
+
+CONTRAINTES IMPORTANTES :
+
+- Code LISIBLE avec commentaires
+- Gestion d'erreurs (try/catch)
+- Pas de complexité inutile
+- Faisable en 2-3 jours
+- Explique-moi les fichiers créés et comment tester
+
+L'objectif : un MVP qui FONCTIONNE vraiment, même si imparfait.

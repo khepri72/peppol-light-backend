@@ -1,7 +1,13 @@
 import { Response } from 'express';
+import fs from 'fs';
 import { base, TABLES } from '../config/airtable';
 import { AuthRequest } from '../middlewares/auth';
 import { buildSafeFilterFormula } from '../utils/airtableHelpers';
+import { extractPdfData } from '../utils/peppolAnalyzer/extractPdf';
+import { extractExcelData } from '../utils/peppolAnalyzer/extractExcel';
+import { validatePeppolRules } from '../utils/peppolAnalyzer/validate';
+import { calculateConformityScore } from '../utils/peppolAnalyzer/score';
+import { generatePeppolUBL } from '../utils/peppolAnalyzer/generateUbl';
 
 /**
  * Register an uploaded invoice in Airtable
@@ -93,6 +99,67 @@ export const getInvoices = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     console.error('Get invoices error:', error);
     res.status(500).json({ error: 'Failed to fetch invoices' });
+  }
+};
+
+/**
+ * Analyze an uploaded invoice with Peppol engine
+ * POST /api/invoices/analyze
+ */
+export const analyzeInvoice = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const filePath = req.file.path;
+    const fileType = req.file.mimetype;
+    
+    // 1. Extraction selon type
+    let invoiceData;
+    if (fileType === 'application/pdf') {
+      invoiceData = await extractPdfData(filePath);
+    } else if (fileType.includes('spreadsheet') || fileType.includes('excel')) {
+      invoiceData = extractExcelData(filePath);
+    } else {
+      return res.status(400).json({ error: 'Type de fichier non supporté. Utilisez PDF ou Excel.' });
+    }
+    
+    // 2. Validation
+    const validationResults = validatePeppolRules(invoiceData);
+    
+    // 3. Score
+    const score = calculateConformityScore(validationResults);
+    
+    // 4. Génération UBL
+    let ublXml = '';
+    let xmlPath = '';
+    try {
+      ublXml = generatePeppolUBL(invoiceData);
+      
+      // Sauvegarder XML
+      xmlPath = `${filePath}.xml`;
+      fs.writeFileSync(xmlPath, ublXml);
+    } catch (ublError) {
+      console.error('Erreur génération UBL:', ublError);
+    }
+    
+    // 5. Réponse
+    res.json({
+      success: true,
+      score,
+      errors: validationResults.filter(v => v.severity === 'error'),
+      warnings: validationResults.filter(v => v.severity === 'warning'),
+      xmlPath: ublXml ? `${req.file.filename}.xml` : null,
+      extractedData: invoiceData
+    });
+    
+  } catch (error) {
+    console.error('Erreur analyse:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Erreur lors de l\'analyse de la facture' 
+    });
   }
 };
 
