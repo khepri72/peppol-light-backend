@@ -55,7 +55,7 @@
   "hero": {
     "title": "Peppol Light",
     "tagline": "Peppol-conformiteit 2026 in 3 kliks",
-    "benefit1": "Analyseer uw facturen in 30 seconden",
+    "benefit1": "Analyseer uw PDF- of Excel-facturen in 30 seconden",
     "benefit2": "Verkrijg uw conforme Peppol XML",
     "benefit3": "Verstuur naar uw boekhouder",
     "reassurance": "EN 16931 conformiteit | SSL/RGPD | Ondersteuning FR/NL/EN"
@@ -68,9 +68,10 @@
     "passwordLabel": "Wachtwoord",
     "passwordPlaceholder": "••••••••",
     "button": "Toegang tot mijn ruimte",
+    "reassurance": "Gratis proefperiode · Geen creditcard vereist",
     "signingIn": "Aanmelden...",
     "noAccount": "Nog geen account?",
-    "createAccount": "Maak uw gratis account aan",
+    "createAccount": "Maak uw gratis account aan in 1 minuut",
     "forgotPassword": "Wachtwoord vergeten?",
     "errorInvalid": "Onjuist e-mailadres of wachtwoord",
     "errorNetwork": "Verbindingsfout met server"

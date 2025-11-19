@@ -55,7 +55,7 @@
   "hero": {
     "title": "Peppol Light",
     "tagline": "Conformité Peppol 2026 en 3 clics",
-    "benefit1": "Analysez vos factures en 30 secondes",
+    "benefit1": "Analysez vos factures PDF ou Excel en 30 secondes",
     "benefit2": "Obtenez votre XML Peppol conforme",
     "benefit3": "Envoyez-le à votre comptable",
     "reassurance": "Conformité EN 16931 | SSL/RGPD | Support FR/NL/EN"
@@ -68,9 +68,10 @@
     "passwordLabel": "Mot de passe",
     "passwordPlaceholder": "••••••••",
     "button": "Accéder à mon espace",
+    "reassurance": "Essai gratuit · Sans carte de crédit",
     "signingIn": "Connexion...",
     "noAccount": "Pas encore de compte ?",
-    "createAccount": "Créez votre compte gratuit",
+    "createAccount": "Créez votre compte gratuit en 1 minute",
     "forgotPassword": "Mot de passe oublié ?",
     "errorInvalid": "Email ou mot de passe incorrect",
     "errorNetwork": "Erreur de connexion au serveur"
