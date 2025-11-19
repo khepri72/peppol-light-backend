@@ -1,0 +1,285 @@
+🚨 CORRECTION ERREUR RUNTIME CRITIQUE
+
+═══════════════════════════════════════════════════════════════════
+🔍 PROBLÈME IDENTIFIÉ
+═══════════════════════════════════════════════════════════════════
+
+Erreur au chargement de la page mobile :
+[plugin:runtime-error-plugin] (unknown runtime error)
+
+SYMPTÔMES :
+- Overlay d'erreur rouge apparaît au chargement
+- Message : "Click outside, press Esc key, or fix the code to dismiss"
+- Après dismiss, la page fonctionne normalement
+- L'erreur se reproduit à chaque rechargement
+
+IMPACT :
+- Bloque l'expérience utilisateur
+- Crée une mauvaise première impression
+- Peut causer des abandons
+
+═══════════════════════════════════════════════════════════════════
+🎯 DIAGNOSTIC & CORRECTION
+═══════════════════════════════════════════════════════════════════
+
+Cette erreur Vite est généralement causée par :
+
+CAUSE 1 : Import/Export non résolu
+CAUSE 2 : Module manquant ou mal configuré
+CAUSE 3 : Erreur dans un hook React
+CAUSE 4 : Problème de HMR (Hot Module Replacement)
+CAUSE 5 : CSS-in-JS qui échoue
+
+═══════════════════════════════════════════════════════════════════
+🛠️ ÉTAPE 1 : VÉRIFIER LES IMPORTS (Login.tsx)
+═══════════════════════════════════════════════════════════════════
+
+Dans le fichier du composant Login, vérifier tous les imports :
+
+1. **Imports React/Hooks :**
+```typescript
+import { useState, useEffect } from 'react';
+```
+✅ S'assurer qu'ils sont bien présents
+
+2. **Import i18n :**
+```typescript
+import { useTranslation } from 'react-i18next';
+```
+✅ Vérifier que react-i18next est installé dans package.json
+✅ Ajouter un try-catch autour de son utilisation
+
+3. **Imports de composants :**
+✅ Vérifier que tous les chemins sont corrects
+✅ Pas de chemins relatifs cassés (../../)
+
+═══════════════════════════════════════════════════════════════════
+🛠️ ÉTAPE 2 : AJOUTER ERROR BOUNDARY
+═══════════════════════════════════════════════════════════════════
+
+Créer le fichier `client/src/components/ErrorBoundary.tsx` :
+```typescript
+import React, { Component, ErrorInfo, ReactNode } from 'react';
+
+interface Props {
+  children: ReactNode;
+  fallback?: ReactNode;
+}
+
+interface State {
+  hasError: boolean;
+  error?: Error;
+}
+
+export class ErrorBoundary extends Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          padding: '20px',
+          textAlign: 'center',
+          backgroundColor: '#f5f5f5'
+        }}>
+          <h1 style={{ color: '#d32f2f', marginBottom: '16px' }}>
+            Oops! Something went wrong
+          </h1>
+          <p style={{ color: '#666', marginBottom: '24px' }}>
+            {this.state.error?.message || 'An unexpected error occurred'}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: '#1E5AA8',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '16px'
+            }}
+          >
+            Reload Page
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+```
+
+═══════════════════════════════════════════════════════════════════
+🛠️ ÉTAPE 3 : WRAPPER L'APP AVEC ERROR BOUNDARY
+═══════════════════════════════════════════════════════════════════
+
+Dans `client/src/main.tsx` ou `client/src/App.tsx`, wrapper l'app :
+```typescript
+import { ErrorBoundary } from './components/ErrorBoundary';
+
+// Dans le render :
+<ErrorBoundary>
+  <App />
+</ErrorBoundary>
+```
+
+═══════════════════════════════════════════════════════════════════
+🛠️ ÉTAPE 4 : SÉCURISER useTranslation
+═══════════════════════════════════════════════════════════════════
+
+Dans le composant Login, remplacer l'utilisation de useTranslation par :
+```typescript
+import { useTranslation } from 'react-i18next';
+import { useEffect, useState } from 'react';
+
+export function Login() {
+  const [isI18nReady, setIsI18nReady] = useState(false);
+  
+  // Attendre que i18n soit prêt
+  useEffect(() => {
+    const checkI18n = async () => {
+      try {
+        // Vérifier que i18n est initialisé
+        const { i18n } = await import('react-i18next');
+        if (i18n.isInitialized) {
+          setIsI18nReady(true);
+        } else {
+          // Attendre l'initialisation
+          i18n.on('initialized', () => setIsI18nReady(true));
+        }
+      } catch (error) {
+        console.error('i18n initialization error:', error);
+        setIsI18nReady(true); // Continuer quand même
+      }
+    };
+    
+    checkI18n();
+  }, []);
+  
+  const { t } = useTranslation();
+  
+  // Fonction de traduction sécurisée
+  const getText = (key: string, fallback: string) => {
+    if (!isI18nReady) return fallback;
+    try {
+      return t(key);
+    } catch (error) {
+      console.error('Translation error:', error);
+      return fallback;
+    }
+  };
+  
+  // Utiliser getText au lieu de t directement :
+  // getText('hero.title', 'Peppol Light')
+}
+```
+
+═══════════════════════════════════════════════════════════════════
+🛠️ ÉTAPE 5 : VÉRIFIER vite.config.ts
+═══════════════════════════════════════════════════════════════════
+
+Dans `vite.config.ts`, s'assurer que la config est correcte :
+```typescript
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    host: '0.0.0.0',
+    port: 5000,
+    strictPort: true,
+    hmr: {
+      clientPort: 443,
+      protocol: 'wss'
+    }
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: undefined
+      }
+    }
+  },
+  optimizeDeps: {
+    exclude: []
+  }
+});
+```
+
+═══════════════════════════════════════════════════════════════════
+🛠️ ÉTAPE 6 : DÉSACTIVER L'OVERLAY D'ERREUR (TEMPORAIRE)
+═══════════════════════════════════════════════════════════════════
+
+Si l'erreur persiste mais que l'app fonctionne, désactiver l'overlay :
+
+Dans `vite.config.ts`, ajouter :
+```typescript
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    hmr: {
+      overlay: false  // ← Désactive l'overlay rouge
+    }
+  }
+});
+```
+
+⚠️ ATTENTION : Ceci cache l'erreur, ne la corrige pas. À utiliser en dernier recours.
+
+═══════════════════════════════════════════════════════════════════
+🛠️ ÉTAPE 7 : NETTOYER LE CACHE
+═══════════════════════════════════════════════════════════════════
+
+Parfois, le problème vient d'un cache corrompu :
+
+1. Supprimer le dossier `node_modules/.vite`
+2. Supprimer le dossier `dist`
+3. Redémarrer le serveur
+
+═══════════════════════════════════════════════════════════════════
+✅ TESTS DE VALIDATION
+═══════════════════════════════════════════════════════════════════
+
+Après corrections, vérifier :
+
+1. ✅ Recharger la page mobile
+2. ✅ Plus d'overlay d'erreur rouge
+3. ✅ Console vide (pas d'erreur)
+4. ✅ Page charge directement sans erreur
+5. ✅ Tous les textes traduits apparaissent
+6. ✅ Boutons langue fonctionnent
+
+═══════════════════════════════════════════════════════════════════
+📋 ORDRE DE PRIORITÉ DES CORRECTIONS
+═══════════════════════════════════════════════════════════════════
+
+1️⃣ AJOUTER ErrorBoundary (ÉTAPE 2+3) → Protection générale
+2️⃣ SÉCURISER useTranslation (ÉTAPE 4) → Corrige probablement l'erreur
+3️⃣ VÉRIFIER vite.config (ÉTAPE 5) → Config propre
+4️⃣ Si rien ne marche : Désactiver overlay (ÉTAPE 6) → Dernier recours
+
+═══════════════════════════════════════════════════════════════════
+
+COMMENCE PAR L'ÉTAPE 2 (ErrorBoundary), PUIS ÉTAPE 4 (sécuriser i18n).
+Cela devrait corriger l'erreur runtime.

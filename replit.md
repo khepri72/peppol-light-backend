@@ -76,7 +76,8 @@ The application requires `AIRTABLE_API_KEY`, `AIRTABLE_BASE_ID`, `JWT_SECRET`, a
   - Layout: Stacked vertical (hero top, form bottom) instead of hidden hero
   - Optical centering: Form padding adjusted (pt-4 pb-12) for better visual balance
   - Translations: Added `hero.mobileTagline` in FR/NL/EN for compact mobile display
-  - Result: Professional branded experience preserved on all screen sizes
+  - Runtime error fix: Added ErrorBoundary + i18n `useSuspense: false` to eliminate "[plugin:runtime-error-plugin]" overlay
+  - Result: Professional branded experience preserved on all screen sizes without runtime errors
 - **Peppol Error Internationalization**: Fully internationalized error messages
   - Structured error storage: errorsData JSON field alongside legacy errorsList for backward compatibility
   - Translation system with code-to-i18n mapping for all 8 Peppol validation rules

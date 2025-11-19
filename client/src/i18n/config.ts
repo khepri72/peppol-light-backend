@@ -19,9 +19,12 @@ i18n
       escapeValue: false
     },
     detection: {
-      order: ['localStorage'],
+      order: ['localStorage', 'navigator'],
       caches: ['localStorage'],
       lookupLocalStorage: 'i18nextLng'
+    },
+    react: {
+      useSuspense: false
     }
   });
 
