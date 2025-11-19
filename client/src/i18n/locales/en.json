@@ -52,17 +52,26 @@
     "sent": "Sent",
     "pending": "Pending"
   },
+  "hero": {
+    "title": "Peppol Light",
+    "tagline": "Peppol 2026 compliance in 3 clicks",
+    "benefit1": "Analyze your invoices in 30 seconds",
+    "benefit2": "Get your compliant Peppol XML",
+    "benefit3": "Send it to your accountant",
+    "reassurance": "EN 16931 compliance | SSL/GDPR | FR/NL/EN support"
+  },
   "login": {
-    "title": "Welcome back",
-    "subtitle": "Sign in to your Peppol Light account",
-    "email": "Email",
+    "title": "Log in to your secure workspace",
+    "subtitle": "Prepare your business for Peppol invoicing 2026",
+    "emailLabel": "Email",
     "emailPlaceholder": "your.email@company.com",
-    "password": "Password",
+    "passwordLabel": "Password",
     "passwordPlaceholder": "••••••••",
-    "signIn": "Sign in",
+    "button": "Access my workspace",
     "signingIn": "Signing in...",
-    "noAccount": "Don't have an account?",
-    "createOne": "Create one",
+    "noAccount": "No account yet?",
+    "createAccount": "Create your free account",
+    "forgotPassword": "Forgot password?",
     "errorInvalid": "Invalid email or password",
     "errorNetwork": "Server connection error"
   },

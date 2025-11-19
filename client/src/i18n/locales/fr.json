@@ -52,17 +52,26 @@
     "sent": "Envoyé",
     "pending": "En attente"
   },
+  "hero": {
+    "title": "Peppol Light",
+    "tagline": "Conformité Peppol 2026 en 3 clics",
+    "benefit1": "Analysez vos factures en 30 secondes",
+    "benefit2": "Obtenez votre XML Peppol conforme",
+    "benefit3": "Envoyez-le à votre comptable",
+    "reassurance": "Conformité EN 16931 | SSL/RGPD | Support FR/NL/EN"
+  },
   "login": {
-    "title": "Bon retour",
-    "subtitle": "Connectez-vous à votre compte Peppol Light",
-    "email": "Email",
+    "title": "Connectez-vous à votre espace sécurisé",
+    "subtitle": "Préparez votre entreprise pour la facturation Peppol 2026",
+    "emailLabel": "Email",
     "emailPlaceholder": "votre.email@entreprise.com",
-    "password": "Mot de passe",
+    "passwordLabel": "Mot de passe",
     "passwordPlaceholder": "••••••••",
-    "signIn": "Se connecter",
+    "button": "Accéder à mon espace",
     "signingIn": "Connexion...",
-    "noAccount": "Vous n'avez pas de compte ?",
-    "createOne": "Créez-en un",
+    "noAccount": "Pas encore de compte ?",
+    "createAccount": "Créez votre compte gratuit",
+    "forgotPassword": "Mot de passe oublié ?",
     "errorInvalid": "Email ou mot de passe incorrect",
     "errorNetwork": "Erreur de connexion au serveur"
   },
