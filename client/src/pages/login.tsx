@@ -217,6 +217,10 @@ export default function Login() {
                 )}
               </Button>
 
+              <p className="text-center text-[13px] text-gray-400 mt-3 font-normal leading-relaxed" data-testid="text-reassurance">
+                {t('login.reassurance')}
+              </p>
+
               <div className="text-center text-sm pt-4">
                 <span className="text-gray-600">{t('login.noAccount')} </span>
                 <button

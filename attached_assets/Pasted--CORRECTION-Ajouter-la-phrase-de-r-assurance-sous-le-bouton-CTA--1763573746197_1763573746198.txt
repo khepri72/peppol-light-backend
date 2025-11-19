@@ -1,0 +1,123 @@
+🎯 CORRECTION : Ajouter la phrase de réassurance sous le bouton CTA
+
+═══════════════════════════════════════════════════════════════════
+PROBLÈME IDENTIFIÉ
+═══════════════════════════════════════════════════════════════════
+
+L'optimisation #2 n'a pas été implémentée correctement.
+Il manque la phrase de réassurance sous le bouton "Accéder à mon espace".
+
+═══════════════════════════════════════════════════════════════════
+SOLUTION REQUISE
+═══════════════════════════════════════════════════════════════════
+
+📍 LOCALISATION EXACTE :
+Dans le formulaire de connexion (partie droite), juste SOUS le bouton orange "Accéder à mon espace", avant le texte "Pas encore de compte ?"
+
+STRUCTURE HTML ATTENDUE :
+
+<button type="submit" className="login-button">
+  {t('login.button')}
+</button>
+
+{/* AJOUTER ICI */}
+<p className="reassurance-text">
+  {t('login.reassurance')}
+</p>
+
+<div className="form-footer">
+  <p>
+    {t('login.noAccount')} 
+    <a href="/register" className="create-account-link">
+      {t('login.createAccount')}
+    </a>
+  </p>
+</div>
+
+═══════════════════════════════════════════════════════════════════
+ÉTAPE 1 : VÉRIFIER/AJOUTER LES TRADUCTIONS
+═══════════════════════════════════════════════════════════════════
+
+Assurer que ces clés existent dans les 3 fichiers i18n :
+
+📁 client/src/i18n/locales/fr.json
+{
+  "login": {
+    "reassurance": "Essai gratuit · Sans carte de crédit"
+  }
+}
+
+📁 client/src/i18n/locales/nl.json
+{
+  "login": {
+    "reassurance": "Gratis proefperiode · Geen creditcard vereist"
+  }
+}
+
+📁 client/src/i18n/locales/en.json
+{
+  "login": {
+    "reassurance": "Free trial · No credit card required"
+  }
+}
+
+═══════════════════════════════════════════════════════════════════
+ÉTAPE 2 : AJOUTER LE STYLE CSS
+═══════════════════════════════════════════════════════════════════
+
+Dans le fichier CSS de la page Login, ajouter :
+
+.reassurance-text {
+  font-size: 13px;
+  color: #999;
+  text-align: center;
+  margin-top: 12px;
+  margin-bottom: 0;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+═══════════════════════════════════════════════════════════════════
+ÉTAPE 3 : MODIFIER LE COMPOSANT LOGIN
+═══════════════════════════════════════════════════════════════════
+
+Dans client/src/pages/Login.tsx (ou équivalent) :
+
+Localiser le bouton login et ajouter IMMÉDIATEMENT APRÈS :
+
+<button type="submit" className="login-button">
+  {t('login.button')}
+</button>
+
+<p className="reassurance-text">
+  {t('login.reassurance')}
+</p>
+
+IMPORTANT : 
+- Cette phrase doit être ENTRE le bouton et le "form-footer"
+- Elle doit être CENTRÉE
+- Elle doit être en GRIS CLAIR (#999)
+- Elle doit être DISCRÈTE (13px)
+
+═══════════════════════════════════════════════════════════════════
+RÉSULTAT VISUEL ATTENDU
+═══════════════════════════════════════════════════════════════════
+
+[Bouton orange "Accéder à mon espace"]
+            ↓
+Essai gratuit · Sans carte de crédit  ← en petit gris centré
+            ↓
+Pas encore de compte ? Créez votre compte gratuit en 1 minute
+
+═══════════════════════════════════════════════════════════════════
+VALIDATION
+═══════════════════════════════════════════════════════════════════
+
+Après modification :
+✅ La phrase apparaît bien sous le bouton orange
+✅ Elle est centrée et en gris clair
+✅ Les 3 langues fonctionnent (FR/NL/EN)
+✅ Elle n'interfère pas visuellement avec le bouton
+✅ Elle est visible mais discrète
+
+Exécute maintenant et montre-moi le résultat. 🚀

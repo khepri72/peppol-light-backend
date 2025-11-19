@@ -58,15 +58,26 @@ The application requires `AIRTABLE_API_KEY`, `AIRTABLE_BASE_ID`, `JWT_SECRET`, a
 
 ## Recent Changes
 
-### 2025-11-19: Excel Upload and Auto-Analysis
+### 2025-11-19: Login Page Transformation & Conversion Optimizations
 
-- **Excel Support**: Added support for .xlsx and .xls file uploads alongside PDF files
-- **Auto-Analysis Workflow**: Implemented automatic Peppol analysis upon file upload
-  - New API method: `uploadAndAnalyzeInvoice()` handles upload + analysis in one call
-  - Frontend dashboard updated to accept both PDF and Excel files
+- **Page Login Redesign**: Complete transformation into a professional, commercial landing page
+  - Split-screen layout: Hero section (left) + Login form (right)
+  - Hero section: Gradient blue background, tagline, 3 benefits with check icons, reassurance banner
+  - Language switcher: Improved visibility with white active state and transparent/border inactive state
+  - CTA button: Orange gradient (#FF6B35 → #FF8C5A) with hover effects
+  - New commercial copywriting in FR/NL/EN focused on Peppol 2026 compliance value proposition
+- **Conversion Optimizations**: 3 micro-optimizations to increase signup rate
+  1. PDF/Excel mention: First benefit explicitly mentions "PDF ou Excel" to clarify supported formats
+  2. Reassurance text: "Essai gratuit · Sans carte de crédit" under CTA button to remove payment barrier
+  3. Quick signup: "en 1 minute" added to account creation link to reduce perceived effort
+- **Peppol Error Internationalization**: Fully internationalized error messages
+  - Structured error storage: errorsData JSON field alongside legacy errorsList for backward compatibility
+  - Translation system with code-to-i18n mapping for all 8 Peppol validation rules
+  - Robust error handling with graceful fallbacks for legacy invoices, corrupted JSON, and unknown error codes
+- **Excel Support & Auto-Analysis**: Added support for .xlsx and .xls file uploads
+  - Auto-Analysis Workflow: `uploadAndAnalyzeInvoice()` handles upload + analysis in one call
   - Results displayed immediately in dashboard table with conformity scores
 - **PDF Parser Migration**: Updated to pdf-parse v2 API using PDFParse class
   - Old: `import * as pdfParse; await pdfParse(buffer)`
   - New: `import { PDFParse }; new PDFParse({ data }).getText(); parser.destroy()`
-- **Translations**: Added multilingual support for "Formats acceptés: PDF et Excel" in FR/NL/EN
-- **Testing**: End-to-end test confirms PDF upload → auto-analysis → 90% score display works correctly
+- **Testing**: End-to-end tests confirm all features work correctly across 3 languages
