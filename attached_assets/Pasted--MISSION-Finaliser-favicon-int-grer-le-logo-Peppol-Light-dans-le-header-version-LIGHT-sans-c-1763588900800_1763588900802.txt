@@ -1,0 +1,137 @@
+🎯 MISSION : Finaliser favicon + intégrer le logo Peppol Light dans le header (version LIGHT, sans casser v2.1)
+
+CONTEXTE
+- Tous les fichiers favicon sont déjà uploadés dans client/public :
+  - favicon.ico
+  - favicon-16x16.png
+  - favicon-32x32.png
+  - apple-touch-icon.png
+  - android-chrome-192x192.png
+  - android-chrome-512x512.png
+  - site.webmanifest
+- Un logo Peppol Light a été uploadé dans client/public/assets/
+  (ex : logo_final.jpg ou similaire).
+
+OBJECTIF
+1) Utiliser les nouveaux favicons dans index.html
+2) Afficher le logo image dans le header de la page de login
+   à la place du texte "Peppol Light", sans modifier le reste
+   de la structure (ErrorBoundary, i18n, etc.).
+
+════════════════════════════════════
+TÂCHE 1 : Configurer les favicons
+════════════════════════════════════
+
+FICHIER : client/public/index.html
+
+1. Dans la balise <head>, s’assurer que les balises suivantes existent
+   (en remplaçant d’anciennes balises favicon si nécessaire) :
+
+   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+   <link rel="manifest" href="/site.webmanifest" />
+
+2. Vérifier qu’aucune balise <link> n’utilise encore "/favicon.png".
+   Si oui, la remplacer par les fichiers ci-dessus.
+
+3. Ne PAS toucher au reste du <head> (title, meta, etc.) sauf si nécessaire
+   pour corriger une erreur évidente.
+
+════════════════════════════════════
+TÂCHE 2 : Utiliser le logo image dans le header de la page de login
+════════════════════════════════════
+
+FICHIER : client/src/pages/Login.tsx (ou équivalent si le composant Login se trouve ailleurs)
+
+1. Identifier l’endroit où le titre "Peppol Light" est affiché
+   dans la partie gauche bleue (hero). Exemple probable :
+
+   <h1 className="hero-title">Peppol Light</h1>
+
+2. Remplacer CE TITRE visuel par une balise <img> utilisant le logo
+   situé dans client/public/assets/.
+
+   - D’abord, détecter le nom exact du fichier logo dans client/public/assets/
+     (par exemple : "logo_final.jpg" ou "logo.png").
+   - Utiliser un chemin absolu à partir de la racine publique : "/assets/nom-du-fichier".
+
+   Exemple de remplacement :
+
+   AVANT :
+   <h1 className="hero-title">Peppol Light</h1>
+
+   APRÈS (adapter le nom de fichier réel) :
+   <img
+     src="/assets/logo_final.jpg"
+     alt="Peppol Light"
+     className="logo-header"
+   />
+
+3. Ne pas remplacer les textes "Peppol Light" dans :
+   - les <title> du document,
+   - les meta description,
+   - le contenu textuel explicatif.
+   On remplace UNIQUEMENT le gros titre visuel du hero.
+
+════════════════════════════════════
+TÂCHE 3 : Ajouter un style simple pour le logo
+════════════════════════════════════
+
+FICHIER : client/src/index.css (ou le fichier CSS global déjà utilisé pour la page Login)
+
+1. Ajouter les règles suivantes (ou les adapter si une classe .logo-header existe déjà) :
+
+   .logo-header {
+     height: 48px;
+     width: auto;
+     display: block;
+     transition: opacity 0.3s ease, transform 0.2s ease;
+     cursor: pointer;
+   }
+
+   .logo-header:hover {
+     opacity: 0.9;
+     transform: scale(1.02);
+   }
+
+   @media (max-width: 768px) {
+     .logo-header {
+       height: 36px;
+     }
+   }
+
+2. Ne pas modifier les autres styles existants, sauf si nécessaire
+   pour corriger un petit problème d’alignement du logo.
+
+════════════════════════════════════
+TÂCHE 4 : Vérifications
+════════════════════════════════════
+
+1. Lancer l’application en dev et vérifier :
+
+   - Le favicon affiché dans l’onglet du navigateur correspond
+     bien aux nouveaux fichiers uploadés (pas l’ancien).
+   - Sur la page /login :
+     - Le texte "Peppol Light" dans le bloc bleu a été remplacé par le logo image.
+     - Le logo est bien visible et lisible, sur desktop et mobile.
+   - Aucune erreur 404 dans la console pour les fichiers favicon ou le logo.
+
+2. Ne pas toucher :
+   - à la configuration ErrorBoundary,
+   - à i18n,
+   - au HMR overlay,
+   - aux routes API.
+
+════════════════════════════════════
+RAPPORT À LA FIN
+════════════════════════════════════
+
+À la fin, fournir un résumé avec :
+- Les fichiers modifiés et les lignes ajoutées/changées.
+- Le nom exact du fichier logo utilisé dans /assets/.
+- La confirmation :
+  - que /favicon.png n’est plus référencé dans index.html,
+  - que le nouveau favicon apparaît bien,
+  - que le logo apparaît bien sur la page /login.

@@ -63,9 +63,12 @@ export default function Login() {
       <div className="flex flex-col bg-gradient-to-br from-[#1E5AA8] to-[#2A6EC1] text-white lg:flex-1 lg:p-10 xl:p-16 lg:justify-between">
         {/* VERSION MOBILE - Compact */}
         <div className="lg:hidden px-6 py-6 flex flex-col items-center gap-4">
-          <h1 className="text-3xl font-bold tracking-tight text-center" data-testid="hero-title-mobile">
-            {t('hero.title')}
-          </h1>
+          <img 
+            src="/assets/logo_final.jpg" 
+            alt="Peppol Light" 
+            className="logo-header"
+            data-testid="hero-logo-mobile"
+          />
           
           {/* Boutons de langue mobile */}
           <div className="flex gap-2" data-testid="language-switcher-mobile">
@@ -97,9 +100,12 @@ export default function Login() {
         <div className="hidden lg:block">
           {/* Header avec logo et boutons langue */}
           <div className="flex justify-between items-start mb-12">
-            <h1 className="text-5xl xl:text-6xl font-bold tracking-tight" data-testid="hero-title-desktop">
-              {t('hero.title')}
-            </h1>
+            <img 
+              src="/assets/logo_final.jpg" 
+              alt="Peppol Light" 
+              className="logo-header"
+              data-testid="hero-logo-desktop"
+            />
             
             {/* Boutons de langue desktop */}
             <div className="flex gap-2" data-testid="language-switcher-desktop">
