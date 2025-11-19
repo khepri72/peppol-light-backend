@@ -82,5 +82,19 @@
     "errorEmailExists": "Dit e-mailadres wordt al gebruikt",
     "errorNetwork": "Verbindingsfout met server",
     "successMessage": "Account succesvol aangemaakt"
+  },
+  "validation": {
+    "severity": {
+      "error": "FOUT",
+      "warning": "WAARSCHUWING"
+    },
+    "errors": {
+      "date_invalid": "Factuurdatum ontbreekt of ongeldig formaat (vereist: DD/MM/JJJJ of JJJJ-MM-DD)",
+      "vat_invalid": "BTW-nummer leverancier ontbreekt of ongeldig formaat (vereist: BE + 10 cijfers)",
+      "no_valid_lines": "Geen geldige factuurregel (hoeveelheid en prijs moeten > 0 zijn)",
+      "amounts_inconsistent": "Inconsistente bedragen: Excl.({{net}}) + BTW({{vat}}) ≠ Incl.({{gross}})",
+      "reference_missing": "BuyerReference of OrderReference verplicht (Peppol-regel R003)",
+      "bce_missing": "KBO-nummer leverancier ontbreekt of ongeldig (10 cijfers vereist)"
+    }
   }
 }

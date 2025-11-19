@@ -82,5 +82,19 @@
     "errorEmailExists": "This email is already in use",
     "errorNetwork": "Server connection error",
     "successMessage": "Account created successfully"
+  },
+  "validation": {
+    "severity": {
+      "error": "ERROR",
+      "warning": "WARNING"
+    },
+    "errors": {
+      "date_invalid": "Invoice date missing or invalid format (required: DD/MM/YYYY or YYYY-MM-DD)",
+      "vat_invalid": "Supplier VAT number missing or invalid format (required: BE + 10 digits)",
+      "no_valid_lines": "No valid invoice line (quantity and price must be > 0)",
+      "amounts_inconsistent": "Inconsistent amounts: Net({{net}}) + VAT({{vat}}) ≠ Gross({{gross}})",
+      "reference_missing": "BuyerReference or OrderReference required (Peppol rule R003)",
+      "bce_missing": "Supplier BCE number missing or invalid (10 digits required)"
+    }
   }
 }

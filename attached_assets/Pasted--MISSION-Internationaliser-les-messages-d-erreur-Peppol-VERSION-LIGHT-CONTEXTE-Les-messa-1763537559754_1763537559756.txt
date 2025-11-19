@@ -1,0 +1,269 @@
+🎯 MISSION : Internationaliser les messages d'erreur Peppol (VERSION LIGHT)
+
+CONTEXTE :
+Les messages d'erreur de validation Peppol s'affichent en français même quand 
+l'utilisateur sélectionne NL (néerlandais) ou EN (anglais).
+
+OBJECTIF :
+Rendre les erreurs multilingues sans toucher au backend.
+
+APPROCHE :
+- Créer un mapping code → clé i18n côté frontend uniquement
+- Ajouter traductions FR/NL/EN
+- Utiliser error.code pour choisir la bonne traduction
+- Backend reste intact (zéro modification)
+
+═══════════════════════════════════════════════════════════
+
+📍 ÉTAPE 1 : IDENTIFIER L'AFFICHAGE ACTUEL DES ERREURS
+
+Trouve le composant React qui affiche les erreurs de validation.
+
+Recherche probable :
+- InvoiceList.tsx ou InvoiceRow.tsx ou Dashboard.tsx
+- Code type : invoice.errors?.map(error => <div>{error.message}</div>)
+
+Vérifie que error.code est disponible (devrait l'être).
+
+═══════════════════════════════════════════════════════════
+
+📍 ÉTAPE 2 : CRÉER LE MAPPING CODE → CLÉ I18N
+
+Créer le fichier : client/src/utils/errorTranslations.ts
+
+/**
+ * Mapping des codes d'erreur backend vers clés de traduction i18n
+ */
+export const ERROR_CODE_TO_I18N: Record<string, string> = {
+  // Erreurs de date
+  DATE_MISSING: 'validation.errors.date_missing',
+  DATE_INVALID_FORMAT: 'validation.errors.date_invalid_format',
+  DATE_CONVERSION_ERROR: 'validation.errors.date_conversion_error',
+  
+  // Erreurs TVA
+  VAT_MISSING: 'validation.errors.vat_missing',
+  VAT_INVALID_FORMAT: 'validation.errors.vat_invalid_format',
+  
+  // Erreurs lignes de facturation
+  NO_VALID_LINES: 'validation.errors.no_valid_lines',
+  
+  // Erreurs montants
+  AMOUNTS_INCONSISTENT: 'validation.errors.amounts_inconsistent',
+  
+  // Erreurs références
+  REFERENCE_MISSING: 'validation.errors.reference_missing',
+  
+  // Erreurs BCE
+  BCE_MISSING: 'validation.errors.bce_missing',
+  BCE_INVALID: 'validation.errors.bce_invalid'
+};
+
+/**
+ * Fonction helper pour traduire une erreur
+ */
+export function translateError(
+  error: { code: string; message: string; messageParams?: any },
+  t: (key: string, params?: any) => string
+): string {
+  const i18nKey = ERROR_CODE_TO_I18N[error.code];
+  
+  // Si clé trouvée → traduire avec paramètres éventuels
+  if (i18nKey) {
+    return t(i18nKey, error.messageParams || {});
+  }
+  
+  // Fallback : message original (français) si code inconnu
+  return error.message || error.code;
+}
+
+═══════════════════════════════════════════════════════════
+
+📍 ÉTAPE 3 : AJOUTER LES TRADUCTIONS
+
+Dans client/src/i18n/locales/fr.ts (ou fr.json selon structure) :
+
+AJOUTER dans l'objet existant :
+
+validation: {
+  errors: {
+    // Dates
+    date_missing: 'Date de facture manquante',
+    date_invalid_format: 'Date doit être au format YYYY-MM-DD',
+    date_conversion_error: 'Impossible de convertir la date',
+    
+    // TVA
+    vat_missing: 'Numéro TVA fournisseur manquant',
+    vat_invalid_format: 'Numéro TVA doit être au format BE + 10 chiffres',
+    
+    // Lignes
+    no_valid_lines: 'Aucune ligne de facturation valide (quantité et prix > 0)',
+    
+    // Montants
+    amounts_inconsistent: 'Incohérence montants : HT({{net}}) + TVA({{vat}}) ≠ TTC({{gross}})',
+    
+    // Références
+    reference_missing: 'BuyerReference ou OrderReference obligatoire (règle Peppol R003)',
+    
+    // BCE
+    bce_missing: 'Numéro BCE fournisseur manquant ou invalide (10 chiffres)',
+    bce_invalid: 'Numéro BCE invalide (10 chiffres requis)'
+  }
+}
+
+Dans client/src/i18n/locales/nl.ts :
+
+AJOUTER :
+
+validation: {
+  errors: {
+    // Dates
+    date_missing: 'Factuurdatum ontbreekt',
+    date_invalid_format: 'Datum moet in formaat JJJJ-MM-DD zijn',
+    date_conversion_error: 'Kan datum niet converteren',
+    
+    // TVA
+    vat_missing: 'BTW-nummer leverancier ontbreekt',
+    vat_invalid_format: 'BTW-nummer moet formaat BE + 10 cijfers hebben',
+    
+    // Lignes
+    no_valid_lines: 'Geen geldige factuurregel (hoeveelheid en prijs > 0)',
+    
+    // Montants
+    amounts_inconsistent: 'Inconsistente bedragen: Excl.({{net}}) + BTW({{vat}}) ≠ Incl.({{gross}})',
+    
+    // Références
+    reference_missing: 'BuyerReference of OrderReference verplicht (Peppol-regel R003)',
+    
+    // BCE
+    bce_missing: 'KBO-nummer leverancier ontbreekt of ongeldig (10 cijfers)',
+    bce_invalid: 'Ongeldig KBO-nummer (10 cijfers vereist)'
+  }
+}
+
+Dans client/src/i18n/locales/en.ts :
+
+AJOUTER :
+
+validation: {
+  errors: {
+    // Dates
+    date_missing: 'Invoice date is missing',
+    date_invalid_format: 'Date must be in YYYY-MM-DD format',
+    date_conversion_error: 'Unable to convert date',
+    
+    // VAT
+    vat_missing: 'Supplier VAT number is missing',
+    vat_invalid_format: 'VAT number must be format BE + 10 digits',
+    
+    // Lines
+    no_valid_lines: 'No valid invoice line (quantity and price > 0)',
+    
+    // Amounts
+    amounts_inconsistent: 'Inconsistent amounts: Net({{net}}) + VAT({{vat}}) ≠ Gross({{gross}})',
+    
+    // References
+    reference_missing: 'BuyerReference or OrderReference required (Peppol rule R003)',
+    
+    // BCE
+    bce_missing: 'Supplier BCE number missing or invalid (10 digits)',
+    bce_invalid: 'Invalid BCE number (10 digits required)'
+  }
+}
+
+⚠️ IMPORTANT : Respecter la structure existante des fichiers de traduction.
+Si c'est JSON, utiliser JSON. Si c'est TS avec export default, adapter.
+
+═══════════════════════════════════════════════════════════
+
+📍 ÉTAPE 4 : MODIFIER LE COMPOSANT D'AFFICHAGE
+
+Trouver le composant qui affiche les erreurs (probablement InvoiceList.tsx 
+ou similaire).
+
+AVANT (code actuel probable) :
+
+{invoice.errors?.map((error, index) => (
+  <div key={index} className="error">
+    {error.message}
+  </div>
+))}
+
+APRÈS (nouvelle version multilingue) :
+
+import { useTranslation } from 'react-i18next';
+import { translateError } from '@/utils/errorTranslations';
+
+function ErrorDisplay({ errors }: { errors: any[] }) {
+  const { t } = useTranslation();
+  
+  return (
+    <>
+      {errors?.map((error, index) => (
+        <div key={error.code || index} className="error">
+          {translateError(error, t)}
+        </div>
+      ))}
+    </>
+  );
+}
+
+OU si c'est inline :
+
+{invoice.errors?.map((error, index) => {
+  const { t } = useTranslation();
+  return (
+    <div key={error.code || index} className="error">
+      {translateError(error, t)}
+    </div>
+  );
+})}
+
+ADAPTER selon le style de code du projet (composant séparé ou inline).
+
+═══════════════════════════════════════════════════════════
+
+✅ RÉSULTAT ATTENDU
+
+Après ces modifications :
+
+1. Backend intact (validate.ts non modifié)
+2. Données en base intactes
+3. Changement langue FR → erreurs en français
+4. Changement langue NL → erreurs en néerlandais  
+5. Changement langue EN → erreurs en anglais
+6. Changement instantané sans recharger la page
+7. Paramètres dynamiques ({{net}}, {{vat}}, {{gross}}) affichés correctement
+
+═══════════════════════════════════════════════════════════
+
+🧪 TEST MANUEL
+
+1. Upload facture-erreur.pdf
+2. Vérifie erreurs affichées en français
+3. Clique bouton NL (drapeau néerlandais)
+4. Vérifie que TOUTES les erreurs passent en néerlandais
+5. Clique bouton EN
+6. Vérifie que toutes les erreurs passent en anglais
+7. Vérifie spécifiquement l'erreur "amounts_inconsistent" 
+   → les montants {{net}}, {{vat}}, {{gross}} doivent s'afficher
+
+═══════════════════════════════════════════════════════════
+
+📊 RAPPORT FINAL
+
+Quand terminé, indique-moi :
+
+1. Fichiers créés :
+   - client/src/utils/errorTranslations.ts
+
+2. Fichiers modifiés :
+   - client/src/i18n/locales/fr.ts (ou .json)
+   - client/src/i18n/locales/nl.ts
+   - client/src/i18n/locales/en.ts
+   - [Nom du composant qui affiche les erreurs]
+
+3. Test effectué : Oui/Non
+
+4. Résultat : OK ou [description problème]
+
+Exécute maintenant !

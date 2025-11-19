@@ -82,5 +82,19 @@
     "errorEmailExists": "Cet email est déjà utilisé",
     "errorNetwork": "Erreur de connexion au serveur",
     "successMessage": "Compte créé avec succès"
+  },
+  "validation": {
+    "severity": {
+      "error": "ERREUR",
+      "warning": "AVERTISSEMENT"
+    },
+    "errors": {
+      "date_invalid": "Date de facture manquante ou format invalide (requis: JJ/MM/AAAA ou AAAA-MM-JJ)",
+      "vat_invalid": "Numéro TVA fournisseur manquant ou format invalide (requis: BE + 10 chiffres)",
+      "no_valid_lines": "Aucune ligne de facturation valide (quantité et prix doivent être > 0)",
+      "amounts_inconsistent": "Incohérence montants : HT({{net}}) + TVA({{vat}}) ≠ TTC({{gross}})",
+      "reference_missing": "BuyerReference ou OrderReference obligatoire (règle Peppol R003)",
+      "bce_missing": "Numéro BCE fournisseur manquant ou invalide (10 chiffres requis)"
+    }
   }
 }
