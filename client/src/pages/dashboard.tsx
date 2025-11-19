@@ -30,6 +30,7 @@ import { Upload, FileText, Trash2, LogOut, Loader2, AlertCircle, AlertTriangle }
 import { queryClient } from '@/lib/queryClient';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { translateErrorsList, type ValidationError } from '@/utils/errorTranslations';
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
@@ -132,6 +133,25 @@ export default function Dashboard() {
     if (score >= 90) return 'text-green-600';
     if (score >= 70) return 'text-amber-600';
     return 'text-red-600';
+  };
+
+  const getTranslatedErrors = (invoice: Invoice): string => {
+    // Try to use structured errorsData first (for i18n translation)
+    if (invoice.errorsData) {
+      try {
+        const parsed = JSON.parse(invoice.errorsData) as {
+          errors: ValidationError[];
+          warnings: ValidationError[];
+        };
+        return translateErrorsList(parsed.errors, parsed.warnings, t);
+      } catch (e) {
+        // If parsing fails, fallback to errorsList
+        return invoice.errorsList || '';
+      }
+    }
+    
+    // Fallback to legacy errorsList (for backward compatibility)
+    return invoice.errorsList || '';
   };
 
   if (!authStorage.isAuthenticated()) {
@@ -273,11 +293,11 @@ export default function Dashboard() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {invoice.errorsList ? (
+                        {(invoice.errorsList || invoice.errorsData) ? (
                           <div className="flex items-center gap-2">
                             <AlertCircle className="h-4 w-4 text-[#FF6B35]" />
-                            <span className="text-sm" data-testid={`text-errors-${invoice.id}`}>
-                              {invoice.errorsList}
+                            <span className="text-sm whitespace-pre-line" data-testid={`text-errors-${invoice.id}`}>
+                              {getTranslatedErrors(invoice)}
                             </span>
                           </div>
                         ) : (

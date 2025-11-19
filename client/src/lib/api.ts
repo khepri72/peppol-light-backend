@@ -33,6 +33,7 @@ export interface Invoice {
   status?: string;
   conformityScore?: number;
   errorsList?: string;
+  errorsData?: string; // JSON string containing { errors: [], warnings: [] }
 }
 
 export interface InvoicesResponse {
@@ -142,12 +143,19 @@ class ApiClient {
       ...analysisResult.warnings.map(w => `WARNING: ${w.message}`)
     ].join('\n');
 
+    // Store structured errors data for i18n translation
+    const errorsData = JSON.stringify({
+      errors: analysisResult.errors,
+      warnings: analysisResult.warnings
+    });
+
     const invoiceData = {
       fileName: file.name,
       fileUrl: uploadResponse.url,
       status: analysisResult.score >= 80 ? 'checked' : 'uploaded',
       conformityScore: analysisResult.score,
       errorsList: errorsList || '',
+      errorsData: errorsData,
     };
 
     return this.request<Invoice>('/api/invoices', {
