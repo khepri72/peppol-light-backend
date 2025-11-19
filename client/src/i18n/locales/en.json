@@ -21,6 +21,10 @@
       "uploadSuccess": "Invoice uploaded successfully",
       "uploadError": "Upload error"
     },
+    "disclaimer": {
+      "title": "Prototype in development",
+      "message": "This version is a prototype under improvement. The automatic analysis uses simplified rules and may contain errors. Results do not constitute an official guarantee of Peppol conformity. Always verify your invoices before sending."
+    },
     "invoiceList": {
       "title": "Your Invoices",
       "total_one": "{{count}} invoice total",

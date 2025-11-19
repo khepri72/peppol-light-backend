@@ -21,6 +21,10 @@
       "uploadSuccess": "Facture téléchargée avec succès",
       "uploadError": "Erreur lors du téléchargement"
     },
+    "disclaimer": {
+      "title": "Prototype en développement",
+      "message": "Cette version est un prototype en cours d'amélioration. L'analyse automatique utilise des règles simplifiées et peut contenir des erreurs. Les résultats ne constituent pas une garantie de conformité officielle Peppol. Vérifiez toujours vos factures avant envoi."
+    },
     "invoiceList": {
       "title": "Vos factures",
       "total_one": "{{count}} facture totale",

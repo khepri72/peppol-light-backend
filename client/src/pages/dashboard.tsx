@@ -26,9 +26,10 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { api, Invoice } from '@/lib/api';
 import { authStorage, logout } from '@/lib/auth';
-import { Upload, FileText, Trash2, LogOut, Loader2, AlertCircle } from 'lucide-react';
+import { Upload, FileText, Trash2, LogOut, Loader2, AlertCircle, AlertTriangle } from 'lucide-react';
 import { queryClient } from '@/lib/queryClient';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
@@ -213,6 +214,16 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
+
+        <Alert className="mb-8 bg-amber-50 border-amber-200" data-testid="alert-disclaimer">
+          <AlertTriangle className="h-5 w-5 text-amber-600" />
+          <AlertTitle className="text-amber-900 font-semibold">
+            {t('dashboard.disclaimer.title')}
+          </AlertTitle>
+          <AlertDescription className="text-amber-800">
+            {t('dashboard.disclaimer.message')}
+          </AlertDescription>
+        </Alert>
 
         <Card>
           <CardHeader>

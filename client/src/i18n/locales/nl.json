@@ -21,6 +21,10 @@
       "uploadSuccess": "Factuur succesvol geüpload",
       "uploadError": "Fout bij uploaden"
     },
+    "disclaimer": {
+      "title": "Prototype in ontwikkeling",
+      "message": "Deze versie is een prototype in ontwikkeling. De automatische analyse gebruikt vereenvoudigde regels en kan fouten bevatten. De resultaten vormen geen garantie voor officiële Peppol-conformiteit. Controleer altijd uw facturen voordat u ze verstuurt."
+    },
     "invoiceList": {
       "title": "Uw facturen",
       "total_one": "{{count}} factuur totaal",
@@ -29,7 +33,7 @@
       "columns": {
         "fileName": "Bestandsnaam",
         "status": "Status",
-        "conformityScore": "Conformiteitsscore",
+        "conformiteitsscore": "Conformiteitsscore",
         "errors": "Fouten",
         "actions": "Acties"
       },
