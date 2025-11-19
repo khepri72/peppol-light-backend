@@ -55,6 +55,7 @@
   "hero": {
     "title": "Peppol Light",
     "tagline": "Conformité Peppol 2026 en 3 clics",
+    "mobileTagline": "Conformité Peppol 2026",
     "benefit1": "Analysez vos factures PDF ou Excel en 30 secondes",
     "benefit2": "Obtenez votre XML Peppol conforme",
     "benefit3": "Envoyez-le à votre comptable",

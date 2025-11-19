@@ -55,6 +55,7 @@
   "hero": {
     "title": "Peppol Light",
     "tagline": "Peppol 2026 compliance in 3 clicks",
+    "mobileTagline": "Peppol 2026 compliance",
     "benefit1": "Analyze your PDF or Excel invoices in 30 seconds",
     "benefit2": "Get your compliant Peppol XML",
     "benefit3": "Send it to your accountant",

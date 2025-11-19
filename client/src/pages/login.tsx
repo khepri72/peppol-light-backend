@@ -58,94 +58,110 @@ export default function Login() {
   ];
 
   return (
-    <div className="flex min-h-screen w-full">
-      {/* PARTIE GAUCHE - HERO SECTION BLEUE */}
-      <div className="hidden lg:flex lg:flex-1 bg-gradient-to-br from-[#1E5AA8] to-[#2A6EC1] text-white p-10 xl:p-16 flex-col justify-between">
-        {/* Header avec logo et boutons langue */}
-        <div className="flex justify-between items-start mb-12">
-          <h1 className="text-5xl xl:text-6xl font-bold tracking-tight">
+    <div className="flex flex-col lg:flex-row min-h-screen w-full">
+      {/* HERO SECTION - Visible sur toutes tailles d'écran */}
+      <div className="flex flex-col bg-gradient-to-br from-[#1E5AA8] to-[#2A6EC1] text-white lg:flex-1 lg:p-10 xl:p-16 lg:justify-between">
+        {/* VERSION MOBILE - Compact */}
+        <div className="lg:hidden px-6 py-6 flex flex-col items-center gap-4">
+          <h1 className="text-3xl font-bold tracking-tight text-center" data-testid="hero-title-mobile">
             {t('hero.title')}
           </h1>
           
-          {/* Boutons de langue - style amélioré */}
-          <div className="flex gap-2" data-testid="language-switcher">
+          {/* Boutons de langue mobile */}
+          <div className="flex gap-2" data-testid="language-switcher-mobile">
             {languages.map((lang) => (
               <button
                 key={lang.code}
                 onClick={() => i18n.changeLanguage(lang.code)}
                 className={`
-                  px-4 py-2 rounded-lg font-medium text-sm transition-all duration-300
+                  px-3 py-1.5 rounded-lg font-medium text-xs transition-all duration-300
                   ${i18n.language === lang.code 
-                    ? 'bg-white text-[#1E5AA8] border border-white font-semibold shadow-md' 
-                    : 'bg-transparent text-white/70 border border-white/30 hover:text-white/95 hover:border-white/50 hover:bg-white/10'
+                    ? 'bg-white text-[#1E5AA8] font-semibold' 
+                    : 'bg-white/20 text-white border border-white/30 hover:bg-white/30'
                   }
                 `}
-                data-testid={`button-lang-${lang.code}`}
+                data-testid={`button-lang-mobile-${lang.code}`}
               >
                 {lang.label}
               </button>
             ))}
           </div>
-        </div>
-
-        {/* Contenu Hero central */}
-        <div className="flex-1 flex flex-col justify-center max-w-xl">
-          <h2 className="text-3xl xl:text-4xl font-semibold mb-10 leading-snug">
-            {t('hero.tagline')}
-          </h2>
-
-          {/* Liste des bénéfices avec icônes check */}
-          <ul className="space-y-5">
-            <li className="flex items-center gap-4">
-              <span className="flex items-center justify-center w-7 h-7 bg-green-500/90 rounded-full flex-shrink-0">
-                <Check className="w-4 h-4 text-white font-bold" />
-              </span>
-              <span className="text-lg xl:text-xl">{t('hero.benefit1')}</span>
-            </li>
-            <li className="flex items-center gap-4">
-              <span className="flex items-center justify-center w-7 h-7 bg-green-500/90 rounded-full flex-shrink-0">
-                <Check className="w-4 h-4 text-white font-bold" />
-              </span>
-              <span className="text-lg xl:text-xl">{t('hero.benefit2')}</span>
-            </li>
-            <li className="flex items-center gap-4">
-              <span className="flex items-center justify-center w-7 h-7 bg-green-500/90 rounded-full flex-shrink-0">
-                <Check className="w-4 h-4 text-white font-bold" />
-              </span>
-              <span className="text-lg xl:text-xl">{t('hero.benefit3')}</span>
-            </li>
-          </ul>
-        </div>
-
-        {/* Bandeau de réassurance en bas */}
-        <div className="bg-white/15 backdrop-blur-md px-6 py-4 rounded-xl border border-white/20 text-center">
-          <p className="text-sm font-medium opacity-95">
-            {t('hero.reassurance')}
+          
+          {/* Mini-tagline mobile */}
+          <p className="text-base font-medium text-center opacity-95" data-testid="hero-tagline-mobile">
+            {t('hero.mobileTagline')}
           </p>
+        </div>
+
+        {/* VERSION DESKTOP - Complète */}
+        <div className="hidden lg:block">
+          {/* Header avec logo et boutons langue */}
+          <div className="flex justify-between items-start mb-12">
+            <h1 className="text-5xl xl:text-6xl font-bold tracking-tight" data-testid="hero-title-desktop">
+              {t('hero.title')}
+            </h1>
+            
+            {/* Boutons de langue desktop */}
+            <div className="flex gap-2" data-testid="language-switcher-desktop">
+              {languages.map((lang) => (
+                <button
+                  key={lang.code}
+                  onClick={() => i18n.changeLanguage(lang.code)}
+                  className={`
+                    px-4 py-2 rounded-lg font-medium text-sm transition-all duration-300
+                    ${i18n.language === lang.code 
+                      ? 'bg-white text-[#1E5AA8] border border-white font-semibold shadow-md' 
+                      : 'bg-transparent text-white/70 border border-white/30 hover:text-white/95 hover:border-white/50 hover:bg-white/10'
+                    }
+                  `}
+                  data-testid={`button-lang-desktop-${lang.code}`}
+                >
+                  {lang.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Contenu Hero central */}
+          <div className="flex-1 flex flex-col justify-center max-w-xl">
+            <h2 className="text-3xl xl:text-4xl font-semibold mb-10 leading-snug">
+              {t('hero.tagline')}
+            </h2>
+
+            {/* Liste des bénéfices avec icônes check */}
+            <ul className="space-y-5">
+              <li className="flex items-center gap-4">
+                <span className="flex items-center justify-center w-7 h-7 bg-green-500/90 rounded-full flex-shrink-0">
+                  <Check className="w-4 h-4 text-white font-bold" />
+                </span>
+                <span className="text-lg xl:text-xl">{t('hero.benefit1')}</span>
+              </li>
+              <li className="flex items-center gap-4">
+                <span className="flex items-center justify-center w-7 h-7 bg-green-500/90 rounded-full flex-shrink-0">
+                  <Check className="w-4 h-4 text-white font-bold" />
+                </span>
+                <span className="text-lg xl:text-xl">{t('hero.benefit2')}</span>
+              </li>
+              <li className="flex items-center gap-4">
+                <span className="flex items-center justify-center w-7 h-7 bg-green-500/90 rounded-full flex-shrink-0">
+                  <Check className="w-4 h-4 text-white font-bold" />
+                </span>
+                <span className="text-lg xl:text-xl">{t('hero.benefit3')}</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Bandeau de réassurance en bas */}
+          <div className="bg-white/15 backdrop-blur-md px-6 py-4 rounded-xl border border-white/20 text-center mt-12">
+            <p className="text-sm font-medium opacity-95">
+              {t('hero.reassurance')}
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* PARTIE DROITE - FORMULAIRE */}
-      <div className="flex-1 flex items-center justify-center px-6 sm:px-8 pt-4 sm:pt-6 pb-12 sm:pb-16 bg-gray-50 relative">
-        {/* Boutons langue pour mobile */}
-        <div className="absolute top-6 right-6 lg:hidden flex gap-2" data-testid="language-switcher-mobile">
-          {languages.map((lang) => (
-            <button
-              key={lang.code}
-              onClick={() => i18n.changeLanguage(lang.code)}
-              className={`
-                px-3 py-1.5 rounded-lg font-medium text-xs transition-all duration-300
-                ${i18n.language === lang.code 
-                  ? 'bg-[#1E5AA8] text-white font-semibold' 
-                  : 'bg-white text-gray-600 border border-gray-300 hover:border-gray-400'
-                }
-              `}
-              data-testid={`button-lang-mobile-${lang.code}`}
-            >
-              {lang.label}
-            </button>
-          ))}
-        </div>
+      {/* PARTIE FORMULAIRE */}
+      <div className="flex-1 flex items-center justify-center px-6 sm:px-8 pt-4 sm:pt-6 pb-12 sm:pb-16 bg-gray-50">
 
         <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 sm:p-12">
           <h2 className="text-3xl font-bold text-[#1E5AA8] mb-3 text-center">

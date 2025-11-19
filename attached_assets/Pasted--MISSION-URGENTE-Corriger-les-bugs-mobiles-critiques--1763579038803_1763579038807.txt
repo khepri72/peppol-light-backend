@@ -1,0 +1,301 @@
+🚨 MISSION URGENTE : Corriger les bugs mobiles critiques
+
+═══════════════════════════════════════════════════════════════════
+🔍 DIAGNOSTIC DES PROBLÈMES IDENTIFIÉS
+═══════════════════════════════════════════════════════════════════
+
+PROBLÈME 1 : ERREUR RUNTIME SUR MOBILE
+Erreur observée : [plugin:runtime-error-plugin] (unknown runtime error)
+Impact : La page plante complètement sur mobile
+
+PROBLÈME 2 : DISPARITION TOTALE DU HERO SUR MOBILE
+Comportement actuel (mauvais) :
+- Sur mobile : hero caché complètement (display: none)
+- Résultat : formulaire blanc anonyme sans contexte
+- Perte totale de l'identité visuelle
+
+Comportement attendu (professionnel) :
+- Sur mobile : version simplifiée du hero VISIBLE
+- Logo + baseline + boutons langue toujours présents
+
+═══════════════════════════════════════════════════════════════════
+🎯 TÂCHE 1 : CORRIGER L'ERREUR RUNTIME
+═══════════════════════════════════════════════════════════════════
+
+DIAGNOSTIC PROBABLE :
+- Import CSS problématique
+- Composant non compatible mobile
+- Hook React mal géré dans le responsive
+- useTranslation() qui plante sur mobile
+
+ACTIONS REQUISES :
+
+1. **Vérifier les imports de styles dans Login.tsx**
+   - S'assurer que tous les imports CSS sont valides
+   - Vérifier qu'il n'y a pas de CSS-in-JS qui plante
+
+2. **Vérifier useTranslation()**
+   - S'assurer que i18n est bien initialisé avant le render mobile
+   - Ajouter des fallbacks si nécessaire
+
+3. **Ajouter des error boundaries**
+   - Wrapper le composant Login dans un ErrorBoundary
+   - Logger les erreurs pour diagnostic
+
+4. **Ajouter des console.log stratégiques**
+   - Au montage du composant
+   - Avant chaque hook
+   - Dans les media queries
+
+Exemple de correction :
+```typescript
+// Dans Login.tsx
+import { useTranslation } from 'react-i18next';
+import { useEffect } from 'react';
+
+export function Login() {
+  const { t, i18n } = useTranslation();
+  
+  // Vérification de l'état d'i18n
+  useEffect(() => {
+    console.log('Login mounted - i18n ready:', i18n.isInitialized);
+    console.log('Current language:', i18n.language);
+  }, []);
+  
+  // Fallback si traduction non disponible
+  const getText = (key: string, fallback: string) => {
+    try {
+      return t(key);
+    } catch (error) {
+      console.error('Translation error:', error);
+      return fallback;
+    }
+  };
+  
+  // ... reste du composant
+}
+```
+
+═══════════════════════════════════════════════════════════════════
+🎯 TÂCHE 2 : RESPONSIVE MOBILE OPTIMISÉ (CRITIQUE)
+═══════════════════════════════════════════════════════════════════
+
+Modifier le CSS responsive pour que le hero reste visible sur mobile.
+
+Dans le fichier CSS du composant Login (probablement `Login.module.css` ou dans `index.css`), REMPLACER les media queries par :
+```css
+/* ============================================ */
+/* MOBILE - Portrait (< 768px) */
+/* ============================================ */
+@media (max-width: 768px) {
+  .login-container {
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* Hero simplifié sur mobile - NE PAS CACHER */
+  .hero-section {
+    display: flex !important;  /* ← CRITIQUE : Force l'affichage */
+    flex-direction: column;
+    min-height: auto;
+    padding: 24px 20px 20px;
+    background: linear-gradient(135deg, #1E5AA8 0%, #2A6EC1 100%);
+  }
+
+  /* Header mobile compact */
+  .hero-header {
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .hero-title {
+    font-size: 28px;
+    text-align: center;
+  }
+
+  /* Cache les 3 bénéfices détaillés */
+  .hero-content {
+    display: none;
+  }
+
+  /* Mini-tagline mobile (À AJOUTER si n'existe pas) */
+  .hero-tagline-mobile {
+    display: block;
+    font-size: 16px;
+    text-align: center;
+    margin-bottom: 16px;
+    opacity: 0.95;
+    color: white;
+  }
+
+  /* Cache le bandeau réassurance complet sur mobile */
+  .reassurance-banner {
+    display: none;
+  }
+
+  /* Formulaire mobile */
+  .form-section {
+    padding: 24px 20px;
+    min-height: auto;
+  }
+
+  .form-card {
+    padding: 32px 24px;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  .form-title {
+    font-size: 24px;
+  }
+
+  .form-subtitle {
+    font-size: 14px;
+  }
+}
+
+/* ============================================ */
+/* TABLETTE - Portrait (768px - 968px) */
+/* ============================================ */
+@media (min-width: 768px) and (max-width: 968px) {
+  .login-container {
+    flex-direction: column;
+  }
+
+  .hero-section {
+    min-height: 40vh;
+    padding: 32px 24px;
+  }
+
+  .hero-title {
+    font-size: 36px;
+  }
+
+  .hero-tagline {
+    font-size: 24px;
+  }
+
+  .benefit-item {
+    font-size: 16px;
+  }
+}
+```
+
+═══════════════════════════════════════════════════════════════════
+🎯 TÂCHE 3 : AJOUTER LA MINI-TAGLINE MOBILE
+═══════════════════════════════════════════════════════════════════
+
+Dans le composant Login.tsx, après `.hero-header`, ajouter :
+```typescript
+<div className="hero-tagline-mobile">
+  {t('hero.mobileTagline')}
+</div>
+```
+
+Puis dans les fichiers de traduction :
+
+**📁 client/src/i18n/locales/fr.json** - Ajouter :
+```json
+{
+  "hero": {
+    "mobileTagline": "Conformité Peppol 2026"
+  }
+}
+```
+
+**📁 client/src/i18n/locales/nl.json** - Ajouter :
+```json
+{
+  "hero": {
+    "mobileTagline": "Peppol-conformiteit 2026"
+  }
+}
+```
+
+**📁 client/src/i18n/locales/en.json** - Ajouter :
+```json
+{
+  "hero": {
+    "mobileTagline": "Peppol 2026 compliance"
+  }
+}
+```
+
+═══════════════════════════════════════════════════════════════════
+🎯 TÂCHE 4 : RÉSULTAT ATTENDU MOBILE
+═══════════════════════════════════════════════════════════════════
+
+Après correction, la page mobile doit afficher :
+
+SECTION BLEUE (visible) :
+┌─────────────────────────────────┐
+│ [Fond bleu dégradé]             │
+│                                 │
+│      Peppol Light               │  ← Logo visible
+│   FR    NL    EN                │  ← Boutons langue
+│                                 │
+│ Conformité Peppol 2026          │  ← Mini-tagline
+│                                 │
+└─────────────────────────────────┘
+
+SECTION BLANCHE (formulaire) :
+┌─────────────────────────────────┐
+│ [Fond blanc]                    │
+│                                 │
+│ Log in to your secure workspace │
+│ Prepare your business...        │
+│                                 │
+│ [Email]                         │
+│ [Password]                      │
+│ [Access my workspace]           │
+│ Free trial · No credit card     │
+│                                 │
+│ No account yet?                 │
+│ Create your free account...     │
+│                                 │
+└─────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════
+🎯 TÂCHE 5 : TESTS À EFFECTUER
+═══════════════════════════════════════════════════════════════════
+
+Après les corrections, vérifier :
+
+1. ✅ Ouvrir sur mobile réel (pas juste DevTools)
+2. ✅ Vérifier que l'erreur runtime a disparu (console vide)
+3. ✅ Vérifier que le logo + baseline sont visibles
+4. ✅ Tester les 3 langues (FR/NL/EN)
+5. ✅ Vérifier que le formulaire est utilisable
+6. ✅ Tester le lien "Create account"
+7. ✅ Vérifier sur différentes tailles :
+   - iPhone SE (375px)
+   - iPhone 14 (390px)
+   - Android standard (360px)
+
+═══════════════════════════════════════════════════════════════════
+⚠️ INSTRUCTIONS CRITIQUES
+═══════════════════════════════════════════════════════════════════
+
+1. NE JAMAIS cacher le hero complètement sur mobile
+2. TOUJOURS garder l'identité visuelle (logo + couleur)
+3. TESTER sur appareil réel, pas seulement DevTools
+4. VIDER le cache après déploiement (Ctrl+Shift+R)
+5. Si erreur persiste, logger toutes les étapes d'initialisation
+
+═══════════════════════════════════════════════════════════════════
+✅ CRITÈRES DE SUCCÈS
+═══════════════════════════════════════════════════════════════════
+
+Mission réussie si :
+- ✅ Aucune erreur runtime sur mobile
+- ✅ Hero visible avec logo + baseline
+- ✅ Boutons langue fonctionnels
+- ✅ Formulaire utilisable
+- ✅ Transitions fluides desktop ↔ mobile
+- ✅ Chargement rapide (<2s)
+
+═══════════════════════════════════════════════════════════════════
+
+COMMENCE MAINTENANT LA CORRECTION DE CES BUGS MOBILES CRITIQUES.

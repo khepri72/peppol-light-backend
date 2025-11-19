@@ -58,10 +58,10 @@ The application requires `AIRTABLE_API_KEY`, `AIRTABLE_BASE_ID`, `JWT_SECRET`, a
 
 ## Recent Changes
 
-### 2025-11-19: Login Page Transformation & Conversion Optimizations
+### 2025-11-19: Login Page Transformation & Mobile Optimization
 
 - **Page Login Redesign**: Complete transformation into a professional, commercial landing page
-  - Split-screen layout: Hero section (left) + Login form (right)
+  - Split-screen layout: Hero section (left) + Login form (right) on desktop
   - Hero section: Gradient blue background, tagline, 3 benefits with check icons, reassurance banner
   - Language switcher: Improved visibility with white active state and transparent/border inactive state
   - CTA button: Orange gradient (#FF6B35 → #FF8C5A) with hover effects
@@ -70,6 +70,13 @@ The application requires `AIRTABLE_API_KEY`, `AIRTABLE_BASE_ID`, `JWT_SECRET`, a
   1. PDF/Excel mention: First benefit explicitly mentions "PDF ou Excel" to clarify supported formats
   2. Reassurance text: "Essai gratuit · Sans carte de crédit" under CTA button to remove payment barrier
   3. Quick signup: "en 1 minute" added to account creation link to reduce perceived effort
+- **Mobile Responsive Fixes**: Critical bug fixes for mobile experience
+  - Fixed: Hero section now visible on mobile (was completely hidden with `display: none`)
+  - Mobile hero: Compact version with logo "Peppol Light" + language switcher + mini-tagline
+  - Layout: Stacked vertical (hero top, form bottom) instead of hidden hero
+  - Optical centering: Form padding adjusted (pt-4 pb-12) for better visual balance
+  - Translations: Added `hero.mobileTagline` in FR/NL/EN for compact mobile display
+  - Result: Professional branded experience preserved on all screen sizes
 - **Peppol Error Internationalization**: Fully internationalized error messages
   - Structured error storage: errorsData JSON field alongside legacy errorsList for backward compatibility
   - Translation system with code-to-i18n mapping for all 8 Peppol validation rules
@@ -80,4 +87,4 @@ The application requires `AIRTABLE_API_KEY`, `AIRTABLE_BASE_ID`, `JWT_SECRET`, a
 - **PDF Parser Migration**: Updated to pdf-parse v2 API using PDFParse class
   - Old: `import * as pdfParse; await pdfParse(buffer)`
   - New: `import { PDFParse }; new PDFParse({ data }).getText(); parser.destroy()`
-- **Testing**: End-to-end tests confirm all features work correctly across 3 languages
+- **Testing**: End-to-end tests confirm all features work correctly across 3 languages and on mobile viewport (375x667)

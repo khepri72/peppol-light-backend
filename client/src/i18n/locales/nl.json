@@ -55,6 +55,7 @@
   "hero": {
     "title": "Peppol Light",
     "tagline": "Peppol-conformiteit 2026 in 3 kliks",
+    "mobileTagline": "Peppol-conformiteit 2026",
     "benefit1": "Analyseer uw PDF- of Excel-facturen in 30 seconden",
     "benefit2": "Verkrijg uw conforme Peppol XML",
     "benefit3": "Verstuur naar uw boekhouder",
