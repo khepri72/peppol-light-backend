@@ -218,12 +218,19 @@ The application requires the following environment variables:
 5. UBL generator creates XML file
 6. Response includes analysis results and XML path
 
-**Known Limitations** (intentional for prototype):
-- PDF extraction uses simple regex patterns (not advanced AI/ML)
-- Excel extraction expects specific column headers
-- Date conversion supports basic DD/MM/YYYY formats only
-- Line item extraction from PDF is simplified
-- UBL generation uses basic structure (extensible for advanced features)
+**Known Limitations** (intentional for MVP/prototype):
+- **PDF extraction**: Uses regex patterns, not advanced AI/ML parsing
+  - Multi-line invoices collapse into single line (single VAT rate assumed)
+  - Works best with standard Belgian invoice formats
+- **Excel extraction**: Expects specific column headers (customizable per user needs)
+- **Date parsing**: Supports DD/MM/YYYY, YYYY-MM-DD, YYYY/MM/DD formats
+  - Does not handle month-first formats (MM/DD/YYYY) or textual months
+- **Amount normalization**: Handles EU (1.234,56) and US (1,234.56) formats
+  - Supports spaces, apostrophes, and non-breaking spaces as thousand separators
+- **Line item extraction**: PDF parsing creates simplified single-line representation
+  - Multi-line invoices with different VAT rates may require manual verification
+- **UBL generation**: Basic structure compliant with Peppol BIS Billing 3.0
+  - Extensible for advanced features as needed
 
 **Frontend Disclaimer**: The dashboard displays a prominent warning banner (data-testid="alert-disclaimer") in all three languages explaining that this is a prototype with simplified rules and results should not be considered official Peppol conformity certification.
 

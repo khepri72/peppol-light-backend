@@ -102,12 +102,26 @@ export function validatePeppolRules(data: InvoiceData): ValidationResult[] {
 }
 
 function convertToISO(dateStr: string): string {
-  // Fonction simplifiée (à améliorer avec day.js ou date-fns)
-  // Gérer 19/11/2025, 19-11-2025, etc. → 2025-11-19
-  const parts = dateStr.split(/[\/\-\.]/);
-  if (parts.length === 3) {
-    const [day, month, year] = parts;
-    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  // Trim whitespace and newlines first
+  const cleaned = dateStr.trim();
+  
+  // Check if already ISO format (YYYY-MM-DD)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) {
+    return cleaned;
   }
-  return dateStr;
+  
+  // Try to parse various formats
+  const parts = cleaned.split(/[\/\-\.]/);
+  if (parts.length === 3) {
+    // If first part is 4 digits, assume year-first format
+    if (parts[0].length === 4) {
+      const [year, month, day] = parts;
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+    // Otherwise assume DD/MM/YYYY format
+    const [day, month, year] = parts;
+    const fullYear = year.length === 2 ? `20${year}` : year;
+    return `${fullYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+  return cleaned;
 }
