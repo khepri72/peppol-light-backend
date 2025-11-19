@@ -140,10 +140,13 @@ export default function Dashboard() {
     if (invoice.errorsData) {
       try {
         const parsed = JSON.parse(invoice.errorsData) as {
-          errors: ValidationError[];
-          warnings: ValidationError[];
+          errors?: ValidationError[];
+          warnings?: ValidationError[];
         };
-        return translateErrorsList(parsed.errors, parsed.warnings, t);
+        // Guard against missing arrays
+        const errors = parsed.errors || [];
+        const warnings = parsed.warnings || [];
+        return translateErrorsList(errors, warnings, t);
       } catch (e) {
         // If parsing fails, fallback to errorsList
         return invoice.errorsList || '';

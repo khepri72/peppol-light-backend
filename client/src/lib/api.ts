@@ -129,8 +129,8 @@ class ApiClient {
     const analysisResult = await this.request<{
       success: boolean;
       score: number;
-      errors: Array<{ rule: string; severity: string; message: string }>;
-      warnings: Array<{ rule: string; severity: string; message: string }>;
+      errors: Array<{ field?: string; code: string; severity: string; message: string }>;
+      warnings: Array<{ field?: string; code: string; severity: string; message: string }>;
       xmlPath: string | null;
     }>('/api/invoices/analyze', {
       method: 'POST',
