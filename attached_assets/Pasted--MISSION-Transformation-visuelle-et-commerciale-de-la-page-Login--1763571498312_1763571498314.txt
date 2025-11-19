@@ -1,0 +1,571 @@
+🎯 MISSION : Transformation visuelle et commerciale de la page Login
+
+═══════════════════════════════════════════════════════════════════
+CONTEXTE PROJET
+═══════════════════════════════════════════════════════════════════
+
+Application : Peppol Light (SaaS de préparation facturation électronique)
+Public cible : TPE, PME, indépendants belges (FR/NL/EN)
+Problème actuel : Page login trop basique, peu engageante, boutons langue invisibles
+Objectif : Créer une page login professionnelle, rassurante et commerciale
+
+═══════════════════════════════════════════════════════════════════
+PARTIE 1 : CORRECTIONS CRITIQUES (PRIORITÉ MAXIMALE)
+═══════════════════════════════════════════════════════════════════
+
+1️⃣ BOUTONS LANGUE - FIX VISIBILITÉ
+
+Problème : boutons inactifs en noir sur fond bleu foncé = invisibles
+Solution : améliorer le contraste et l'affordance
+
+CSS à appliquer aux boutons langue :
+
+.language-button {
+  /* État inactif - VISIBLE */
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.language-button:hover:not(.active) {
+  color: rgba(255, 255, 255, 0.95);
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.language-button.active {
+  background: white;
+  color: #1E5AA8;
+  border: 1px solid white;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+2️⃣ BOUTON CTA PRINCIPAL - RENDRE ATTRACTIF
+
+Remplacer le bouton "Se connecter" bleu basique par un bouton gradient orange :
+
+.login-button {
+  background: linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%);
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 14px 24px;
+  border-radius: 10px;
+  border: none;
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  width: 100%;
+}
+
+.login-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+}
+
+.login-button:active {
+  transform: translateY(0);
+}
+
+═══════════════════════════════════════════════════════════════════
+PARTIE 2 : AMÉLIORATION COPYWRITING (TRILINGUE)
+═══════════════════════════════════════════════════════════════════
+
+Mettre à jour les fichiers de traduction (i18n) :
+
+📁 FICHIER : client/src/locales/fr.json
+
+Ajouter/modifier les clés suivantes :
+
+{
+  "hero": {
+    "title": "Peppol Light",
+    "tagline": "Conformité Peppol 2026 en 3 clics",
+    "benefit1": "Analysez vos factures en 30 secondes",
+    "benefit2": "Obtenez votre XML Peppol conforme",
+    "benefit3": "Envoyez-le à votre comptable",
+    "reassurance": "Conformité EN 16931 | SSL/RGPD | Support FR/NL/EN"
+  },
+  "login": {
+    "title": "Connectez-vous à votre espace sécurisé",
+    "subtitle": "Préparez votre entreprise pour la facturation Peppol 2026",
+    "emailLabel": "Email",
+    "emailPlaceholder": "votre.email@entreprise.com",
+    "passwordLabel": "Mot de passe",
+    "passwordPlaceholder": "••••••••",
+    "button": "🔐 Accéder à mon espace",
+    "noAccount": "Pas encore de compte ?",
+    "createAccount": "Créez votre compte gratuit",
+    "forgotPassword": "Mot de passe oublié ?"
+  }
+}
+
+📁 FICHIER : client/src/locales/nl.json
+
+{
+  "hero": {
+    "title": "Peppol Light",
+    "tagline": "Peppol-conformiteit 2026 in 3 kliks",
+    "benefit1": "Analyseer uw facturen in 30 seconden",
+    "benefit2": "Verkrijg uw conforme Peppol XML",
+    "benefit3": "Verstuur naar uw boekhouder",
+    "reassurance": "EN 16931 conformiteit | SSL/RGPD | Ondersteuning FR/NL/EN"
+  },
+  "login": {
+    "title": "Log in op uw beveiligde werkruimte",
+    "subtitle": "Bereid uw bedrijf voor op Peppol-facturering 2026",
+    "emailLabel": "E-mailadres",
+    "emailPlaceholder": "uw.email@bedrijf.com",
+    "passwordLabel": "Wachtwoord",
+    "passwordPlaceholder": "••••••••",
+    "button": "🔐 Toegang tot mijn ruimte",
+    "noAccount": "Nog geen account?",
+    "createAccount": "Maak uw gratis account aan",
+    "forgotPassword": "Wachtwoord vergeten?"
+  }
+}
+
+📁 FICHIER : client/src/locales/en.json
+
+{
+  "hero": {
+    "title": "Peppol Light",
+    "tagline": "Peppol 2026 compliance in 3 clicks",
+    "benefit1": "Analyze your invoices in 30 seconds",
+    "benefit2": "Get your compliant Peppol XML",
+    "benefit3": "Send it to your accountant",
+    "reassurance": "EN 16931 compliance | SSL/GDPR | FR/NL/EN support"
+  },
+  "login": {
+    "title": "Log in to your secure workspace",
+    "subtitle": "Prepare your business for Peppol invoicing 2026",
+    "emailLabel": "Email",
+    "emailPlaceholder": "your.email@company.com",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "••••••••",
+    "button": "🔐 Access my workspace",
+    "noAccount": "No account yet?",
+    "createAccount": "Create your free account",
+    "forgotPassword": "Forgot password?"
+  }
+}
+
+═══════════════════════════════════════════════════════════════════
+PARTIE 3 : STRUCTURE HTML AMÉLIORÉE
+═══════════════════════════════════════════════════════════════════
+
+Modifier le composant Login (client/src/pages/Login.tsx ou équivalent) :
+
+STRUCTURE CIBLE :
+
+<div className="login-container">
+  {/* PARTIE GAUCHE - HERO BLEU */}
+  <div className="hero-section">
+    {/* Header avec logo et boutons langue */}
+    <div className="hero-header">
+      <h1 className="hero-title">{t('hero.title')}</h1>
+      <div className="language-switcher">
+        <button className={`language-button ${locale === 'fr' ? 'active' : ''}`} 
+                onClick={() => changeLocale('fr')}>FR</button>
+        <button className={`language-button ${locale === 'nl' ? 'active' : ''}`} 
+                onClick={() => changeLocale('nl')}>NL</button>
+        <button className={`language-button ${locale === 'en' ? 'active' : ''}`} 
+                onClick={() => changeLocale('en')}>EN</button>
+      </div>
+    </div>
+
+    {/* Tagline principal */}
+    <div className="hero-content">
+      <h2 className="hero-tagline">
+        🚀 {t('hero.tagline')}
+      </h2>
+
+      {/* Liste des bénéfices avec icônes */}
+      <ul className="benefits-list">
+        <li className="benefit-item">
+          <span className="check-icon">✓</span>
+          <span>{t('hero.benefit1')}</span>
+        </li>
+        <li className="benefit-item">
+          <span className="check-icon">✓</span>
+          <span>{t('hero.benefit2')}</span>
+        </li>
+        <li className="benefit-item">
+          <span className="check-icon">✓</span>
+          <span>{t('hero.benefit3')}</span>
+        </li>
+      </ul>
+    </div>
+
+    {/* Bandeau réassurance en bas */}
+    <div className="reassurance-banner">
+      <p>{t('hero.reassurance')}</p>
+    </div>
+  </div>
+
+  {/* PARTIE DROITE - FORMULAIRE */}
+  <div className="form-section">
+    <div className="form-card">
+      <h2 className="form-title">{t('login.title')}</h2>
+      <p className="form-subtitle">{t('login.subtitle')}</p>
+
+      <form onSubmit={handleLogin} className="login-form">
+        <div className="form-group">
+          <label>{t('login.emailLabel')}</label>
+          <input 
+            type="email" 
+            placeholder={t('login.emailPlaceholder')}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label>{t('login.passwordLabel')}</label>
+          <input 
+            type="password" 
+            placeholder={t('login.passwordPlaceholder')}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+
+        <button type="submit" className="login-button">
+          {t('login.button')}
+        </button>
+      </form>
+
+      <div className="form-footer">
+        <p>
+          {t('login.noAccount')} 
+          <a href="/register" className="create-account-link">
+            {t('login.createAccount')}
+          </a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+═══════════════════════════════════════════════════════════════════
+PARTIE 4 : STYLES CSS COMPLETS
+═══════════════════════════════════════════════════════════════════
+
+Créer ou mettre à jour le fichier CSS dédié à la page Login :
+
+.login-container {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* ========== PARTIE GAUCHE - HERO ========== */
+
+.hero-section {
+  flex: 1;
+  background: linear-gradient(135deg, #1E5AA8 0%, #2A6EC1 100%);
+  color: white;
+  padding: 40px 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+}
+
+.hero-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 60px;
+}
+
+.hero-title {
+  font-size: 48px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.language-switcher {
+  display: flex;
+  gap: 8px;
+}
+
+.language-button {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.language-button:hover:not(.active) {
+  color: rgba(255, 255, 255, 0.95);
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.language-button.active {
+  background: white;
+  color: #1E5AA8;
+  border: 1px solid white;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.hero-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.hero-tagline {
+  font-size: 32px;
+  font-weight: 600;
+  margin-bottom: 40px;
+  line-height: 1.3;
+}
+
+.benefits-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.benefit-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 18px;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.check-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(76, 175, 80, 0.9);
+  color: white;
+  border-radius: 50%;
+  font-weight: bold;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.reassurance-banner {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  padding: 16px 24px;
+  border-radius: 12px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.reassurance-banner p {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.95;
+  font-weight: 500;
+}
+
+/* ========== PARTIE DROITE - FORMULAIRE ========== */
+
+.form-section {
+  flex: 1;
+  background: #F8F9FA;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.form-card {
+  background: white;
+  padding: 48px 40px;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 440px;
+}
+
+.form-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1E5AA8;
+  margin: 0 0 12px 0;
+  text-align: center;
+}
+
+.form-subtitle {
+  font-size: 15px;
+  color: #666;
+  margin: 0 0 32px 0;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.form-group input {
+  padding: 12px 16px;
+  border: 2px solid #E0E0E0;
+  border-radius: 8px;
+  font-size: 15px;
+  transition: all 0.3s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #1E5AA8;
+  box-shadow: 0 0 0 3px rgba(30, 90, 168, 0.1);
+}
+
+.form-group input::placeholder {
+  color: #999;
+}
+
+.login-button {
+  background: linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%);
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 14px 24px;
+  border-radius: 10px;
+  border: none;
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.login-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+}
+
+.login-button:active {
+  transform: translateY(0);
+}
+
+.form-footer {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.form-footer p {
+  font-size: 15px;
+  color: #666;
+  margin: 0;
+}
+
+.create-account-link {
+  color: #FF6B35;
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 6px;
+  transition: color 0.3s ease;
+}
+
+.create-account-link:hover {
+  color: #FF8C5A;
+  text-decoration: underline;
+}
+
+/* ========== RESPONSIVE ========== */
+
+@media (max-width: 968px) {
+  .login-container {
+    flex-direction: column;
+  }
+
+  .hero-section {
+    min-height: 50vh;
+    padding: 32px 24px;
+  }
+
+  .hero-title {
+    font-size: 36px;
+  }
+
+  .hero-tagline {
+    font-size: 24px;
+  }
+
+  .benefit-item {
+    font-size: 16px;
+  }
+
+  .form-section {
+    padding: 24px;
+  }
+
+  .form-card {
+    padding: 32px 24px;
+  }
+}
+
+═══════════════════════════════════════════════════════════════════
+PARTIE 5 : VALIDATION & TESTS
+═══════════════════════════════════════════════════════════════════
+
+Après avoir appliqué tous les changements :
+
+1. ✅ Vérifier que les 3 langues (FR/NL/EN) affichent bien tous les textes
+2. ✅ Tester le contraste des boutons langue (actif/inactif)
+3. ✅ Vérifier le bouton CTA orange avec hover/active
+4. ✅ Tester la responsiveness (mobile/tablet/desktop)
+5. ✅ Valider que le lien "Créez votre compte" fonctionne
+6. ✅ Vérifier l'accessibilité (tab navigation, labels, etc.)
+
+═══════════════════════════════════════════════════════════════════
+RÉSULTAT ATTENDU
+═══════════════════════════════════════════════════════════════════
+
+✅ Page login professionnelle et commerciale
+✅ Boutons langue clairement visibles (blanc 70% → 100%)
+✅ 3 bénéfices produit mis en avant avec icônes check
+✅ CTA principal en orange gradient attractif
+✅ Copywriting orienté "valeur client" en 3 langues
+✅ Bandeau de réassurance (conformité, sécurité, support)
+✅ Design cohérent avec identité Peppol Light
+✅ Expérience responsive mobile-friendly
+
+Quand tu as terminé, montre-moi :
+- Les fichiers modifiés (chemin complet)
+- Une capture d'écran de la nouvelle page
+- Les éventuels problèmes rencontrés
+
+Exécute maintenant. 🚀
