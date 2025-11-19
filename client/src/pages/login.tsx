@@ -126,7 +126,7 @@ export default function Login() {
       </div>
 
       {/* PARTIE DROITE - FORMULAIRE */}
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-8 bg-gray-50 relative">
+      <div className="flex-1 flex items-center justify-center px-6 sm:px-8 pt-4 sm:pt-6 pb-12 sm:pb-16 bg-gray-50 relative">
         {/* Boutons langue pour mobile */}
         <div className="absolute top-6 right-6 lg:hidden flex gap-2" data-testid="language-switcher-mobile">
           {languages.map((lang) => (

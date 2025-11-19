@@ -1,0 +1,72 @@
+🎯 MICRO-AJUSTEMENT : Centrage vertical optimal du formulaire
+
+═══════════════════════════════════════════════════════════════════
+PROBLÈME OBSERVÉ
+═══════════════════════════════════════════════════════════════════
+
+Le formulaire de connexion (partie droite) semble légèrement trop bas visuellement.
+L'espace blanc au-dessus du formulaire est plus grand que celui en dessous.
+
+Objectif : Améliorer le centrage vertical pour un équilibre visuel optimal.
+
+═══════════════════════════════════════════════════════════════════
+SOLUTION : Ajustement CSS subtil
+═══════════════════════════════════════════════════════════════════
+
+Dans le fichier CSS de la page Login, modifier la classe .form-section :
+
+AVANT :
+.form-section {
+  flex: 1;
+  background: #F8F9FA;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+APRÈS :
+.form-section {
+  flex: 1;
+  background: #F8F9FA;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  padding-top: 20px;        /* ← AJOUT : Réduit l'espace du haut */
+  padding-bottom: 60px;      /* ← AJOUT : Augmente l'espace du bas */
+}
+
+EXPLICATION :
+- Cette modification crée un "centrage optique" plutôt que mathématique
+- Le formulaire remonte légèrement vers le haut
+- L'équilibre visuel est meilleur pour l'œil humain
+
+═══════════════════════════════════════════════════════════════════
+ALTERNATIVE (si le résultat ne convient pas)
+═══════════════════════════════════════════════════════════════════
+
+Si le formulaire doit être encore plus haut, utiliser :
+
+.form-section {
+  flex: 1;
+  background: #F8F9FA;
+  display: flex;
+  align-items: flex-start;   /* ← Change de 'center' à 'flex-start' */
+  justify-content: center;
+  padding: 80px 40px 40px;   /* ← Plus d'espace en haut */
+}
+
+═══════════════════════════════════════════════════════════════════
+VALIDATION VISUELLE
+═══════════════════════════════════════════════════════════════════
+
+Après modification :
+✅ L'espace au-dessus et en-dessous du formulaire semble équilibré
+✅ Le formulaire ne paraît plus "trop bas"
+✅ L'alignement visuel avec la partie gauche est harmonieux
+✅ La page semble plus équilibrée globalement
+
+Teste les deux versions et choisis celle qui te paraît la plus naturelle.
+
+Exécute maintenant. 🚀
