@@ -1,4 +1,4 @@
-import * as pdfParse from 'pdf-parse';
+import { PDFParse } from 'pdf-parse';
 import fs from 'fs';
 import { InvoiceData } from './types';
 
@@ -31,7 +31,9 @@ function normalizeAmount(amountStr: string): number {
 
 export async function extractPdfData(pdfPath: string): Promise<InvoiceData> {
   const dataBuffer = fs.readFileSync(pdfPath);
-  const pdfData = await (pdfParse as any)(dataBuffer);
+  const parser = new PDFParse({ data: dataBuffer });
+  const pdfData = await parser.getText();
+  await parser.destroy();
   const text = pdfData.text;
   
   // Extraction par regex (patterns simples)

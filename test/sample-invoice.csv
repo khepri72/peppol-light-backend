@@ -1,0 +1,2 @@
+Numéro facture,Date,Client,Référence client,N° TVA vendeur,BCE,Total HT,TVA,Total TTC,Description,Quantité,Prix unitaire,TVA %,Total ligne
+INV-2025-001,19/11/2025,ACME Corporation,REF-12345,BE0123456789,0123456789,1000,210,1210,Consulting services,10,100,21,1000
