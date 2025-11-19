@@ -69,22 +69,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Analyze invoice with Peppol engine (PDF or Excel)
   app.post('/api/invoices/analyze', authenticateToken, upload.single('file'), invoiceController.analyzeInvoice);
 
-  // File upload route
+  // File upload route (PDF or Excel)
   app.post('/api/upload/pdf', authenticateToken, upload.single('pdf'), (req, res) => {
     try {
       if (!req.file) {
-        return res.status(400).json({ error: 'No PDF file uploaded' });
+        return res.status(400).json({ error: 'No file uploaded' });
       }
 
       const fileUrl = `/api/uploads/${req.file.filename}`;
       res.json({
-        message: 'PDF uploaded successfully',
+        message: 'File uploaded successfully',
         url: fileUrl,
         filename: req.file.filename,
       });
     } catch (error) {
       console.error('Upload error:', error);
-      res.status(500).json({ error: 'Failed to upload PDF' });
+      res.status(500).json({ error: 'Failed to upload file' });
     }
   });
 

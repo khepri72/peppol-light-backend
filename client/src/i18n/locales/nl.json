@@ -14,11 +14,14 @@
     "companyName": "{{name}}",
     "uploadSection": {
       "title": "Factuur uploaden",
-      "subtitle": "Upload een PDF-factuur om de Peppol-conformiteit te verifiëren",
-      "chooseFile": "Kies PDF-bestand",
+      "subtitle": "Upload een PDF- of Excel-factuur om de Peppol-conformiteit te verifiëren",
+      "chooseFile": "Kies bestand",
       "onlyPdf": "Alleen PDF-bestanden worden geaccepteerd",
-      "uploading": "Uploaden...",
+      "acceptedFormats": "Geaccepteerde formaten: PDF en Excel (.xlsx, .xls)",
+      "invalidFormat": "Ongeldig formaat. Alleen PDF- en Excel-bestanden worden geaccepteerd",
+      "uploading": "Uploaden en analyseren...",
       "uploadSuccess": "Factuur succesvol geüpload",
+      "analysisComplete": "Peppol-analyse voltooid",
       "uploadError": "Fout bij uploaden"
     },
     "disclaimer": {

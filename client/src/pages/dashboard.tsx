@@ -72,10 +72,16 @@ export default function Dashboard() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.name.toLowerCase().endsWith('.pdf')) {
+    // Validate file type: PDF or Excel
+    const fileName = file.name.toLowerCase();
+    const isValidFile = fileName.endsWith('.pdf') || 
+                       fileName.endsWith('.xlsx') || 
+                       fileName.endsWith('.xls');
+    
+    if (!isValidFile) {
       toast({
         title: t('common.error'),
-        description: t('dashboard.uploadSection.onlyPdf'),
+        description: t('dashboard.uploadSection.invalidFormat'),
         variant: 'destructive',
       });
       return;
@@ -84,12 +90,12 @@ export default function Dashboard() {
     setIsUploading(true);
 
     try {
-      await api.uploadInvoice(file);
+      await api.uploadAndAnalyzeInvoice(file);
       queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
       
       toast({
         title: t('dashboard.uploadSection.uploadSuccess'),
-        description: t('dashboard.uploadSection.uploadSuccess'),
+        description: t('dashboard.uploadSection.analysisComplete'),
       });
       
       if (fileInputRef.current) {
@@ -186,7 +192,7 @@ export default function Dashboard() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".pdf"
+                accept=".pdf,.xlsx,.xls,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
                 onChange={handleFileSelect}
                 className="hidden"
                 data-testid="input-file"
@@ -209,7 +215,7 @@ export default function Dashboard() {
                 )}
               </Button>
               <span className="text-sm text-muted-foreground">
-                {t('dashboard.uploadSection.onlyPdf')}
+                {t('dashboard.uploadSection.acceptedFormats')}
               </span>
             </div>
           </CardContent>

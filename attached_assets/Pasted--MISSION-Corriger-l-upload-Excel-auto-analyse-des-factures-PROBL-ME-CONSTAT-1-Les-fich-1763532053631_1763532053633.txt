@@ -1,0 +1,159 @@
+🎯 MISSION : Corriger l'upload Excel + auto-analyse des factures
+
+PROBLÈME CONSTATÉ :
+1. Les fichiers Excel (.xlsx) sont rejetés à l'upload
+2. Les factures uploadées affichent 0% (analyse pas déclenchée)
+
+SOLUTIONS À APPLIQUER :
+
+═══════════════════════════════════════════════════════════
+
+1️⃣ FRONTEND - Accepter PDF + Excel
+
+Trouver le composant d'upload (probablement Dashboard.tsx ou UploadInvoice.tsx)
+
+REMPLACER :
+accept="application/pdf"
+
+PAR :
+accept=".pdf,.xlsx,.xls,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+
+ET MODIFIER LE TEXTE :
+De : "Seuls les fichiers PDF sont acceptés"
+Vers : "Formats acceptés : PDF et Excel (.xlsx, .xls)"
+
+═══════════════════════════════════════════════════════════
+
+2️⃣ BACKEND - Multer accepter Excel
+
+Dans server/middleware/upload.ts (ou routes/invoices.ts si multer est là)
+
+TROUVER :
+if (file.mimetype !== 'application/pdf') {
+  return cb(new Error('Only PDF files are allowed'));
+}
+
+REMPLACER PAR :
+const allowedTypes = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-excel',
+  'application/x-excel',
+  'application/x-msexcel'
+];
+
+if (!allowedTypes.includes(file.mimetype)) {
+  return cb(new Error('Only PDF and Excel files are allowed'));
+}
+
+═══════════════════════════════════════════════════════════
+
+3️⃣ AUTO-DÉCLENCHEMENT DE L'ANALYSE
+
+Dans server/routes/invoices.ts, après l'upload :
+
+VÉRIFIER que le code appelle analyzeInvoice automatiquement :
+
+router.post('/upload', upload.single('invoice'), async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Créer l'entrée en base AVEC statut "pending"
+    const invoiceRecord = await db.invoices.create({
+      filename: file.filename,
+      originalName: file.originalname,
+      status: 'pending',
+      score: 0
+    });
+
+    // ⚠️ DÉCLENCHER L'ANALYSE IMMÉDIATEMENT
+    // Option A : Appel synchrone (bloquant)
+    const analysisResult = await analyzeInvoiceFile(file.path, file.mimetype);
+    
+    await db.invoices.update(invoiceRecord.id, {
+      status: 'analyzed',
+      score: analysisResult.score,
+      errors: JSON.stringify(analysisResult.errors),
+      warnings: JSON.stringify(analysisResult.warnings)
+    });
+
+    res.json({
+      success: true,
+      invoice: { ...invoiceRecord, ...analysisResult }
+    });
+
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ error: 'Upload failed' });
+  }
+});
+
+SI LE CODE N'APPELLE PAS analyzeInvoice AUTOMATIQUEMENT :
+- Ajouter l'appel après la création de l'enregistrement
+- Mettre à jour le statut et le score en base après analyse
+
+═══════════════════════════════════════════════════════════
+
+4️⃣ VÉRIFIER LA FONCTION analyzeInvoiceFile
+
+S'assurer qu'elle existe et qu'elle appelle bien le moteur Peppol :
+
+import { extractPdfData } from '../utils/peppolAnalyzer/extractPdf';
+import { extractExcelData } from '../utils/peppolAnalyzer/extractExcel';
+import { validatePeppolRules } from '../utils/peppolAnalyzer/validate';
+import { calculateConformityScore } from '../utils/peppolAnalyzer/score';
+import { generatePeppolUBL } from '../utils/peppolAnalyzer/generateUbl';
+
+async function analyzeInvoiceFile(filePath, mimeType) {
+  // 1. Extraction selon type
+  let invoiceData;
+  if (mimeType === 'application/pdf') {
+    invoiceData = await extractPdfData(filePath);
+  } else if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) {
+    invoiceData = extractExcelData(filePath);
+  } else {
+    throw new Error('Unsupported file type');
+  }
+
+  // 2. Validation
+  const validations = validatePeppolRules(invoiceData);
+
+  // 3. Score
+  const score = calculateConformityScore(validations);
+
+  // 4. Génération UBL (optionnel pour MVP)
+  let ublXml = null;
+  try {
+    ublXml = generatePeppolUBL(invoiceData);
+  } catch (err) {
+    console.error('UBL generation error:', err);
+  }
+
+  return {
+    score,
+    errors: validations.filter(v => v.severity === 'error'),
+    warnings: validations.filter(v => v.severity === 'warning'),
+    ublXml,
+    extractedData: invoiceData
+  };
+}
+
+═══════════════════════════════════════════════════════════
+
+✅ RÉSULTAT ATTENDU :
+
+Après ces corrections :
+1. Upload Excel fonctionne
+2. Score s'affiche automatiquement après analyse
+3. Erreurs Peppol listées clairement
+4. Statut change de "En attente" à "Analysé"
+
+Teste avec :
+- facture-conforme.pdf → devrait donner ~90-100%
+- facture-erreur.pdf → devrait donner ~60-70%
+- facture-excel-test.xlsx → devrait être accepté et analysé
+
+Confirme-moi quand c'est fait !

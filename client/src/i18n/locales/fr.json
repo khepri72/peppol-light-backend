@@ -14,11 +14,14 @@
     "companyName": "{{name}}",
     "uploadSection": {
       "title": "Télécharger la facture",
-      "subtitle": "Téléchargez une facture PDF pour vérifier sa conformité Peppol",
-      "chooseFile": "Choisissez le fichier PDF",
+      "subtitle": "Téléchargez une facture PDF ou Excel pour vérifier sa conformité Peppol",
+      "chooseFile": "Choisissez le fichier",
       "onlyPdf": "Seuls les fichiers PDF sont acceptés",
-      "uploading": "Envoi en cours...",
+      "acceptedFormats": "Formats acceptés : PDF et Excel (.xlsx, .xls)",
+      "invalidFormat": "Format non valide. Seuls les fichiers PDF et Excel sont acceptés",
+      "uploading": "Envoi et analyse en cours...",
       "uploadSuccess": "Facture téléchargée avec succès",
+      "analysisComplete": "Analyse Peppol terminée",
       "uploadError": "Erreur lors du téléchargement"
     },
     "disclaimer": {

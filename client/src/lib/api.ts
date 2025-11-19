@@ -111,6 +111,51 @@ class ApiClient {
     });
   }
 
+  async uploadAndAnalyzeInvoice(file: File): Promise<Invoice> {
+    // Step 1: Upload the file
+    const formData = new FormData();
+    formData.append('pdf', file);
+    
+    const uploadResponse = await this.request<{ url: string; filename: string }>('/api/upload/pdf', {
+      method: 'POST',
+      body: formData,
+    });
+
+    // Step 2: Analyze the file
+    const analyzeFormData = new FormData();
+    analyzeFormData.append('file', file);
+    
+    const analysisResult = await this.request<{
+      success: boolean;
+      score: number;
+      errors: Array<{ rule: string; severity: string; message: string }>;
+      warnings: Array<{ rule: string; severity: string; message: string }>;
+      xmlPath: string | null;
+    }>('/api/invoices/analyze', {
+      method: 'POST',
+      body: analyzeFormData,
+    });
+
+    // Step 3: Register in Airtable with analysis results
+    const errorsList = [
+      ...analysisResult.errors.map(e => `ERROR: ${e.message}`),
+      ...analysisResult.warnings.map(w => `WARNING: ${w.message}`)
+    ].join('\n');
+
+    const invoiceData = {
+      fileName: file.name,
+      fileUrl: uploadResponse.url,
+      status: analysisResult.score >= 80 ? 'checked' : 'uploaded',
+      conformityScore: analysisResult.score,
+      errorsList: errorsList || '',
+    };
+
+    return this.request<Invoice>('/api/invoices', {
+      method: 'POST',
+      body: JSON.stringify(invoiceData),
+    });
+  }
+
   async deleteInvoice(id: string): Promise<{ message: string }> {
     return this.request<{ message: string }>(`/api/invoices/${id}`, {
       method: 'DELETE',

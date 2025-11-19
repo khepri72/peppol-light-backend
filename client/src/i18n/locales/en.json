@@ -14,11 +14,14 @@
     "companyName": "{{name}}",
     "uploadSection": {
       "title": "Upload Invoice",
-      "subtitle": "Upload a PDF invoice to verify its Peppol conformity",
-      "chooseFile": "Choose PDF File",
+      "subtitle": "Upload a PDF or Excel invoice to verify its Peppol conformity",
+      "chooseFile": "Choose File",
       "onlyPdf": "Only PDF files are accepted",
-      "uploading": "Uploading...",
+      "acceptedFormats": "Accepted formats: PDF and Excel (.xlsx, .xls)",
+      "invalidFormat": "Invalid format. Only PDF and Excel files are accepted",
+      "uploading": "Uploading and analyzing...",
       "uploadSuccess": "Invoice uploaded successfully",
+      "analysisComplete": "Peppol analysis complete",
       "uploadError": "Upload error"
     },
     "disclaimer": {
