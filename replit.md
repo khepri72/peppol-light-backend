@@ -2,9 +2,7 @@
 
 ## Overview
 
-Peppol Light Backend is a RESTful API built with Node.js and Express that provides a complete invoicing SaaS platform. The system manages user authentication, invoice creation and management, PDF generation with customizable templates, and file uploads. It uses Airtable as a cloud-based database solution for data persistence, making it easy to deploy and scale without managing traditional database infrastructure.
-
-The application follows a standard MVC-style architecture with clear separation between routes, controllers, and configuration. Key features include JWT authentication, invoice status filtering, PDF generation with PDFKit, and customizable invoice templates with company branding.
+Peppol Light Backend is a RESTful API built with Node.js and Express, designed as an invoicing SaaS platform. It manages user authentication, invoice creation, PDF generation with customizable templates, and file uploads. The system utilizes Airtable as its primary data store, offering a serverless database solution. The project aims to provide a robust platform for invoice management and Peppol compliance analysis.
 
 ## User Preferences
 
@@ -14,232 +12,61 @@ Preferred communication style: Simple, everyday language.
 
 ### Backend Architecture
 
-**Framework & Runtime**: The application uses Express.js running on Node.js with TypeScript for type safety. The server is configured to run on port 5000 and handles both API requests and static file serving for the frontend in production.
+The application uses Express.js with Node.js and TypeScript, following RESTful conventions. It employs an MVC-style architecture with separate routes, controllers (auth, invoices, users), and configuration. Key features include JWT-based authentication, bcrypt for password hashing, and Zod for input validation.
 
-**Routing Structure**: The API follows RESTful conventions with routes organized by resource type (auth, invoices, users). All API endpoints are prefixed with `/api` to separate them from frontend routes. A health check endpoint at `/health` provides basic service monitoring.
+### Data Storage
 
-**Controller Pattern**: Business logic is separated into three main controllers:
-- `authController`: Handles user registration and login with JWT token generation
-- `invoiceController`: Manages CRUD operations for invoices
-- `userController`: Handles user profile management
+Airtable serves as the cloud-based database, storing `Users` and `Invoices` data. It offers built-in UI and API access, eliminating the need for traditional database management. The system includes protections against Airtable formula injection.
 
-This separation ensures each controller has a single responsibility and makes the codebase easier to maintain and test.
+### File Upload and Analysis
 
-### Authentication & Authorization
+The system handles PDF and Excel file uploads using Multer. Uploaded files undergo automatic Peppol validation and analysis. The custom Peppol analysis engine extracts data, validates it against six critical Peppol rules, calculates a conformity score, and generates UBL XML files. This engine supports basic PDF and Excel data extraction using pdf-parse v2 API (PDFParse class) and handles amount normalization and date parsing.
 
-**JWT-based Authentication**: The system uses JSON Web Tokens (JWT) for stateless authentication. Upon successful login or registration, users receive a token that must be included in the Authorization header (as "Bearer TOKEN") for protected endpoints.
-
-**Password Security**: User passwords are hashed using bcrypt with 10 salt rounds before storage. Plain-text passwords are never stored in the database, ensuring security even if the database is compromised.
-
-**Middleware Protection**: The `authenticateToken` middleware validates JWTs and extracts the userId, which is then attached to the request object for use by downstream controllers. This middleware protects all routes that require authentication.
-
-### Data Storage & Management
-
-**Airtable as Database**: Rather than using a traditional SQL or NoSQL database, this application uses Airtable as its data store. This choice offers several advantages:
-- No database server to manage or maintain
-- Built-in UI for viewing and managing data
-- Easy to set up and deploy
-- Automatic backups and version control
-- RESTful API provided by Airtable
-
-**Schema Structure**: The system uses two main Airtable tables:
-- `Users`: Stores email, hashed password, company name, and creation timestamp
-- `Invoices`: Stores invoice data linked to users, including client information, amounts, items, status, and PDF URLs
-
-**Security Measures**: The application includes protection against Airtable formula injection attacks through the `buildSafeFilterFormula` helper function, which properly escapes user input before using it in filter formulas.
-
-### File Upload System
-
-**PDF Upload Handling**: The application uses Multer middleware to handle PDF file uploads for invoices. Files are stored locally in the `server/uploads` directory with unique filenames generated using timestamps and random numbers.
-
-**Upload Validation**: The system enforces strict validation on uploaded files:
-- Only PDF files are accepted (MIME type validation)
-- Maximum file size is 10MB
-- Files are stored with secure, unique filenames to prevent overwrites
-
-### Data Validation
-
-**Zod Schema Validation**: All user input is validated using Zod schemas defined in `shared/schema.ts`. This ensures type safety and data integrity across both frontend and backend. The schemas validate:
-- User registration (email format, password length)
-- Invoice creation (required fields, number formats, enum values)
-- Invoice updates (partial validation)
+**Auto-Analysis Workflow**: When a file is uploaded through the dashboard:
+1. Frontend calls `uploadAndAnalyzeInvoice()` which uploads the file to `/api/upload/pdf`
+2. The uploaded file is automatically sent to `/api/invoices/analyze` for Peppol validation
+3. The invoice is registered in Airtable with the conformity score and analysis results
+4. Results are displayed immediately in the dashboard table
 
 ### Frontend Architecture
 
-**React with Vite**: The frontend is built using React and bundled with Vite for fast development and optimized production builds. The development server includes HMR (Hot Module Replacement) for rapid iteration.
+The frontend is built with React and Vite, using shadcn/ui components (based on Radix UI) and Tailwind CSS for styling. React Query manages server state, and Wouter handles client-side routing.
 
-**UI Component Library**: The application uses shadcn/ui components built on Radix UI primitives, providing accessible and customizable UI components. Styling is handled through Tailwind CSS with a custom design system.
+### Internationalization (i18n)
 
-**State Management**: React Query (@tanstack/react-query) is used for server state management, providing caching, background updates, and request deduplication.
+The application supports French (default), Dutch, and English, specifically tailored for the Belgian market. It uses `react-i18next` for language detection, translation, and persistence of user language preferences.
 
-**Routing**: The frontend uses Wouter for client-side routing, which is lightweight and suitable for the application's needs.
+### Development and Build Process
 
-### Development & Build Process
-
-**TypeScript Configuration**: The project uses TypeScript with strict mode enabled, ensuring type safety across the entire codebase. Path aliases are configured for cleaner imports (`@/`, `@shared/`).
-
-**Build Pipeline**:
-- Frontend: Vite builds the React application to `dist/public`
-- Backend: esbuild bundles the server code to `dist/index.js`
-- Production: The Express server serves both the API and static frontend files
-
-**Development Mode**: Running `npm run dev` starts the server with hot reloading using tsx, which compiles TypeScript on the fly for faster iteration.
-
-### CORS & Security
-
-**Cross-Origin Configuration**: CORS is configured to allow requests from any origin in development, with the ability to restrict to specific domains in production via the `FRONTEND_URL` environment variable.
-
-**Request Logging**: Custom middleware logs all API requests with timing information, helping with debugging and performance monitoring.
-
-**Error Handling**: Controllers include comprehensive error handling with appropriate HTTP status codes and error messages, ensuring clients receive meaningful feedback.
+The project uses TypeScript for type safety. Frontend assets are bundled with Vite, and backend code with esbuild. Development uses `tsx` for hot reloading, while production serves both API and static frontend files.
 
 ## External Dependencies
 
 ### Third-Party Services
 
-**Airtable**: Cloud-based spreadsheet/database service used as the primary data store. Requires an API key and base ID configured via environment variables (`AIRTABLE_API_KEY`, `AIRTABLE_BASE_ID`).
+- **Airtable**: Primary cloud-based database for data storage.
 
 ### Key NPM Packages
 
-**Backend Dependencies**:
-- `express`: Web framework for handling HTTP requests
-- `airtable`: Official Airtable SDK for database operations
-- `bcrypt`: Password hashing library
-- `jsonwebtoken`: JWT creation and validation
-- `multer`: Multipart form data handling for file uploads
-- `cors`: Cross-origin request handling
-- `zod`: Runtime type validation
-
-**Frontend Dependencies**:
-- `react` & `react-dom`: UI framework
-- `@tanstack/react-query`: Server state management
-- `wouter`: Lightweight routing
-- `@radix-ui/*`: Accessible UI component primitives
-- `tailwindcss`: Utility-first CSS framework
-- `class-variance-authority`: Component variant management
-- `react-i18next`, `i18next`, `i18next-browser-languagedetector`: Internationalization (i18n) for multi-language support
-
-**Development Tools**:
-- `vite`: Frontend build tool and development server
-- `typescript`: Type checking and compilation
-- `tsx`: TypeScript execution for development
-- `esbuild`: Fast backend bundling
+- **Backend**: `express`, `airtable`, `bcrypt`, `jsonwebtoken`, `multer`, `cors`, `zod`, `pdf-parse` (v2).
+- **Frontend**: `react`, `react-dom`, `@tanstack/react-query`, `wouter`, `@radix-ui/*`, `tailwindcss`, `react-i18next`.
+- **Development**: `vite`, `typescript`, `tsx`, `esbuild`.
 
 ### Environment Configuration
 
-The application requires the following environment variables:
-- `AIRTABLE_API_KEY`: Authentication for Airtable API
-- `AIRTABLE_BASE_ID`: Identifier for the Airtable base
-- `JWT_SECRET`: Secret key for signing JWT tokens
-- `FRONTEND_URL` (optional): CORS origin restriction in production
-- `PORT` (optional): Server port, defaults to 5000
+The application requires `AIRTABLE_API_KEY`, `AIRTABLE_BASE_ID`, `JWT_SECRET`, and `SESSION_SECRET`. `FRONTEND_URL` and `PORT` are optional.
 
-### Internationalization (i18n)
+## Recent Changes
 
-**Multi-Language Support**: The application supports three languages tailored for the Belgian market:
-- French (FR) - Default language
-- Dutch/Nederlands (NL)
-- English (EN)
+### 2025-11-19: Excel Upload and Auto-Analysis
 
-**Implementation**: Uses react-i18next with the following architecture:
-- **Configuration**: `client/src/i18n/config.ts` sets up language detection and persistence
-- **Translation Files**: JSON files in `client/src/i18n/locales/` (fr.json, nl.json, en.json)
-- **Language Switcher**: Component in header allows instant language switching with visual feedback
-- **Persistence**: User's language choice is stored in localStorage (key: `i18nextLng`) and persists across sessions and page navigation
-- **Detection Strategy**: Uses only localStorage (not browser language) to ensure French default for Belgian market
-
-**Pages Translated**: All user-facing pages are fully translated:
-- Login page (`/login`)
-- Registration page (`/register`)
-- Dashboard page (`/dashboard`)
-
-**Translation Keys Structure**:
-- `common.*`: Shared elements (app title, loading states, etc.)
-- `login.*`: Login page specific texts
-- `register.*`: Registration page specific texts
-- `dashboard.*`: Dashboard page specific texts including upload section, disclaimer, and invoice list
-- `status.*`: Invoice status labels
-- `nav.*`: Navigation elements
-
-### Peppol Analysis Engine
-
-**Overview**: The system includes a custom Peppol analysis engine located in `server/utils/peppolAnalyzer/` that extracts data from PDF and Excel files, validates them against Peppol rules, calculates conformity scores, and generates UBL XML files.
-
-**Architecture**: The engine is modular with six main TypeScript files:
-
-1. **types.ts**: Defines core interfaces
-   - `InvoiceData`: Complete invoice structure with seller/buyer info, lines, and totals
-   - `InvoiceLine`: Individual invoice line items
-   - `ValidationResult`: Validation errors and warnings with severity levels
-
-2. **extractPdf.ts**: PDF data extraction using pdf-parse
-   - Extracts invoice number, date, VAT numbers, and amounts using regex patterns
-   - Basic extraction suitable for standard invoice formats
-   - Returns structured `InvoiceData` object
-
-3. **extractExcel.ts**: Excel data extraction using xlsx
-   - Reads first sheet and maps columns to invoice fields
-   - Expects standard column headers (Numéro facture, Date, Client, etc.)
-   - Parses lines from rows
-
-4. **validate.ts**: Peppol validation rules (6 critical rules)
-   - **Rule 1**: Date must be convertible to YYYY-MM-DD format
-   - **Rule 2**: Seller VAT number must be format BE + 10 digits
-   - **Rule 3**: At least one valid invoice line required (quantity > 0, price > 0)
-   - **Rule 4**: Amounts consistency (HT + TVA = TTC, tolerance 0.01€)
-   - **Rule 5**: BuyerReference OR OrderReference mandatory (Peppol R003)
-   - **Rule 6**: BCE number recommended (10 digits, warning if missing)
-   - Returns array of `ValidationResult` objects with severity (error/warning)
-
-5. **score.ts**: Conformity score calculation
-   - Starts at 100 points
-   - Deducts 10 points per error
-   - Deducts 5 points per warning
-   - Final score clamped between 0-100
-
-6. **generateUbl.ts**: UBL XML generation
-   - Generates XML compliant with Peppol BIS Billing 3.0
-   - Includes proper namespaces (urn:oasis:names:specification:ubl)
-   - CustomizationID and ProfileID for Peppol compliance
-   - Supports seller/buyer parties, tax details, and invoice lines
-   - Escapes XML characters for security
-
-**API Endpoint**: `POST /api/invoices/analyze`
-- Accepts PDF or Excel files via multipart form data
-- Field name: `file`
-- Returns: score, errors array, warnings array, XML path, and extracted data
-- Saves generated UBL XML alongside uploaded file
-
-**Workflow**:
-1. User uploads PDF/Excel file
-2. System detects MIME type and routes to appropriate extractor
-3. Validator checks 6 Peppol rules
-4. Score calculator determines conformity percentage
-5. UBL generator creates XML file
-6. Response includes analysis results and XML path
-
-**Known Limitations** (intentional for MVP/prototype):
-- **PDF extraction**: Uses regex patterns, not advanced AI/ML parsing
-  - Multi-line invoices collapse into single line (single VAT rate assumed)
-  - Works best with standard Belgian invoice formats
-- **Excel extraction**: Expects specific column headers (customizable per user needs)
-- **Date parsing**: Supports DD/MM/YYYY, YYYY-MM-DD, YYYY/MM/DD formats
-  - Does not handle month-first formats (MM/DD/YYYY) or textual months
-- **Amount normalization**: Handles EU (1.234,56) and US (1,234.56) formats
-  - Supports spaces, apostrophes, and non-breaking spaces as thousand separators
-- **Line item extraction**: PDF parsing creates simplified single-line representation
-  - Multi-line invoices with different VAT rates may require manual verification
-- **UBL generation**: Basic structure compliant with Peppol BIS Billing 3.0
-  - Extensible for advanced features as needed
-
-**Frontend Disclaimer**: The dashboard displays a prominent warning banner (data-testid="alert-disclaimer") in all three languages explaining that this is a prototype with simplified rules and results should not be considered official Peppol conformity certification.
-
-**Test Files**: A sample invoice PDF is available at `test/sample-invoice.pdf`, generated by `test/generateTestInvoice.ts` script. This invoice contains:
-- Valid Belgian VAT format (BE0123456789)
-- Client reference for Peppol R003 compliance
-- Two invoice lines with proper amounts
-- Consistent totals (HT: 1000€, TVA 21%: 210€, TTC: 1210€)
-
-### Database Migration Note
-
-While the application currently uses Airtable, there is evidence of Drizzle ORM configuration (`drizzle.config.ts`) and PostgreSQL dependencies (`@neondatabase/serverless`). This suggests the system is designed to potentially migrate to a PostgreSQL database in the future. The code agent should be aware that adding proper PostgreSQL support would require implementing the schema definitions in `shared/schema.ts` using Drizzle ORM and updating the controllers to use database queries instead of Airtable API calls.
+- **Excel Support**: Added support for .xlsx and .xls file uploads alongside PDF files
+- **Auto-Analysis Workflow**: Implemented automatic Peppol analysis upon file upload
+  - New API method: `uploadAndAnalyzeInvoice()` handles upload + analysis in one call
+  - Frontend dashboard updated to accept both PDF and Excel files
+  - Results displayed immediately in dashboard table with conformity scores
+- **PDF Parser Migration**: Updated to pdf-parse v2 API using PDFParse class
+  - Old: `import * as pdfParse; await pdfParse(buffer)`
+  - New: `import { PDFParse }; new PDFParse({ data }).getText(); parser.destroy()`
+- **Translations**: Added multilingual support for "Formats acceptés: PDF et Excel" in FR/NL/EN
+- **Testing**: End-to-end test confirms PDF upload → auto-analysis → 90% score display works correctly
