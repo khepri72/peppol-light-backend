@@ -31,6 +31,19 @@ export const registerUploadedInvoice = async (req: AuthRequest, res: Response) =
       });
     }
 
+    // Check user quota before creating invoice
+    const user = await base(TABLES.USERS).find(userId);
+    const quotaLimit = user.fields.quotaLimit !== undefined ? Number(user.fields.quotaLimit) : 1;
+    const quotaUsed = user.fields.quotaUsed !== undefined ? Number(user.fields.quotaUsed) : 0;
+    const isUnlimited = quotaLimit === -1;
+
+    // Block if quota exceeded
+    if (!isUnlimited && quotaUsed >= quotaLimit) {
+      return res.status(403).json({ 
+        error: `Quota limit reached. You have used ${quotaUsed}/${quotaLimit} uploads this month. Upgrade your plan to continue.` 
+      });
+    }
+
     // Create invoice record in Airtable
     const records = await base(TABLES.INVOICES).create([
       {
@@ -47,6 +60,13 @@ export const registerUploadedInvoice = async (req: AuthRequest, res: Response) =
     ]);
 
     const invoice = records[0];
+
+    // Increment quotaUsed after successful upload (only if not unlimited)
+    if (!isUnlimited) {
+      await base(TABLES.USERS).update(userId, {
+        quotaUsed: quotaUsed + 1
+      });
+    }
 
     res.status(201).json({
       id: invoice.id,
