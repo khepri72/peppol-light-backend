@@ -7,6 +7,8 @@ import { authenticateToken } from "./middlewares/auth";
 import * as authController from "./controllers/authController";
 import * as invoiceController from "./controllers/invoiceController";
 import * as userController from "./controllers/userController";
+import downloadRoute from "./routes/downloadRoute";
+import billingRoute from "./routes/billingRoute";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -112,6 +114,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to access file' });
     }
   });
+
+  // Routes Supabase (download avec quotas + billing Stripe)
+  app.use('/api', downloadRoute);
+  app.use('/api', billingRoute);
 
   const httpServer = createServer(app);
 
