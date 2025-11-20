@@ -14,20 +14,6 @@ interface QuotaLimits {
 }
 
 /**
- * Get quota limit based on plan
- */
-function getQuotaLimit(plan: Plan): number {
-  const limits: Record<Plan, number> = {
-    FREE: 1,
-    STARTER: 10,
-    PRO: -1, // Unlimited
-    BUSINESS: -1, // Unlimited
-  };
-  
-  return limits[plan] || 1;
-}
-
-/**
  * Get plan display name
  */
 function getPlanName(plan: Plan): string {
@@ -78,7 +64,7 @@ export function useQuotas() {
   }
 
   const plan = (profile.user.plan || 'FREE') as Plan;
-  const quotaLimit = getQuotaLimit(plan);
+  const quotaLimit = profile.user.quotaLimit !== undefined ? profile.user.quotaLimit : 1;
   const quotaUsed = profile.user.quotaUsed || 0;
   const isUnlimited = quotaLimit === -1;
   

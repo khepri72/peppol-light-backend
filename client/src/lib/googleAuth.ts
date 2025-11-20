@@ -7,8 +7,11 @@ interface GoogleAuthResponse {
     id: string;
     email: string;
     companyName: string;
+    googleId: string;
     plan: 'FREE' | 'STARTER' | 'PRO' | 'BUSINESS';
     quotaUsed: number;
+    quotaLimit: number;
+    quotaResetDate: string;
     picture?: string;
   };
 }
@@ -52,4 +55,53 @@ export function getGoogleClientId(): string {
   }
   
   return clientId;
+}
+
+/**
+ * Handle Google Login with popup
+ */
+export async function handleGoogleLogin(): Promise<GoogleAuthResponse> {
+  const clientId = getGoogleClientId();
+  
+  if (!clientId) {
+    throw new Error('Google Client ID not configured');
+  }
+
+  return new Promise((resolve, reject) => {
+    if (typeof window === 'undefined' || !window.google) {
+      reject(new Error('Google SDK not loaded'));
+      return;
+    }
+
+    window.google.accounts.id.initialize({
+      client_id: clientId,
+      callback: async (response: { credential: string }) => {
+        try {
+          const authResponse = await authenticateWithGoogle(response.credential);
+          resolve(authResponse);
+        } catch (error) {
+          reject(error);
+        }
+      },
+    });
+
+    window.google.accounts.id.prompt((notification: { isNotDisplayed(): boolean; isSkippedMoment(): boolean }) => {
+      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+        reject(new Error('Google One Tap was not displayed or was skipped'));
+      }
+    });
+  });
+}
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: { client_id: string; callback: (response: { credential: string }) => void }) => void;
+          prompt: (callback: (notification: { isNotDisplayed(): boolean; isSkippedMoment(): boolean }) => void) => void;
+        };
+      };
+    };
+  }
 }

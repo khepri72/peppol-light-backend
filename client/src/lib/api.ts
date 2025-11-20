@@ -26,6 +26,8 @@ export interface AuthResponse {
     googleId?: string;
     plan?: 'FREE' | 'STARTER' | 'PRO' | 'BUSINESS';
     quotaUsed?: number;
+    quotaLimit?: number;
+    quotaResetDate?: string;
     picture?: string;
   };
 }

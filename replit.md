@@ -12,11 +12,11 @@ Preferred communication style: Simple, everyday language.
 
 ### Backend Architecture
 
-The application uses Express.js with Node.js and TypeScript, following RESTful conventions. It employs an MVC-style architecture with separate routes, controllers (auth, invoices, users), and configuration. Key features include JWT-based authentication, bcrypt for password hashing, and Zod for input validation.
+The application uses Express.js with Node.js and TypeScript, following RESTful conventions. It employs an MVC-style architecture with separate routes, controllers (auth, authGoogle, invoices, users), and configuration. Key features include JWT-based authentication, Google OAuth2 authentication, bcrypt for password hashing, and Zod for input validation.
 
 ### Data Storage
 
-Airtable serves as the cloud-based database, storing `Users` and `Invoices` data. It offers built-in UI and API access, eliminating the need for traditional database management. The system includes protections against Airtable formula injection.
+Airtable serves as the cloud-based database, storing `Users` and `Invoices` data. User records include authentication fields (email, password, googleId), quota management (plan, quotaUsed, quotaLimit, quotaResetDate), and profile data (companyName, picture). It offers built-in UI and API access, eliminating the need for traditional database management. The system includes protections against Airtable formula injection.
 
 ### File Upload and Analysis
 
@@ -54,7 +54,7 @@ The project uses TypeScript for type safety. Frontend assets are bundled with Vi
 
 ### Environment Configuration
 
-The application requires `AIRTABLE_API_KEY`, `AIRTABLE_BASE_ID`, `JWT_SECRET`, and `SESSION_SECRET`. `FRONTEND_URL` and `PORT` are optional.
+The application requires `AIRTABLE_API_KEY`, `AIRTABLE_BASE_ID`, `JWT_SECRET`, `SESSION_SECRET`, and `VITE_GOOGLE_CLIENT_ID`. `FRONTEND_URL` and `PORT` are optional.
 
 ## Recent Changes
 
@@ -89,3 +89,41 @@ The application requires `AIRTABLE_API_KEY`, `AIRTABLE_BASE_ID`, `JWT_SECRET`, a
   - Old: `import * as pdfParse; await pdfParse(buffer)`
   - New: `import { PDFParse }; new PDFParse({ data }).getText(); parser.destroy()`
 - **Testing**: End-to-end tests confirm all features work correctly across 3 languages and on mobile viewport (375x667)
+
+### 2025-11-20: Google OAuth2 & Tiered Quota System - Complete Security Audit & Type Safety
+
+- **Google OAuth2 Authentication**: Added Google Sign-In as alternative to email/password
+  - Backend: `authGoogleController.ts` verifies Google JWT tokens with Google OAuth2 Library
+  - Frontend: Google SDK integration with `handleGoogleLogin()` for One Tap login
+  - Route: `POST /api/auth/google` accepts Google credential and returns JWT token
+  - Seamless integration: Google users get same JWT flow as email/password users
+  - Logo: Custom Google SVG logo component with official 4-color branding
+  - UI: "Continue with Google" button on login page with "or" separator
+- **Tiered Quota System**: Usage limits based on subscription plans
+  - Plans: FREE (1 upload/month), STARTER €29 (10/month), PRO €99 (unlimited), BUSINESS €299 (unlimited)
+  - Airtable fields: `plan`, `quotaUsed`, `quotaLimit`, `quotaResetDate`
+  - Hook: `useQuotas()` calculates remaining uploads and enforces limits
+  - Dashboard badge: Real-time quota display (e.g., "3/10 envois utilisés" or "Illimité")
+  - Automatic reset: Monthly quota resets managed server-side
+- **Critical Security Fixes**: Complete Airtable injection protection
+  - ALL controllers (`authController`, `authGoogleController`) use `buildSafeFilterFormula()` for email/googleId queries
+  - Eliminated manual string interpolation in Airtable filterByFormula to prevent injection attacks
+  - JWT hardening: All tokens include `issuer: 'peppol-light'` and `audience: 'peppol-light-users'` for verification
+- **Backend Quota Persistence**: Automatic migration for legacy users
+  - `authController.register`: Creates new users with complete quota fields (plan, quotaUsed, quotaLimit, quotaResetDate)
+  - `authController.login`: Persists missing quota fields to Airtable with defaults when user logs in
+  - `authController.getCurrentUser`: Persists missing quota fields when fetching profile
+  - `authGoogleController.googleAuth`: Persists missing quota fields for both new and existing Google users
+  - All legacy users auto-migrated on next login (any method), ensuring data consistency
+- **Frontend Type Safety & Cache Management**:
+  - Synchronized `User`, `AuthResponse`, `GoogleAuthResponse` interfaces across `shared/schema.ts` and all files
+  - React Query cache update: `queryClient.setQueryData(['/api/auth/me'], response)` after Google login (not just invalidate)
+  - Eliminates stale cache: Dashboard quota badge now reflects correct limits immediately after login
+  - `useQuotas()` derives all values from backend response (no hardcoded defaults)
+- **Internationalization Updates**: Added translations for Google Login and quotas
+  - `login.googleButton`: "Continue with Google" / "Continuer avec Google" / "Doorgaan met Google"
+  - `login.orSeparator`: "or" / "ou" / "of"
+  - `quotas.*`: Full translation set for quota messages (used, unlimited, exceeded, upgrade)
+- **Architecture**: Preserved existing JWT + localStorage system, Google auth as complementary method
+- **Security**: Google Client ID stored in Replit Secrets (`VITE_GOOGLE_CLIENT_ID`)
+- **Testing**: System validated by architect tool, all critical issues resolved (injection protection, type safety, quota persistence)

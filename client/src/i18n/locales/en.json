@@ -64,6 +64,8 @@
   "login": {
     "title": "Log in to your secure workspace",
     "subtitle": "Prepare your business for Peppol invoicing 2026",
+    "googleButton": "Continue with Google",
+    "orSeparator": "or",
     "emailLabel": "Email",
     "emailPlaceholder": "your.email@company.com",
     "passwordLabel": "Password",
@@ -107,5 +109,13 @@
       "reference_missing": "BuyerReference or OrderReference required (Peppol rule R003)",
       "bce_missing": "Supplier BCE number missing or invalid (10 digits required)"
     }
+  },
+  "quotas": {
+    "used": "{{used}}/{{limit}} uploads used",
+    "unlimited": "Unlimited",
+    "exceeded": "Quota exceeded",
+    "upgradePlan": "Upgrade plan",
+    "remainingUploads_one": "{{count}} upload remaining",
+    "remainingUploads_other": "{{count}} uploads remaining"
   }
 }

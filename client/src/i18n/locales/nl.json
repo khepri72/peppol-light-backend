@@ -64,6 +64,8 @@
   "login": {
     "title": "Log in op uw beveiligde werkruimte",
     "subtitle": "Bereid uw bedrijf voor op Peppol-facturering 2026",
+    "googleButton": "Doorgaan met Google",
+    "orSeparator": "of",
     "emailLabel": "E-mailadres",
     "emailPlaceholder": "uw.email@bedrijf.com",
     "passwordLabel": "Wachtwoord",
@@ -107,5 +109,13 @@
       "reference_missing": "BuyerReference of OrderReference verplicht (Peppol-regel R003)",
       "bce_missing": "KBO-nummer leverancier ontbreekt of ongeldig (10 cijfers vereist)"
     }
+  },
+  "quotas": {
+    "used": "{{used}}/{{limit}} uploads gebruikt",
+    "unlimited": "Onbeperkt",
+    "exceeded": "Quota overschreden",
+    "upgradePlan": "Upgrade plan",
+    "remainingUploads_one": "{{count}} upload over",
+    "remainingUploads_other": "{{count}} uploads over"
   }
 }

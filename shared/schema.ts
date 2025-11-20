@@ -24,8 +24,14 @@ export type UpdateUserProfile = z.infer<typeof updateUserProfileSchema>;
 export interface User {
   id: string;
   email: string;
-  password: string;
+  password?: string; // Optional for Google users
   companyName?: string;
+  googleId?: string;
+  plan?: 'FREE' | 'STARTER' | 'PRO' | 'BUSINESS';
+  quotaUsed?: number;
+  quotaLimit?: number;
+  quotaResetDate?: string;
+  picture?: string;
   createdAt: string;
 }
 

@@ -31,6 +31,7 @@ import { queryClient } from '@/lib/queryClient';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { translateErrorsList, type ValidationError } from '@/utils/errorTranslations';
+import { useQuotas } from '@/hooks/useQuotas';
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
@@ -44,6 +45,8 @@ export default function Dashboard() {
     queryKey: ['/api/auth/me'],
     queryFn: () => api.getProfile(),
   });
+
+  const quotas = useQuotas();
 
   const { data: invoicesData, isLoading } = useQuery({
     queryKey: ['/api/invoices'],
@@ -180,6 +183,18 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            {!quotas.isLoading && (
+              <Badge 
+                variant={quotas.canUpload ? "default" : "destructive"}
+                className="text-sm px-3 py-1.5"
+                data-testid="badge-quota"
+              >
+                {quotas.isUnlimited 
+                  ? t('quotas.unlimited')
+                  : t('quotas.used', { used: quotas.used, limit: quotas.limit })
+                }
+              </Badge>
+            )}
             <LanguageSwitcher />
             <Button
               variant="outline"

@@ -27,13 +27,17 @@ export const register = async (req: Request, res: Response) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(validatedData.password, SALT_ROUNDS);
 
-    // Create user in Airtable
+    // Create user in Airtable with quota fields
     const records = await base(TABLES.USERS).create([
       {
         fields: {
           email: validatedData.email,
           password: hashedPassword,
           companyName: validatedData.companyName || '',
+          plan: 'FREE',
+          quotaUsed: 0,
+          quotaLimit: 1,
+          quotaResetDate: new Date().toISOString(),
           createdAt: new Date().toISOString(),
         },
       },
@@ -42,11 +46,22 @@ export const register = async (req: Request, res: Response) => {
     const user = records[0];
     const userId = user.id;
 
-    // Generate JWT token
+    // Generate JWT token with quota fields
     const token = jwt.sign(
-      { userId }, 
+      { 
+        userId,
+        email: validatedData.email,
+        plan: 'FREE',
+        quotaUsed: 0,
+        quotaLimit: 1,
+        quotaResetDate: user.fields.quotaResetDate
+      }, 
       config.jwt.secret,
-      { expiresIn: config.jwt.expiresIn }
+      { 
+        expiresIn: config.jwt.expiresIn,
+        issuer: 'peppol-light',
+        audience: 'peppol-light-users'
+      }
     );
 
     res.status(201).json({
@@ -56,6 +71,10 @@ export const register = async (req: Request, res: Response) => {
         id: userId,
         email: validatedData.email,
         companyName: validatedData.companyName,
+        plan: 'FREE',
+        quotaUsed: 0,
+        quotaLimit: 1,
+        quotaResetDate: user.fields.quotaResetDate,
       },
     });
   } catch (error: any) {
@@ -94,11 +113,39 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    // Generate JWT token
+    // Extract quota fields with defaults for legacy users
+    const plan = user.fields.plan || 'FREE';
+    const quotaUsed = user.fields.quotaUsed !== undefined ? user.fields.quotaUsed : 0;
+    const quotaLimit = user.fields.quotaLimit !== undefined ? user.fields.quotaLimit : 1;
+    const quotaResetDate = user.fields.quotaResetDate || new Date().toISOString();
+
+    // Persist defaults to Airtable for legacy users
+    const updateData: any = {};
+    if (!user.fields.plan) updateData.plan = plan;
+    if (user.fields.quotaUsed === undefined) updateData.quotaUsed = quotaUsed;
+    if (user.fields.quotaLimit === undefined) updateData.quotaLimit = quotaLimit;
+    if (!user.fields.quotaResetDate) updateData.quotaResetDate = quotaResetDate;
+
+    if (Object.keys(updateData).length > 0) {
+      await base(TABLES.USERS).update(userId, updateData);
+    }
+
+    // Generate JWT token with quota fields
     const token = jwt.sign(
-      { userId }, 
+      { 
+        userId,
+        email: user.fields.email,
+        plan,
+        quotaUsed,
+        quotaLimit,
+        quotaResetDate
+      }, 
       config.jwt.secret,
-      { expiresIn: config.jwt.expiresIn }
+      { 
+        expiresIn: config.jwt.expiresIn,
+        issuer: 'peppol-light',
+        audience: 'peppol-light-users'
+      }
     );
 
     res.json({
@@ -108,6 +155,12 @@ export const login = async (req: Request, res: Response) => {
         id: userId,
         email: user.fields.email,
         companyName: user.fields.companyName || '',
+        googleId: user.fields.googleId,
+        plan,
+        quotaUsed,
+        quotaLimit,
+        quotaResetDate,
+        picture: user.fields.picture,
       },
     });
   } catch (error: any) {
@@ -125,11 +178,34 @@ export const getCurrentUser = async (req: Request, res: Response) => {
 
     const user = await base(TABLES.USERS).find(userId);
 
+    // Extract quota fields with defaults for legacy users
+    const plan = user.fields.plan || 'FREE';
+    const quotaUsed = user.fields.quotaUsed !== undefined ? user.fields.quotaUsed : 0;
+    const quotaLimit = user.fields.quotaLimit !== undefined ? user.fields.quotaLimit : 1;
+    const quotaResetDate = user.fields.quotaResetDate || new Date().toISOString();
+
+    // Persist defaults to Airtable for legacy users
+    const updateData: any = {};
+    if (!user.fields.plan) updateData.plan = plan;
+    if (user.fields.quotaUsed === undefined) updateData.quotaUsed = quotaUsed;
+    if (user.fields.quotaLimit === undefined) updateData.quotaLimit = quotaLimit;
+    if (!user.fields.quotaResetDate) updateData.quotaResetDate = quotaResetDate;
+
+    if (Object.keys(updateData).length > 0) {
+      await base(TABLES.USERS).update(userId, updateData);
+    }
+
     res.json({
       user: {
         id: user.id,
         email: user.fields.email,
         companyName: user.fields.companyName || '',
+        googleId: user.fields.googleId,
+        plan,
+        quotaUsed,
+        quotaLimit,
+        quotaResetDate,
+        picture: user.fields.picture,
       },
     });
   } catch (error) {

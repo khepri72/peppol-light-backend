@@ -17,11 +17,15 @@ import { api } from '@/lib/api';
 import { authStorage } from '@/lib/auth';
 import { loginSchema, LoginUser } from '@shared/schema';
 import { Loader2, Check } from 'lucide-react';
+import { GoogleLogo } from '@/components/GoogleLogo';
+import { handleGoogleLogin } from '@/lib/googleAuth';
+import { useState } from 'react';
 
 export default function Login() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { t, i18n } = useTranslation();
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const form = useForm<LoginUser>({
     resolver: zodResolver(loginSchema),
@@ -48,6 +52,35 @@ export default function Login() {
         description: error instanceof Error ? error.message : t('login.errorInvalid'),
         variant: 'destructive',
       });
+    }
+  };
+
+  const onGoogleLogin = async () => {
+    setIsGoogleLoading(true);
+    try {
+      const response = await handleGoogleLogin();
+      
+      // Update React Query cache with enriched user data (including quota fields)
+      const { queryClient } = await import('@/lib/queryClient');
+      queryClient.setQueryData(['/api/auth/me'], {
+        token: response.token,
+        user: response.user
+      });
+      
+      toast({
+        title: t('common.success'),
+        description: `${response.user.email}`,
+      });
+
+      setLocation('/dashboard');
+    } catch (error) {
+      toast({
+        title: t('common.error'),
+        description: error instanceof Error ? error.message : t('login.errorNetwork'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGoogleLoading(false);
     }
   };
 
@@ -176,6 +209,29 @@ export default function Login() {
           <p className="text-gray-600 mb-8 text-center leading-relaxed">
             {t('login.subtitle')}
           </p>
+
+          <Button
+            type="button"
+            onClick={onGoogleLogin}
+            disabled={isGoogleLoading}
+            className="w-full h-12 bg-white hover:bg-gray-50 text-gray-800 font-medium border-2 border-gray-300 rounded-lg shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-3 mb-6"
+            data-testid="button-google-login"
+          >
+            {isGoogleLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <>
+                <GoogleLogo className="w-5 h-5" />
+                <span>{t('login.googleButton')}</span>
+              </>
+            )}
+          </Button>
+
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex-1 h-px bg-gray-300"></div>
+            <span className="text-sm text-gray-500 font-medium">{t('login.orSeparator')}</span>
+            <div className="flex-1 h-px bg-gray-300"></div>
+          </div>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">

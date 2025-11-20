@@ -7,6 +7,8 @@ export interface User {
   googleId?: string;
   plan?: 'FREE' | 'STARTER' | 'PRO' | 'BUSINESS';
   quotaUsed?: number;
+  quotaLimit?: number;
+  quotaResetDate?: string;
   picture?: string;
 }
 

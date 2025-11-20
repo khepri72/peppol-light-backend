@@ -64,6 +64,8 @@
   "login": {
     "title": "Connectez-vous à votre espace sécurisé",
     "subtitle": "Préparez votre entreprise pour la facturation Peppol 2026",
+    "googleButton": "Continuer avec Google",
+    "orSeparator": "ou",
     "emailLabel": "Email",
     "emailPlaceholder": "votre.email@entreprise.com",
     "passwordLabel": "Mot de passe",
@@ -107,5 +109,13 @@
       "reference_missing": "BuyerReference ou OrderReference obligatoire (règle Peppol R003)",
       "bce_missing": "Numéro BCE fournisseur manquant ou invalide (10 chiffres requis)"
     }
+  },
+  "quotas": {
+    "used": "{{used}}/{{limit}} envois utilisés",
+    "unlimited": "Illimité",
+    "exceeded": "Quota dépassé",
+    "upgradePlan": "Augmenter le forfait",
+    "remainingUploads_one": "{{count}} envoi restant",
+    "remainingUploads_other": "{{count}} envois restants"
   }
 }
