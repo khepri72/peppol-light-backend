@@ -113,7 +113,10 @@
   "quotas": {
     "used": "{{used}}/{{limit}} uploads gebruikt",
     "unlimited": "Onbeperkt",
-    "exceeded": "Quota overschreden",
+    "exceeded": {
+      "title": "Limiet overschreden",
+      "description": "U heeft {{used}}/{{limit}} downloads deze maand gebruikt. Upgrade naar een hoger plan."
+    },
     "upgradePlan": "Upgrade plan",
     "remainingUploads_one": "{{count}} upload over",
     "remainingUploads_other": "{{count}} uploads over"

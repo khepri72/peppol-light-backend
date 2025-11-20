@@ -76,6 +76,23 @@ export default function Dashboard() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Vérifier le quota avant l'upload
+    if (!quotas.canUpload) {
+      toast({
+        title: quotas.isUnlimited 
+          ? t('common.error')
+          : t('quotas.exceeded.title'),
+        description: quotas.isUnlimited
+          ? t('common.error')
+          : t('quotas.exceeded.description', { 
+              used: quotas.used, 
+              limit: quotas.limit 
+            }),
+        variant: 'destructive',
+      });
+      return;
+    }
+
     // Validate file type: PDF or Excel
     const fileName = file.name.toLowerCase();
     const isValidFile = fileName.endsWith('.pdf') || 

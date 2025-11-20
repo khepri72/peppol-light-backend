@@ -113,7 +113,10 @@
   "quotas": {
     "used": "{{used}}/{{limit}} uploads used",
     "unlimited": "Unlimited",
-    "exceeded": "Quota exceeded",
+    "exceeded": {
+      "title": "Quota exceeded",
+      "description": "You have used {{used}}/{{limit}} downloads this month. Upgrade to a higher plan."
+    },
     "upgradePlan": "Upgrade plan",
     "remainingUploads_one": "{{count}} upload remaining",
     "remainingUploads_other": "{{count}} uploads remaining"

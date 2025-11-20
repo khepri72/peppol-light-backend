@@ -113,7 +113,10 @@
   "quotas": {
     "used": "{{used}}/{{limit}} envois utilisés",
     "unlimited": "Illimité",
-    "exceeded": "Quota dépassé",
+    "exceeded": {
+      "title": "Quota dépassé",
+      "description": "Vous avez utilisé {{used}}/{{limit}} téléchargements ce mois. Passez à un plan supérieur."
+    },
     "upgradePlan": "Augmenter le forfait",
     "remainingUploads_one": "{{count}} envoi restant",
     "remainingUploads_other": "{{count}} envois restants"
