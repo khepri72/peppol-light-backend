@@ -16,7 +16,21 @@ The application uses Express.js with Node.js and TypeScript, following RESTful c
 
 ### Data Storage
 
-Airtable serves as the cloud-based database, storing `Users` and `Invoices` data. It offers built-in UI and API access, eliminating the need for traditional database management. The system includes protections against Airtable formula injection.
+**Dual Database Architecture** (Supabase + Airtable):
+
+1. **Supabase (PostgreSQL)** - Transactional data with RLS security:
+   - `public.users`: User profiles, authentication metadata, subscription plans, download quotas
+   - `public.invoices`: Invoice metadata (status, UBL file URLs, conformity scores)
+   - `public.downloads_log`: Download tracking for analytics and quota enforcement
+   - Storage buckets: `invoices-uploaded` (user files), `invoices-processed` (UBL outputs)
+
+2. **Airtable** - CRM and business analytics (legacy, coexists):
+   - `Users`: Business metrics (MRR, churn, LTV)
+   - `Invoices`: Dashboard Khepri analytics
+   - `Leads`: Marketing funnel tracking
+   - `Comptables_Partenaires`: Partner commissions
+
+**Synchronization**: Planned via n8n webhooks (Supabase → Airtable for business intelligence).
 
 ### File Upload and Analysis
 
@@ -48,15 +62,61 @@ The project uses TypeScript for type safety. Frontend assets are bundled with Vi
 
 ### Key NPM Packages
 
-- **Backend**: `express`, `airtable`, `bcrypt`, `jsonwebtoken`, `multer`, `cors`, `zod`, `pdf-parse` (v2).
-- **Frontend**: `react`, `react-dom`, `@tanstack/react-query`, `wouter`, `@radix-ui/*`, `tailwindcss`, `react-i18next`.
+- **Backend**: `express`, `@supabase/supabase-js`, `stripe`, `airtable`, `bcrypt`, `jsonwebtoken`, `multer`, `cors`, `zod`, `pdf-parse` (v2).
+- **Frontend**: `react`, `react-dom`, `@supabase/supabase-js`, `@tanstack/react-query`, `wouter`, `@radix-ui/*`, `tailwindcss`, `react-i18next`.
 - **Development**: `vite`, `typescript`, `tsx`, `esbuild`.
 
 ### Environment Configuration
 
-The application requires `AIRTABLE_API_KEY`, `AIRTABLE_BASE_ID`, `JWT_SECRET`, and `SESSION_SECRET`. `FRONTEND_URL` and `PORT` are optional.
+**Required:**
+- `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (frontend Supabase)
+- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (backend Supabase)
+- `AIRTABLE_API_KEY`, `AIRTABLE_BASE_ID` (legacy CRM)
+- `JWT_SECRET`, `SESSION_SECRET` (auth)
+
+**Optional:**
+- `STRIPE_SECRET_KEY`, `STRIPE_PRICE_STARTER`, `STRIPE_PRICE_PRO` (payments)
+- `FRONTEND_URL`, `PORT` (deployment)
 
 ## Recent Changes
+
+### 2025-11-20: Supabase Integration + Google OAuth + Download Quotas
+
+- **Dual Database Architecture**: Supabase (transactional) + Airtable (CRM/analytics) coexist
+  - Supabase: `users`, `invoices`, `downloads_log` tables with Row Level Security (RLS)
+  - Airtable: Legacy system preserved for business analytics
+  - Migration path: Manual SQL execution in Supabase dashboard (`server/migrations/001_create_supabase_tables.sql`)
+- **Google OAuth Authentication**: One-click login via Supabase Auth
+  - New page: `/login-google` with professional Google SSO button
+  - Auto-creation of user profile in `public.users` via PostgreSQL trigger
+  - Default plan: `free` with 1 download/month quota
+  - AuthContext wraps entire app for global auth state
+- **Download Quota System**: Three-tier subscription model (FREE/STARTER/PRO)
+  - FREE: 1 UBL download/month, auto-reset monthly
+  - STARTER: 10 downloads/month (29€/month via Stripe)
+  - PRO: Unlimited downloads (99€/month via Stripe)
+  - Endpoint: `POST /api/invoices/:id/download` enforces quotas before serving UBL files
+  - Quota tracking: `downloads_used_this_month` incremented on each download
+  - Auto-reset: `quota_reset_date` triggers monthly reset via cron job or inline check
+- **QuotaDisplay Component**: Real-time quota visualization in dashboard header
+  - Color-coded badges: green (unlimited), blue (available), orange (low), red (depleted)
+  - Progress bar showing usage percentage
+  - CTA button "Passer à PRO" when quota exhausted
+- **Pricing Page**: Marketing page with 3 plans comparison
+  - Plan cards with features, pricing, quota limits
+  - Integration stub for Stripe Checkout (ready for production)
+  - Route: `/pricing` accessible from dashboard and quota warnings
+- **Stripe Integration (Stubs)**: Foundation for payment processing
+  - `server/lib/stripeClient.ts`: Stripe SDK initialization
+  - `server/routes/billingRoute.ts`: Checkout session creation + webhook handlers (TODOs)
+  - Environment variables ready: `STRIPE_SECRET_KEY`, `STRIPE_PRICE_STARTER`, `STRIPE_PRICE_PRO`
+- **Middleware & Security**: JWT authentication for Supabase routes
+  - `server/middleware/authMiddleware.ts`: Decodes Supabase JWT tokens
+  - Protected routes: download endpoint, billing endpoint
+  - RLS policies ensure users only access own data
+- **Documentation**: 
+  - `SUPABASE_SETUP.md`: Complete setup guide (Google OAuth config, table creation, storage buckets, RLS)
+  - `GUIDE_UTILISATEUR.md`: End-to-end user flow documentation (signup, upload, quota management, upgrades)
 
 ### 2025-11-19: Login Page Transformation & Mobile Optimization
 

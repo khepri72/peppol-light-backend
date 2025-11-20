@@ -17,6 +17,16 @@ const router = Router();
  */
 router.post('/invoices/:id/download', authenticateSupabase, async (req, res) => {
   try {
+    // ─────────────────────────────────────────────────────────
+    // 0. VÉRIFIER QUE SUPABASE EST CONFIGURÉ
+    // ─────────────────────────────────────────────────────────
+    if (!supabaseServer) {
+      return res.status(503).json({
+        error: 'service_unavailable',
+        message: 'Supabase n\'est pas configuré. Voir SUPABASE_SETUP.md',
+      });
+    }
+
     const invoiceId = req.params.id;
     const userId = req.user!.id;
 

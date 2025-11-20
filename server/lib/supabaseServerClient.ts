@@ -1,24 +1,31 @@
 import { createClient } from '@supabase/supabase-js';
-import { config } from '../config/env';
 
 // Variables d'environnement Supabase côté serveur
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 if (!supabaseUrl || !supabaseServiceRoleKey) {
-  console.error('⚠️ SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY doivent être configurés');
+  console.warn('⚠️ SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY non configurés');
+  console.warn('📖 Voir SUPABASE_SETUP.md pour configurer Supabase');
 }
 
 // Client Supabase pour le backend (avec service_role key pour bypass RLS)
-export const supabaseServer = createClient(supabaseUrl, supabaseServiceRoleKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-  },
-});
+// Si non configuré, créer un client factice pour éviter les crashes
+export const supabaseServer = (supabaseUrl && supabaseServiceRoleKey)
+  ? createClient(supabaseUrl, supabaseServiceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    })
+  : null;
 
 // Helper : récupérer un utilisateur par ID
 export async function getUserById(userId: string) {
+  if (!supabaseServer) {
+    throw new Error('Supabase not configured');
+  }
+
   const { data, error } = await supabaseServer
     .from('users')
     .select('*')
@@ -34,6 +41,10 @@ export async function getUserById(userId: string) {
 
 // Helper : incrémenter le quota de téléchargement
 export async function incrementDownloadQuota(userId: string) {
+  if (!supabaseServer) {
+    throw new Error('Supabase not configured');
+  }
+
   // Récupérer la valeur actuelle
   const user = await getUserById(userId);
   
@@ -51,6 +62,10 @@ export async function incrementDownloadQuota(userId: string) {
 
 // Helper : reset des quotas mensuels (appelé avant vérification)
 export async function resetQuotaIfNeeded(userId: string) {
+  if (!supabaseServer) {
+    throw new Error('Supabase not configured');
+  }
+
   const user = await getUserById(userId);
   const now = new Date();
   const quotaResetDate = new Date(user.quota_reset_date);
@@ -81,6 +96,10 @@ export async function resetQuotaIfNeeded(userId: string) {
 
 // Helper : logger un téléchargement
 export async function logDownload(userId: string, invoiceId: string, plan: string) {
+  if (!supabaseServer) {
+    throw new Error('Supabase not configured');
+  }
+
   const { error } = await supabaseServer
     .from('downloads_log')
     .insert({
@@ -96,6 +115,10 @@ export async function logDownload(userId: string, invoiceId: string, plan: strin
 
 // Helper : marquer une facture comme téléchargée
 export async function markInvoiceAsDownloaded(invoiceId: string) {
+  if (!supabaseServer) {
+    throw new Error('Supabase not configured');
+  }
+
   const { error } = await supabaseServer
     .from('invoices')
     .update({

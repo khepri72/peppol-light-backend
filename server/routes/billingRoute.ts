@@ -12,6 +12,14 @@ const router = Router();
  */
 router.post('/billing/create-checkout-session', authenticateSupabase, async (req, res) => {
   try {
+    // Vérifier que Stripe est configuré
+    if (!stripe) {
+      return res.status(503).json({
+        error: 'stripe_not_configured',
+        message: 'Stripe n\'est pas encore configuré. Contactez le support.',
+      });
+    }
+
     const { plan } = req.body; // 'starter' | 'pro'
     const userId = req.user!.id;
     const userEmail = req.user!.email;
@@ -21,13 +29,6 @@ router.post('/billing/create-checkout-session', authenticateSupabase, async (req
       return res.status(400).json({
         error: 'invalid_plan',
         message: 'Plan invalide. Choisissez "starter" ou "pro".',
-      });
-    }
-
-    if (!stripe) {
-      return res.status(503).json({
-        error: 'stripe_not_configured',
-        message: 'Stripe n\'est pas encore configuré. Contactez le support.',
       });
     }
 

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import { supabaseServer } from '../lib/supabaseServerClient';
 
 // Extension du type Request Express pour inclure user
 declare global {
@@ -16,6 +16,7 @@ declare global {
 /**
  * Middleware d'authentification pour les routes Supabase
  * Vérifie le token JWT Supabase dans le header Authorization
+ * SÉCURISÉ : Appelle Supabase Auth API pour vérifier la signature JWT
  */
 export const authenticateSupabase = async (
   req: Request,
@@ -23,6 +24,14 @@ export const authenticateSupabase = async (
   next: NextFunction
 ) => {
   try {
+    // Vérifier que Supabase est configuré
+    if (!supabaseServer) {
+      return res.status(503).json({
+        error: 'service_unavailable',
+        message: 'Supabase n\'est pas configuré. Voir SUPABASE_SETUP.md',
+      });
+    }
+
     // Récupérer le token depuis le header Authorization
     const authHeader = req.headers.authorization;
 
@@ -35,21 +44,21 @@ export const authenticateSupabase = async (
 
     const token = authHeader.substring(7); // Enlever "Bearer "
 
-    // Décoder le JWT Supabase (sans vérification de signature car Supabase Auth le gère)
-    // En production, utilisez la clé publique Supabase pour vérifier
-    const decoded = jwt.decode(token) as { sub: string; email: string } | null;
+    // SÉCURITÉ : Vérifier le token avec Supabase Auth API
+    // Cela vérifie la signature JWT avec la clé publique Supabase
+    const { data: { user }, error } = await supabaseServer.auth.getUser(token);
 
-    if (!decoded || !decoded.sub) {
+    if (error || !user) {
       return res.status(401).json({
         error: 'invalid_token',
-        message: 'Token invalide',
+        message: 'Token invalide ou expiré',
       });
     }
 
     // Attacher l'utilisateur à la requête
     req.user = {
-      id: decoded.sub,
-      email: decoded.email,
+      id: user.id,
+      email: user.email || '',
     };
 
     next();
