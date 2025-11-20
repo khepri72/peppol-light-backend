@@ -1,0 +1,77 @@
+🎯 MISSION : Ajouter l'authentification Google + système de quotas
+
+⚠️ RÈGLES ABSOLUES :
+- NE TOUCHE PAS aux boutons FR/NL/EN
+- NE CHANGE PAS le design bleu/orange existant
+- NE MODIFIE PAS les pages qui fonctionnent
+- AJOUTE uniquement les nouveaux fichiers nécessaires
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 ÉTAPE 1 : ANALYSE (fais ça d'abord)
+
+Liste-moi :
+1. Les fichiers existants dans src/ (avec leur chemin complet)
+2. Quels fichiers tu vas CRÉER (nouveaux)
+3. Quels fichiers tu vas MODIFIER (avec les lignes exactes que tu vas changer)
+
+ATTENDS MA VALIDATION avant de coder quoi que ce soit.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 ÉTAPE 2 : CE QUE TU DOIS FAIRE (après validation)
+
+✅ CRÉER ces nouveaux fichiers uniquement :
+
+1. src/lib/supabaseClient.js
+   - Import Supabase
+   - Export client configuré
+
+2. src/contexts/AuthContext.jsx
+   - Gestion session utilisateur
+   - signInWithGoogle()
+   - signOut()
+
+3. src/components/ProtectedRoute.jsx
+   - Vérifie si user connecté
+   - Redirect /login si non connecté
+
+4. src/hooks/useQuotas.js
+   - Gère les quotas de téléchargement
+   - Vérifie plan utilisateur (FREE/STARTER/PRO/BUSINESS)
+
+✅ MODIFIER uniquement :
+
+1. src/main.jsx
+   - Wrapper <AuthProvider> autour de <App />
+
+2. Page de login existante
+   - AJOUTER seulement un bouton "Continuer avec Google" AU-DESSUS du formulaire
+   - GARDER tout le reste identique
+
+3. src/App.jsx
+   - Wrapper les routes protégées avec <ProtectedRoute>
+
+✅ AJOUTER dans le dashboard :
+   - Badge quota en haut : "📥 X/Y téléchargements ce mois"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 QUOTAS PAR PLAN :
+- FREE: 1 téléchargement/mois
+- STARTER (29€): 10 téléchargements/mois
+- PRO (99€): illimité
+- BUSINESS (299€): illimité + multi-clients
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+❌ CE QUE TU NE DOIS PAS FAIRE :
+- Supprimer les boutons FR/NL/EN
+- Changer le design
+- Refaire les pages existantes
+- Modifier les couleurs
+- Toucher au tableau des factures
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+👉 COMMENCE PAR L'ÉTAPE 1 : Liste-moi les fichiers.
