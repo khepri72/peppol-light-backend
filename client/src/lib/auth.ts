@@ -4,6 +4,10 @@ export interface User {
   id: string;
   email: string;
   companyName: string;
+  googleId?: string;
+  plan?: 'FREE' | 'STARTER' | 'PRO' | 'BUSINESS';
+  quotaUsed?: number;
+  picture?: string;
 }
 
 export const authStorage = {

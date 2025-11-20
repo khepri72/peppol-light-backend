@@ -23,6 +23,10 @@ export interface AuthResponse {
     id: string;
     email: string;
     companyName: string;
+    googleId?: string;
+    plan?: 'FREE' | 'STARTER' | 'PRO' | 'BUSINESS';
+    quotaUsed?: number;
+    picture?: string;
   };
 }
 
@@ -92,7 +96,7 @@ class ApiClient {
   }
 
   async getProfile() {
-    return this.request<{ user: { id: string; email: string; companyName: string } }>('/api/auth/me');
+    return this.request<AuthResponse>('/api/auth/me');
   }
 
   async getInvoices(): Promise<InvoicesResponse> {

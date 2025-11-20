@@ -5,6 +5,7 @@ import path from "path";
 import { fileURLToPath } from 'url';
 import { authenticateToken } from "./middlewares/auth";
 import * as authController from "./controllers/authController";
+import * as authGoogleController from "./controllers/authGoogleController";
 import * as invoiceController from "./controllers/invoiceController";
 import * as userController from "./controllers/userController";
 
@@ -55,6 +56,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
   app.post('/api/auth/register', authController.register);
   app.post('/api/auth/login', authController.login);
+  app.post('/api/auth/google', authGoogleController.googleAuth);
   app.get('/api/auth/me', authenticateToken, authController.getCurrentUser);
 
   // User routes
