@@ -3,6 +3,7 @@ import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import { base, TABLES } from '../config/airtable';
 import { buildSafeFilterFormula } from '../utils/airtableHelpers';
+import { getNextMonthFirstDayUTC } from '../utils/dateHelpers';
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -69,7 +70,9 @@ export async function googleAuth(req: Request, res: Response) {
       const plan = existingUser.fields.plan || 'FREE';
       const quotaUsed = existingUser.fields.quotaUsed !== undefined ? existingUser.fields.quotaUsed : 0;
       const quotaLimit = existingUser.fields.quotaLimit !== undefined ? existingUser.fields.quotaLimit : 1;
-      const quotaResetDate = existingUser.fields.quotaResetDate || new Date().toISOString();
+      
+      // Calculate quota reset date (first day of next month in UTC) if not set
+      const quotaResetDate = existingUser.fields.quotaResetDate || getNextMonthFirstDayUTC();
 
       const updateData: any = {};
       if (!existingUser.fields.googleId) {
@@ -100,6 +103,9 @@ export async function googleAuth(req: Request, res: Response) {
         picture: existingUser.fields.picture || picture
       };
     } else {
+      // Calculate quota reset date (first day of next month in UTC)
+      const quotaResetDateStr = getNextMonthFirstDayUTC();
+      
       // Create new user
       const newUser = await usersTable.create({
         email,
@@ -108,7 +114,7 @@ export async function googleAuth(req: Request, res: Response) {
         plan: 'FREE',
         quotaUsed: 0,
         quotaLimit: 1,
-        quotaResetDate: new Date().toISOString(),
+        quotaResetDate: quotaResetDateStr,
         picture: picture || '',
         // No password needed for Google auth
       });

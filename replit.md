@@ -90,6 +90,22 @@ The application requires `AIRTABLE_API_KEY`, `AIRTABLE_BASE_ID`, `JWT_SECRET`, `
   - New: `import { PDFParse }; new PDFParse({ data }).getText(); parser.destroy()`
 - **Testing**: End-to-end tests confirm all features work correctly across 3 languages and on mobile viewport (375x667)
 
+### 2025-11-21: Quota Reset Date UTC Fix
+
+- **Critical Bug Fix**: quotaResetDate timezone offset issue resolved
+  - Created shared utility `getNextMonthFirstDayUTC()` in `server/utils/dateHelpers.ts`
+  - UTC calculation: `new Date(Date.UTC(year, month + 1, 1)).toISOString().split('T')[0]`
+  - Prevents timezone skew: ensures quotaResetDate is always first day of next month regardless of server timezone
+  - Format: YYYY-MM-DD (e.g., "2025-12-01") for Airtable compatibility (not ISO timestamp)
+- **Applied to All Auth Flows**: Consistent quota reset logic across entire system
+  - `authController.register`: New user creation with UTC quota reset
+  - `authController.login`: Legacy user fallback with UTC quota reset  
+  - `authController.getCurrentUser`: Legacy user fallback with UTC quota reset
+  - `authGoogleController`: Both existing and new Google users with UTC quota reset
+- **Automatic Rollover**: December → January handled by JavaScript Date (Dec 2025 → Jan 2026)
+- **Legacy User Migration**: Fallbacks persist normalized YYYY-MM-DD format to Airtable on next login
+- **Testing**: All authentication flows validated (register, login, Google OAuth, quota display)
+
 ### 2025-11-20: Google OAuth2 & Tiered Quota System - Complete Security Audit & Type Safety
 
 - **Google OAuth2 Authentication**: Added Google Sign-In as alternative to email/password

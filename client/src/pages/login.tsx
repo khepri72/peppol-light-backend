@@ -16,16 +16,13 @@ import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
 import { authStorage } from '@/lib/auth';
 import { loginSchema, LoginUser } from '@shared/schema';
-import { Loader2, Check } from 'lucide-react';
-import { GoogleLogo } from '@/components/GoogleLogo';
-import { handleGoogleLogin } from '@/lib/googleAuth';
-import { useState } from 'react';
+import { Check, Loader2 } from 'lucide-react';
+import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 
 export default function Login() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { t, i18n } = useTranslation();
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const form = useForm<LoginUser>({
     resolver: zodResolver(loginSchema),
@@ -52,35 +49,6 @@ export default function Login() {
         description: error instanceof Error ? error.message : t('login.errorInvalid'),
         variant: 'destructive',
       });
-    }
-  };
-
-  const onGoogleLogin = async () => {
-    setIsGoogleLoading(true);
-    try {
-      const response = await handleGoogleLogin();
-      
-      // Update React Query cache with enriched user data (including quota fields)
-      const { queryClient } = await import('@/lib/queryClient');
-      queryClient.setQueryData(['/api/auth/me'], {
-        token: response.token,
-        user: response.user
-      });
-      
-      toast({
-        title: t('common.success'),
-        description: `${response.user.email}`,
-      });
-
-      setLocation('/dashboard');
-    } catch (error) {
-      toast({
-        title: t('common.error'),
-        description: error instanceof Error ? error.message : t('login.errorNetwork'),
-        variant: 'destructive',
-      });
-    } finally {
-      setIsGoogleLoading(false);
     }
   };
 
@@ -210,22 +178,9 @@ export default function Login() {
             {t('login.subtitle')}
           </p>
 
-          <Button
-            type="button"
-            onClick={onGoogleLogin}
-            disabled={isGoogleLoading}
-            className="w-full h-12 bg-white hover:bg-gray-50 text-gray-800 font-medium border-2 border-gray-300 rounded-lg shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-3 mb-6"
-            data-testid="button-google-login"
-          >
-            {isGoogleLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <>
-                <GoogleLogo className="w-5 h-5" />
-                <span>{t('login.googleButton')}</span>
-              </>
-            )}
-          </Button>
+          <div className="mb-6">
+            <GoogleSignInButton />
+          </div>
 
           <div className="flex items-center gap-4 mb-6">
             <div className="flex-1 h-px bg-gray-300"></div>

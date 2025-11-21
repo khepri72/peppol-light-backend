@@ -70,14 +70,19 @@ class ApiClient {
       headers,
     });
 
+    // Handle 401 errors differently based on endpoint
     if (response.status === 401) {
-      logout();
-      throw new Error('Session expired. Please login again.');
+      // Don't logout on login/register endpoints - these are auth attempts
+      if (!endpoint.includes('/api/auth/login') && !endpoint.includes('/api/auth/register')) {
+        logout();
+        throw new Error('Session expired. Please login again.');
+      }
     }
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'An error occurred' }));
-      throw new Error(error.message || 'Request failed');
+      const error = await response.json().catch(() => ({ error: 'An error occurred' }));
+      // Backend returns {error: "..."} not {message: "..."}
+      throw new Error(error.error || error.message || 'Request failed');
     }
 
     return response.json();

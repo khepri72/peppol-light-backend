@@ -1,0 +1,87 @@
+OBJECTIF : Corriger Google One Tap dans le frontend SANS toucher au backend.
+
+ARCHITECTURE :
+- Backend = Node.js + Express + Airtable
+- Auth Google = Google One Tap → POST /api/auth/google
+- NE PAS utiliser Passport ou Supabase
+
+PROBLÈME :
+- Erreur removeChild sur le composant Google One Tap
+- Google One Tap ne s'affiche plus
+- FedCM warnings
+- Erreur "Google One Tap was not displayed or was skipped"
+
+ACTIONS À FAIRE :
+
+1. TROUVER le composant frontend où Google One Tap est initialisé
+   (chercher "google.accounts.id" dans client/src).
+
+2. SUPPRIMER tous les codes suivants :
+   - document.getElementById(...)
+   - element.innerHTML = ''
+   - element.removeChild(...)
+   - toute manipulation DOM directe
+
+3. REFAIRE le composant Google One Tap correctement en React :
+
+   - Utiliser useRef() pour contenir le bouton
+   - Utiliser useEffect() sans manipuler le DOM manuellement
+   - Code à implémenter :
+
+     import { useEffect, useRef } from 'react';
+
+     function GoogleSignIn() {
+       const googleRef = useRef(null);
+
+       useEffect(() => {
+         if (!googleRef.current) return;
+         try {
+           google.accounts.id.initialize({
+             client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+             callback: handleCredentialResponse,
+             auto_select: false
+           });
+           google.accounts.id.renderButton(
+             googleRef.current,
+             { theme: "outline", size: "large", width: 300 }
+           );
+         } catch (e) { console.error("Google One Tap error:", e); }
+       }, []);
+
+       const handleCredentialResponse = async (res) => {
+         const response = await fetch("/api/auth/google", {
+           method: "POST",
+           headers: { "Content-Type": "application/json" },
+           body: JSON.stringify({ credential: res.credential }),
+         });
+         const data = await response.json();
+         if (data.token) {
+           localStorage.setItem("token", data.token);
+           window.location.href = "/dashboard";
+         }
+       };
+
+       return <div ref={googleRef}></div>;
+     }
+
+4. ASSURER que :
+   - VITE_GOOGLE_CLIENT_ID existe dans les secrets
+   - index.html contient :
+     <script src="https://accounts.google.com/gsi/client" async></script>
+
+NE PAS TOUCHER :
+- backend
+- quotas
+- authGoogleController
+- authController
+- routes
+- Airtable
+
+RÉSULTAT ATTENDU :
+- Page register/login sans crash
+- Bouton Google fonctionne
+- One Tap fonctionne
+- Redirection vers dashboard
+- Plus aucune erreur removeChild ou FedCM
+
+Afficher les fichiers modifiés à la fin.

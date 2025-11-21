@@ -58,50 +58,8 @@ export function getGoogleClientId(): string {
 }
 
 /**
- * Handle Google Login with popup
+ * DEPRECATED: Use GoogleSignInButton component instead
+ * 
+ * This function used the problematic `prompt()` API that manipulates DOM.
+ * The new approach uses `renderButton()` API with proper React lifecycle.
  */
-export async function handleGoogleLogin(): Promise<GoogleAuthResponse> {
-  const clientId = getGoogleClientId();
-  
-  if (!clientId) {
-    throw new Error('Google Client ID not configured');
-  }
-
-  return new Promise((resolve, reject) => {
-    if (typeof window === 'undefined' || !window.google) {
-      reject(new Error('Google SDK not loaded'));
-      return;
-    }
-
-    window.google.accounts.id.initialize({
-      client_id: clientId,
-      callback: async (response: { credential: string }) => {
-        try {
-          const authResponse = await authenticateWithGoogle(response.credential);
-          resolve(authResponse);
-        } catch (error) {
-          reject(error);
-        }
-      },
-    });
-
-    window.google.accounts.id.prompt((notification: { isNotDisplayed(): boolean; isSkippedMoment(): boolean }) => {
-      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-        reject(new Error('Google One Tap was not displayed or was skipped'));
-      }
-    });
-  });
-}
-
-declare global {
-  interface Window {
-    google?: {
-      accounts: {
-        id: {
-          initialize: (config: { client_id: string; callback: (response: { credential: string }) => void }) => void;
-          prompt: (callback: (notification: { isNotDisplayed(): boolean; isSkippedMoment(): boolean }) => void) => void;
-        };
-      };
-    };
-  }
-}

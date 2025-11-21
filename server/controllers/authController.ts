@@ -5,6 +5,7 @@ import { base, TABLES } from '../config/airtable';
 import { insertUserSchema, loginSchema } from '../../shared/schema';
 import { config } from '../config/env';
 import { buildSafeFilterFormula } from '../utils/airtableHelpers';
+import { getNextMonthFirstDayUTC } from '../utils/dateHelpers';
 
 const SALT_ROUNDS = 10;
 
@@ -27,6 +28,9 @@ export const register = async (req: Request, res: Response) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(validatedData.password, SALT_ROUNDS);
 
+    // Calculate quota reset date (first day of next month in UTC)
+    const quotaResetDateStr = getNextMonthFirstDayUTC();
+    
     // Create user in Airtable with quota fields
     const records = await base(TABLES.USERS).create([
       {
@@ -37,7 +41,7 @@ export const register = async (req: Request, res: Response) => {
           plan: 'FREE',
           quotaUsed: 0,
           quotaLimit: 1,
-          quotaResetDate: new Date().toISOString(),
+          quotaResetDate: quotaResetDateStr,
           createdAt: new Date().toISOString(),
         },
       },
@@ -117,7 +121,7 @@ export const login = async (req: Request, res: Response) => {
     const plan = user.fields.plan || 'FREE';
     const quotaUsed = user.fields.quotaUsed !== undefined ? user.fields.quotaUsed : 0;
     const quotaLimit = user.fields.quotaLimit !== undefined ? user.fields.quotaLimit : 1;
-    const quotaResetDate = user.fields.quotaResetDate || new Date().toISOString();
+    const quotaResetDate = user.fields.quotaResetDate || getNextMonthFirstDayUTC();
 
     // Persist defaults to Airtable for legacy users
     const updateData: any = {};
@@ -182,7 +186,7 @@ export const getCurrentUser = async (req: Request, res: Response) => {
     const plan = user.fields.plan || 'FREE';
     const quotaUsed = user.fields.quotaUsed !== undefined ? user.fields.quotaUsed : 0;
     const quotaLimit = user.fields.quotaLimit !== undefined ? user.fields.quotaLimit : 1;
-    const quotaResetDate = user.fields.quotaResetDate || new Date().toISOString();
+    const quotaResetDate = user.fields.quotaResetDate || getNextMonthFirstDayUTC();
 
     // Persist defaults to Airtable for legacy users
     const updateData: any = {};
