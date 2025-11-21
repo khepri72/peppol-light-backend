@@ -90,7 +90,7 @@ The application requires `AIRTABLE_API_KEY`, `AIRTABLE_BASE_ID`, `JWT_SECRET`, `
   - New: `import { PDFParse }; new PDFParse({ data }).getText(); parser.destroy()`
 - **Testing**: End-to-end tests confirm all features work correctly across 3 languages and on mobile viewport (375x667)
 
-### 2025-11-21: Quota Reset Date UTC Fix
+### 2025-11-21: Quota Reset Date UTC Fix & Enhanced Upload Error Handling
 
 - **Critical Bug Fix**: quotaResetDate timezone offset issue resolved
   - Created shared utility `getNextMonthFirstDayUTC()` in `server/utils/dateHelpers.ts`
@@ -104,7 +104,14 @@ The application requires `AIRTABLE_API_KEY`, `AIRTABLE_BASE_ID`, `JWT_SECRET`, `
   - `authGoogleController`: Both existing and new Google users with UTC quota reset
 - **Automatic Rollover**: December → January handled by JavaScript Date (Dec 2025 → Jan 2026)
 - **Legacy User Migration**: Fallbacks persist normalized YYYY-MM-DD format to Airtable on next login
-- **Testing**: All authentication flows validated (register, login, Google OAuth, quota display)
+- **Enhanced Upload Error Handling**: Improved resilience and user feedback for file uploads
+  - `dashboard.tsx`: Added console logging, file input reset on error, quota cache invalidation after upload
+  - `api.ts`: Wrapped `uploadAndAnalyzeInvoice()` in try/catch with user-friendly error messages
+  - Error messages: Generic "Request failed" replaced with "Failed to process invoice. Please ensure the file is a valid PDF or Excel invoice."
+  - File input always resets after upload (success or error) to prevent stuck state
+  - Upload button re-enables automatically via finally block
+  - Backend route `/api/upload/pdf` already has comprehensive try/catch and multer configuration (10MB limit, PDF/Excel filtering)
+- **Testing**: All authentication flows validated (register, login, Google OAuth, quota display); E2E upload test confirms no DOM errors, no 404s, quota tracking working correctly
 
 ### 2025-11-20: Google OAuth2 & Tiered Quota System - Complete Security Audit & Type Safety
 
