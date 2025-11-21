@@ -1,0 +1,98 @@
+OBJECTIF : Trouver la CAUSE RÉELLE du "Internal server error" quand j’upload une facture depuis le dashboard, et la corriger SANS casser ce qui fonctionne déjà.
+
+CONTEXTE :
+- Frontend : React, page dashboard (/dashboard) avec bouton "Choisissez le fichier"
+- Backend :
+  - Route POST /api/upload/pdf (Multer + authenticateToken)
+  - Route POST /api/invoices/analyze pour l’analyse Peppol
+- En dev : tes tests E2E passent.
+- En prod (sur l’URL publique) : j’ai un toast "Erreur lors du téléchargement – Internal server error" et la console montre :
+  uploadAndAnalyzeInvoice error: Error: Internal server error
+
+TÂCHES À FAIRE :
+
+1) AJOUTER DES LOGS DÉTAILLÉS SUR LA ROUTE /api/upload/pdf
+
+- Ouvre server/routes.ts
+- Localise la route POST /api/upload/pdf.
+- Entoure TOUT le code de la route dans un try/catch détaillé, avec des logs explicites :
+
+  - Au début de la route, log :
+    console.log('📥 /api/upload/pdf called');
+    console.log('User ID:', (req as any).userId);
+    console.log('File info:', req.file);
+
+  - Si !req.file :
+    - log : console.error('❌ No file uploaded');
+    - return res.status(400).json({ error: 'No file uploaded from frontend' });
+
+  - Juste AVANT l’appel à l’analyse ou à invoiceController.registerUploadedInvoice / analyzeInvoice :
+    - log : console.log('▶️ Starting invoice analysis for file:', req.file?.originalname);
+
+  - Dans le catch :
+    console.error('❌ Fatal upload error:', error);
+    return res.status(500).json({
+      error: 'Upload failed',
+      details: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
+2) GARANTIR QUE LE DOSSIER D’UPLOAD EXISTE TOUJOURS
+
+- Toujours dans server/routes.ts (ou là où Multer est configuré), juste après le calcul de __dirname, ajoute une fonction utilitaire :
+
+  import fs from 'fs';
+
+  function ensureUploadsDir() {
+    const uploadsPath = path.join(__dirname, 'uploads');
+    if (!fs.existsSync(uploadsPath)) {
+      fs.mkdirSync(uploadsPath, { recursive: true });
+      console.log('📁 Created uploads directory at', uploadsPath);
+    }
+    return uploadsPath;
+  }
+
+- Modifie la config Multer pour utiliser ce helper avant d’enregistrer le fichier :
+
+  const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      const uploadsPath = ensureUploadsDir();
+      cb(null, uploadsPath);
+    },
+    filename: (req, file, cb) => { ... }
+  });
+
+=> Objectif : ne JAMAIS dépendre d’un dossier déjà présent dans l’image déployée.
+
+3) VÉRIFIER LA COHÉRENCE DU NOM DE CHAMP FICHIER
+
+- Ouvre client/src/lib/api.ts (ou le fichier qui fait l’appel uploadAndAnalyzeInvoice).
+- Vérifie le FormData :
+  - formData.append('pdf', file);  OU  formData.append('file', file);
+
+- Assure-toi que le nom utilisé côté frontend correspond à upload.single('<NOM>') dans routes.ts.
+- Si le backend utilise upload.single('pdf'), le frontend doit faire :
+  formData.append('pdf', file);
+
+4) TEST INTERNE AVEC LOGS
+
+- Après ces changements, lance l’app dans Replit (Start application).
+- Dans la console serveur, essaye d’uploader un fichier test (un vrai PDF).
+- Vérifie :
+  - le status HTTP de /api/upload/pdf,
+  - le JSON de réponse (pas seulement "Internal server error", mais aussi le champ "details"),
+  - les logs console côté serveur (ils doivent montrer clairement où ça casse si ça casse).
+
+5) NE PAS TOUCHER pour l’instant :
+- invoiceController.analyzeInvoice (sauf si le stacktrace montre clairement une erreur de type "cannot read property ..." ou similaire).
+- Le système de quotas, JWT, Airtable, Google OAuth.
+- La logique React du dashboard (sauf si tu vois un vrai bug évident).
+
+RÉSULTAT ATTENDU :
+
+- Si tout va bien : upload retourne 200, la facture apparaît dans le tableau, le quota est mis à jour.
+- Si ça échoue encore : la réponse JSON de /api/upload/pdf contient maintenant un champ "details" et "stack" avec l’erreur exacte (qu’on pourra analyser ensuite).
+
+À LA FIN :
+- Affiche-moi le code final de la route /api/upload/pdf.
+- Affiche-moi un exemple de log console complet côté serveur lors d’un upload (succès ou échec).
