@@ -1,0 +1,333 @@
+# MISSION : Internationaliser les erreurs d'analyse Peppol
+
+## CONTEXTE
+- Dashboard déjà traduit FR/NL/EN ✅
+- Erreurs Peppol actuellement hardcodées en français dans le backend
+- Besoin : système de codes d'erreur + traductions frontend
+
+## OBJECTIF
+Remplacer les messages d'erreur français hardcodés par des codes d'erreur,
+puis traduire ces codes côté frontend selon la langue sélectionnée.
+
+## DIAGNOSTIC ACTUEL
+
+**Backend actuel (server/controllers/invoiceController.ts)** :
+```typescript
+errors: [
+  "ERREUR : Aucune ligne de facturation valide (quantité et prix > 0)",
+  "ERREUR : BuyerReference ou OrderReference obligatoire (règle Peppol R003)",
+  "ATTENTION : Numéro BCE fournisseur manquant ou invalide (10 chiffres)"
+]
+```
+
+**Problème** : Messages en français uniquement, pas de traduction possible.
+
+---
+
+## ACTIONS
+
+### 1. Modifier le backend pour envoyer des CODES d'erreur
+
+**Fichier à modifier** : `server/controllers/invoiceController.ts`
+
+**Remplacer les messages texte par des objets avec codes** :
+```typescript
+// AVANT (à remplacer)
+errors: [
+  "ERREUR : Aucune ligne de facturation valide"
+]
+
+// APRÈS (nouveau format)
+errors: [
+  {
+    code: "PEPPOL_NO_INVOICE_LINES",
+    severity: "error",
+    field: "invoiceLines" // optionnel, pour contextualiser
+  }
+]
+```
+
+**Liste complète des codes d'erreur à créer** :
+```typescript
+// Codes d'erreur Peppol (à utiliser dans le backend)
+const PEPPOL_ERROR_CODES = {
+  // Erreurs critiques
+  NO_INVOICE_LINES: 'PEPPOL_NO_INVOICE_LINES',
+  BUYER_REF_MISSING: 'PEPPOL_BUYER_REF_MISSING',
+  
+  // Erreurs TVA/BCE
+  BCE_MISSING: 'PEPPOL_BCE_MISSING',
+  VAT_INVALID: 'PEPPOL_VAT_INVALID',
+  VAT_AMOUNT_MISMATCH: 'PEPPOL_VAT_AMOUNT_MISMATCH',
+  
+  // Erreurs dates
+  DATE_MISSING: 'PEPPOL_DATE_MISSING',
+  DATE_INVALID: 'PEPPOL_DATE_INVALID',
+  
+  // Erreurs montants
+  AMOUNT_MISMATCH: 'PEPPOL_AMOUNT_MISMATCH',
+  NEGATIVE_AMOUNT: 'PEPPOL_NEGATIVE_AMOUNT',
+  
+  // Erreurs format
+  INVOICE_NUMBER_MISSING: 'PEPPOL_INVOICE_NUMBER_MISSING',
+  CURRENCY_MISSING: 'PEPPOL_CURRENCY_MISSING',
+  
+  // Warnings
+  ADDRESS_INCOMPLETE: 'PEPPOL_ADDRESS_INCOMPLETE',
+  PAYMENT_TERMS_MISSING: 'PEPPOL_PAYMENT_TERMS_MISSING'
+};
+```
+
+**Exemple de transformation dans le backend** :
+```typescript
+// Dans la fonction d'analyse Peppol
+const errors = [];
+
+// AVANT
+if (!hasValidLines) {
+  errors.push("ERREUR : Aucune ligne de facturation valide");
+}
+
+// APRÈS
+if (!hasValidLines) {
+  errors.push({
+    code: 'PEPPOL_NO_INVOICE_LINES',
+    severity: 'error'
+  });
+}
+
+// AVANT
+if (!buyerReference && !orderReference) {
+  errors.push("ERREUR : BuyerReference ou OrderReference obligatoire (règle Peppol R003)");
+}
+
+// APRÈS
+if (!buyerReference && !orderReference) {
+  errors.push({
+    code: 'PEPPOL_BUYER_REF_MISSING',
+    severity: 'error',
+    rule: 'R003'
+  });
+}
+
+// AVANT
+if (!bceNumber || bceNumber.length !== 10) {
+  errors.push("ATTENTION : Numéro BCE fournisseur manquant ou invalide");
+}
+
+// APRÈS
+if (!bceNumber || bceNumber.length !== 10) {
+  errors.push({
+    code: 'PEPPOL_BCE_MISSING',
+    severity: 'warning'
+  });
+}
+```
+
+---
+
+### 2. Ajouter les traductions dans les fichiers i18n
+
+**Fichier** : `client/src/i18n/locales/fr.json`
+
+Ajouter cette section :
+```json
+{
+  "peppolErrors": {
+    "PEPPOL_NO_INVOICE_LINES": "ERREUR : Aucune ligne de facturation valide (quantité et prix > 0)",
+    "PEPPOL_BUYER_REF_MISSING": "ERREUR : BuyerReference ou OrderReference obligatoire (règle Peppol R003)",
+    "PEPPOL_BCE_MISSING": "ATTENTION : Numéro BCE fournisseur manquant ou invalide (10 chiffres)",
+    "PEPPOL_VAT_INVALID": "ERREUR : Numéro de TVA invalide",
+    "PEPPOL_VAT_AMOUNT_MISMATCH": "ERREUR : Montants TVA incohérents (HT + TVA ≠ TTC)",
+    "PEPPOL_DATE_MISSING": "ERREUR : Date de facture manquante",
+    "PEPPOL_DATE_INVALID": "ERREUR : Format de date invalide",
+    "PEPPOL_AMOUNT_MISMATCH": "ERREUR : Montants incohérents",
+    "PEPPOL_NEGATIVE_AMOUNT": "ERREUR : Montant négatif non autorisé",
+    "PEPPOL_INVOICE_NUMBER_MISSING": "ERREUR : Numéro de facture manquant",
+    "PEPPOL_CURRENCY_MISSING": "ATTENTION : Devise non spécifiée (EUR par défaut)",
+    "PEPPOL_ADDRESS_INCOMPLETE": "ATTENTION : Adresse émetteur ou destinataire incomplète",
+    "PEPPOL_PAYMENT_TERMS_MISSING": "ATTENTION : Conditions de paiement manquantes"
+  }
+}
+```
+
+**Fichier** : `client/src/i18n/locales/nl.json`
+```json
+{
+  "peppolErrors": {
+    "PEPPOL_NO_INVOICE_LINES": "FOUT: Geen geldige factuurregel (hoeveelheid en prijs > 0)",
+    "PEPPOL_BUYER_REF_MISSING": "FOUT: BuyerReference of OrderReference verplicht (Peppol regel R003)",
+    "PEPPOL_BCE_MISSING": "WAARSCHUWING: BTW-nummer leverancier ontbreekt of ongeldig (10 cijfers)",
+    "PEPPOL_VAT_INVALID": "FOUT: Ongeldig BTW-nummer",
+    "PEPPOL_VAT_AMOUNT_MISMATCH": "FOUT: Inconsistente BTW-bedragen (excl. BTW + BTW ≠ incl. BTW)",
+    "PEPPOL_DATE_MISSING": "FOUT: Factuurdatum ontbreekt",
+    "PEPPOL_DATE_INVALID": "FOUT: Ongeldig datumformaat",
+    "PEPPOL_AMOUNT_MISMATCH": "FOUT: Inconsistente bedragen",
+    "PEPPOL_NEGATIVE_AMOUNT": "FOUT: Negatief bedrag niet toegestaan",
+    "PEPPOL_INVOICE_NUMBER_MISSING": "FOUT: Factuurnummer ontbreekt",
+    "PEPPOL_CURRENCY_MISSING": "WAARSCHUWING: Valuta niet gespecificeerd (standaard EUR)",
+    "PEPPOL_ADDRESS_INCOMPLETE": "WAARSCHUWING: Adres afzender of ontvanger onvolledig",
+    "PEPPOL_PAYMENT_TERMS_MISSING": "WAARSCHUWING: Betalingsvoorwaarden ontbreken"
+  }
+}
+```
+
+**Fichier** : `client/src/i18n/locales/en.json`
+```json
+{
+  "peppolErrors": {
+    "PEPPOL_NO_INVOICE_LINES": "ERROR: No valid invoice lines (quantity and price > 0)",
+    "PEPPOL_BUYER_REF_MISSING": "ERROR: BuyerReference or OrderReference required (Peppol rule R003)",
+    "PEPPOL_BCE_MISSING": "WARNING: Supplier VAT number missing or invalid (10 digits)",
+    "PEPPOL_VAT_INVALID": "ERROR: Invalid VAT number",
+    "PEPPOL_VAT_AMOUNT_MISMATCH": "ERROR: Inconsistent VAT amounts (net + VAT ≠ gross)",
+    "PEPPOL_DATE_MISSING": "ERROR: Invoice date missing",
+    "PEPPOL_DATE_INVALID": "ERROR: Invalid date format",
+    "PEPPOL_AMOUNT_MISMATCH": "ERROR: Inconsistent amounts",
+    "PEPPOL_NEGATIVE_AMOUNT": "ERROR: Negative amount not allowed",
+    "PEPPOL_INVOICE_NUMBER_MISSING": "ERROR: Invoice number missing",
+    "PEPPOL_CURRENCY_MISSING": "WARNING: Currency not specified (EUR by default)",
+    "PEPPOL_ADDRESS_INCOMPLETE": "WARNING: Sender or recipient address incomplete",
+    "PEPPOL_PAYMENT_TERMS_MISSING": "WARNING: Payment terms missing"
+  }
+}
+```
+
+---
+
+### 3. Modifier le Dashboard pour traduire les erreurs
+
+**Fichier** : `client/src/pages/dashboard.tsx`
+
+**Trouver la section d'affichage des erreurs** (ligne ~160-180) :
+```tsx
+// AVANT
+<td className="px-6 py-4">
+  {invoice.errors && invoice.errors.length > 0 ? (
+    <ul className="list-disc list-inside text-sm text-red-600">
+      {invoice.errors.map((error, idx) => (
+        <li key={idx}>{error}</li>
+      ))}
+    </ul>
+  ) : (
+    <span className="text-gray-500">-</span>
+  )}
+</td>
+
+// APRÈS
+<td className="px-6 py-4">
+  {invoice.errors && invoice.errors.length > 0 ? (
+    <ul className="list-disc list-inside text-sm">
+      {invoice.errors.map((error, idx) => {
+        // Si erreur = objet avec code
+        if (typeof error === 'object' && error.code) {
+          const severity = error.severity === 'error' ? 'text-red-600' : 'text-yellow-600';
+          return (
+            <li key={idx} className={severity}>
+              {t(`peppolErrors.${error.code}`)}
+            </li>
+          );
+        }
+        // Sinon afficher tel quel (compatibilité anciennes factures)
+        return <li key={idx} className="text-red-600">{error}</li>;
+      })}
+    </ul>
+  ) : (
+    <span className="text-gray-500">-</span>
+  )}
+</td>
+```
+
+---
+
+### 4. Gestion des anciennes factures (rétrocompatibilité)
+
+**Ajouter une fonction utilitaire** dans `client/src/lib/errorFormatter.ts` :
+```typescript
+import { TFunction } from 'react-i18next';
+
+export interface PeppolError {
+  code: string;
+  severity: 'error' | 'warning';
+  field?: string;
+  rule?: string;
+}
+
+export function formatPeppolError(
+  error: PeppolError | string,
+  t: TFunction
+): { text: string; severity: 'error' | 'warning' } {
+  // Si c'est une chaîne (ancien format)
+  if (typeof error === 'string') {
+    return {
+      text: error,
+      severity: error.toLowerCase().includes('erreur') ? 'error' : 'warning'
+    };
+  }
+  
+  // Si c'est un objet avec code (nouveau format)
+  return {
+    text: t(`peppolErrors.${error.code}`, { defaultValue: error.code }),
+    severity: error.severity
+  };
+}
+```
+
+**Utiliser dans le dashboard** :
+```tsx
+import { formatPeppolError } from '../lib/errorFormatter';
+
+// Dans le rendu
+{invoice.errors.map((error, idx) => {
+  const formatted = formatPeppolError(error, t);
+  const className = formatted.severity === 'error' ? 'text-red-600' : 'text-yellow-600';
+  
+  return (
+    <li key={idx} className={className}>
+      {formatted.text}
+    </li>
+  );
+})}
+```
+
+---
+
+## VALIDATION
+
+Une fois terminé, vérifie :
+
+1. ✅ Backend envoie des objets `{ code, severity }` au lieu de strings
+2. ✅ Fichiers fr.json, nl.json, en.json contiennent section `peppolErrors`
+3. ✅ Dashboard affiche les erreurs traduites selon la langue sélectionnée
+4. ✅ Upload d'une facture test → erreurs apparaissent dans la bonne langue
+5. ✅ Switch FR → NL → EN → erreurs changent de langue
+6. ✅ Anciennes factures (avec erreurs string) affichent toujours correctement
+
+---
+
+## NE PAS TOUCHER
+
+- Authentification
+- Système de quotas
+- Upload de fichiers
+- Calcul du score de conformité (seulement le format des erreurs change)
+
+---
+
+## RÉSULTAT ATTENDU
+
+**Avant** :
+```
+Interface : NL ✅
+Erreurs : FR ❌
+→ Incohérent
+```
+
+**Après** :
+```
+Interface : NL ✅
+Erreurs : NL ✅
+→ Cohérent 100%
+```
+
+**IMPORTANT** : Compile et teste avec une vraie facture pour vérifier que les erreurs s'affichent correctement dans les 3 langues.
