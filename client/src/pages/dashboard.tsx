@@ -112,22 +112,34 @@ export default function Dashboard() {
 
     try {
       await api.uploadAndAnalyzeInvoice(file);
-      queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
+      
+      // Invalidate queries to refresh the invoice list
+      await queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       
       toast({
         title: t('dashboard.uploadSection.uploadSuccess'),
         description: t('dashboard.uploadSection.analysisComplete'),
       });
       
+      // Reset file input to allow re-uploading the same file
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     } catch (error) {
+      console.error('Upload error:', error);
+      
+      // Display user-friendly error message
       toast({
         title: t('dashboard.uploadSection.uploadError'),
         description: error instanceof Error ? error.message : t('common.error'),
         variant: 'destructive',
       });
+      
+      // Reset file input even on error
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     } finally {
       setIsUploading(false);
     }

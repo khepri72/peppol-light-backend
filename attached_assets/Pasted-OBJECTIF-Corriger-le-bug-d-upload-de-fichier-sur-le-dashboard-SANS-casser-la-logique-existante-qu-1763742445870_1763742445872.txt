@@ -1,0 +1,53 @@
+OBJECTIF : Corriger le bug d'upload de fichier sur le dashboard SANS casser la logique existante (quotas, React Query, i18n).
+
+SYMPTÔMES EN PROD :
+- En cliquant sur "Choisissez le fichier" sur /dashboard :
+  - Erreur "Oups ! Il y a eu un problème."
+  - Console :
+    - NotFoundError: Failed to execute 'insertBefore' on 'Node'
+    - Failed to load resource: the server responded with a 404 api/upload/pdf:1
+
+ARCHITECTURE :
+- Backend :
+  - POST /api/upload/pdf (upload sécurisé avec Multer)
+  - POST /api/invoices/analyze (analyse Peppol)
+- Frontend :
+  - Page : client/src/pages/dashboard.tsx
+  - Utilise déjà quotas, toasts, React Query.
+
+ACTIONS :
+
+1. Dans tout le frontend (client/src) :
+   - Chercher toutes les occurrences de "api/upload/pdf".
+   - Corriger les URLs relatives en URLs absolues :
+     "api/upload/pdf" → "/api/upload/pdf".
+
+2. Dans le code qui gère l'upload (dashboard.tsx ou hook utilisé) :
+   - Entourer l'appel API d'un try/catch.
+   - En cas d'erreur (réseau ou HTTP non 2xx), NE PAS laisser remonter l'erreur jusqu'à l'ErrorBoundary.
+   - À la place, afficher un toast :
+     - title: t('dashboard.uploadSection.uploadError')
+     - description: t('common.error')
+     - variant: 'destructive'
+
+3. Vérifier qu'il n'y a PAS de manipulations DOM directes liées à l'upload :
+   - Pas de document.getElementById
+   - Pas de insertBefore / removeChild
+   - Si tu trouves de telles manipulations pour l'upload, remplace-les par une logique React standard (useRef, onChange, etc.) mais SANS réécrire toute la logique de quotas et React Query.
+
+NE PAS TOUCHER :
+- authController, authGoogleController
+- invoiceController (sauf si erreur manifeste)
+- logique de quotas (canUpload, remaining, etc.)
+- intégration React Query (cache, invalidation, etc.)
+- i18n (traductions existantes)
+
+RÉSULTAT ATTENDU :
+- Upload d'un PDF/Excel sur /dashboard fonctionne sans crash.
+- L'API correcte est appelée (/api/upload/pdf puis analyse).
+- En cas d'erreur, l'utilisateur voit un toast, pas l'écran "Oups !".
+- quotaUsed dans Airtable passe de 0 → 1 pour un plan FREE.
+- Le badge quotas se met à jour.
+- Aucune erreur "insertBefore" dans la console.
+
+Affiche les fichiers modifiés à la fin.

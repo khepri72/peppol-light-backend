@@ -124,55 +124,66 @@ class ApiClient {
   }
 
   async uploadAndAnalyzeInvoice(file: File): Promise<Invoice> {
-    // Step 1: Upload the file
-    const formData = new FormData();
-    formData.append('pdf', file);
-    
-    const uploadResponse = await this.request<{ url: string; filename: string }>('/api/upload/pdf', {
-      method: 'POST',
-      body: formData,
-    });
+    try {
+      // Step 1: Upload the file
+      const formData = new FormData();
+      formData.append('pdf', file);
+      
+      const uploadResponse = await this.request<{ url: string; filename: string }>('/api/upload/pdf', {
+        method: 'POST',
+        body: formData,
+      });
 
-    // Step 2: Analyze the file
-    const analyzeFormData = new FormData();
-    analyzeFormData.append('file', file);
-    
-    const analysisResult = await this.request<{
-      success: boolean;
-      score: number;
-      errors: Array<{ field?: string; code: string; severity: string; message: string }>;
-      warnings: Array<{ field?: string; code: string; severity: string; message: string }>;
-      xmlPath: string | null;
-    }>('/api/invoices/analyze', {
-      method: 'POST',
-      body: analyzeFormData,
-    });
+      // Step 2: Analyze the file
+      const analyzeFormData = new FormData();
+      analyzeFormData.append('file', file);
+      
+      const analysisResult = await this.request<{
+        success: boolean;
+        score: number;
+        errors: Array<{ field?: string; code: string; severity: string; message: string }>;
+        warnings: Array<{ field?: string; code: string; severity: string; message: string }>;
+        xmlPath: string | null;
+      }>('/api/invoices/analyze', {
+        method: 'POST',
+        body: analyzeFormData,
+      });
 
-    // Step 3: Register in Airtable with analysis results
-    const errorsList = [
-      ...analysisResult.errors.map(e => `ERROR: ${e.message}`),
-      ...analysisResult.warnings.map(w => `WARNING: ${w.message}`)
-    ].join('\n');
+      // Step 3: Register in Airtable with analysis results
+      const errorsList = [
+        ...analysisResult.errors.map(e => `ERROR: ${e.message}`),
+        ...analysisResult.warnings.map(w => `WARNING: ${w.message}`)
+      ].join('\n');
 
-    // Store structured errors data for i18n translation
-    const errorsData = JSON.stringify({
-      errors: analysisResult.errors,
-      warnings: analysisResult.warnings
-    });
+      // Store structured errors data for i18n translation
+      const errorsData = JSON.stringify({
+        errors: analysisResult.errors,
+        warnings: analysisResult.warnings
+      });
 
-    const invoiceData = {
-      fileName: file.name,
-      fileUrl: uploadResponse.url,
-      status: analysisResult.score >= 80 ? 'checked' : 'uploaded',
-      conformityScore: analysisResult.score,
-      errorsList: errorsList || '',
-      errorsData: errorsData,
-    };
+      const invoiceData = {
+        fileName: file.name,
+        fileUrl: uploadResponse.url,
+        status: analysisResult.score >= 80 ? 'checked' : 'uploaded',
+        conformityScore: analysisResult.score,
+        errorsList: errorsList || '',
+        errorsData: errorsData,
+      };
 
-    return this.request<Invoice>('/api/invoices', {
-      method: 'POST',
-      body: JSON.stringify(invoiceData),
-    });
+      return this.request<Invoice>('/api/invoices', {
+        method: 'POST',
+        body: JSON.stringify(invoiceData),
+      });
+    } catch (error) {
+      console.error('uploadAndAnalyzeInvoice error:', error);
+      // Re-throw with more context if error message is generic
+      if (error instanceof Error) {
+        if (error.message === 'Request failed' || error.message === 'An error occurred') {
+          throw new Error('Failed to process invoice. Please ensure the file is a valid PDF or Excel invoice.');
+        }
+      }
+      throw error;
+    }
   }
 
   async deleteInvoice(id: string): Promise<{ message: string }> {
