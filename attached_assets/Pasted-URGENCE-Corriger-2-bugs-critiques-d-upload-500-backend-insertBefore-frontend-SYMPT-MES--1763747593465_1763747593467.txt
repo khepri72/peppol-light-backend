@@ -1,0 +1,122 @@
+URGENCE : Corriger 2 bugs critiques d'upload (500 backend + insertBefore frontend).
+
+SYMPTÔMES :
+- Console navigateur : "NotFoundError: Failed to execute 'insertBefore' on 'Node'"
+- Network : "POST /api/upload/pdf → 500 Internal Server Error"
+- Résultat : écran "Oups ! Il y a eu un problème"
+
+CAUSES PROBABLES :
+1. Backend : route /api/upload/pdf lève une exception non catchée
+2. Frontend : ErrorBoundary déclenché par manipulation DOM (Google button ou upload)
+
+=== PARTIE 1 : BACKEND (PRIORITÉ) ===
+
+1. Vérifier que le dossier uploads/ existe à la racine du projet
+   - Si absent, le créer avec mkdir -p uploads
+
+2. Ouvrir la route POST /api/upload/pdf (probablement server/routes/upload.ts)
+
+3. Sécuriser avec try/catch complet :
+```typescript
+router.post('/api/upload/pdf', authenticateToken, upload.single('file'), async (req, res) => {
+  try {
+    console.log('📤 Upload started:', req.file?.originalname);
+    
+    if (!req.file) {
+      console.error('❌ No file received');
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    console.log('✅ File received, size:', req.file.size);
+    
+    // Votre logique d'analyse ici
+    const result = await analyzeInvoice(req.file);
+    
+    console.log('✅ Analysis complete');
+    res.json(result);
+    
+  } catch (error: any) {
+    console.error('❌ Upload error:', error.message);
+    console.error('Stack:', error.stack);
+    
+    // Retourner une erreur propre
+    res.status(500).json({ 
+      error: 'Upload failed', 
+      message: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+```
+
+4. Vérifier la config Multer (limites, destination) :
+```typescript
+const upload = multer({ 
+  dest: 'uploads/',
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/pdf' || file.mimetype.includes('spreadsheet')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PDF and Excel files allowed'));
+    }
+  }
+});
+```
+
+=== PARTIE 2 : FRONTEND ===
+
+1. Dans client/src/pages/dashboard.tsx, chercher la fonction d'upload
+
+2. S'assurer que les erreurs API sont catchées proprement :
+```typescript
+const handleUpload = async (file: File) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await fetch('/api/upload/pdf', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Upload failed');
+    }
+    
+    const data = await response.json();
+    // Traiter le succès
+    
+  } catch (error: any) {
+    console.error('Upload error:', error);
+    // Afficher un toast d'erreur
+    toast({
+      title: 'Upload failed',
+      description: error.message,
+      variant: 'destructive'
+    });
+    // NE PAS relancer l'erreur (évite ErrorBoundary)
+  }
+};
+```
+
+3. Supprimer toute manipulation DOM directe (getElementById, insertBefore, etc.)
+
+=== PARTIE 3 : TEST ===
+
+Après corrections :
+1. Relancer le serveur
+2. Tester upload sur /dashboard
+3. Vérifier les logs console backend
+4. Confirmer que quota s'incrémente dans Airtable
+
+RÉSULTAT ATTENDU :
+✅ Upload retourne 200 avec données invoice
+✅ Badge quota passe de 0/1 à 1/1
+✅ Plus d'erreur insertBefore
+✅ Plus d'écran "Oups !"
+
+Commence par créer le dossier uploads/ et sécuriser la route backend.
+Affiche-moi les logs après le premier test.
