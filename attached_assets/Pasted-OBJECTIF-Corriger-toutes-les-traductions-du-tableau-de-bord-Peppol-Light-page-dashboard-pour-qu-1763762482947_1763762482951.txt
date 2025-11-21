@@ -1,0 +1,76 @@
+OBJECTIF : Corriger toutes les traductions du tableau de bord Peppol Light (page /dashboard) pour que les textes soient gérés par i18n en FR / NL / EN.
+
+STACK FRONTEND :
+- React + TypeScript
+- i18next (fichiers de traduction dans client/src/locales/{fr,nl,en}/…)
+- Page principale : client/src/pages/dashboard.tsx
+
+ACTIONS À FAIRE :
+
+1. OUVRIR client/src/pages/dashboard.tsx
+   - Rechercher tous les textes FR écrits en dur, par ex. :
+     - "Vérification des factures"
+     - "Téléchargez une facture au format PDF ou Excel…"
+     - "Prototype en développement"
+     - "Vos factures"
+     - "Score de conformité"
+     - "Erreurs"
+     - etc.
+
+2. REMPLACER ces textes par des clés i18n avec useTranslation :
+   - S’assurer que useTranslation('dashboard') (ou similaire) est déjà utilisé.
+   - Exemple :
+     - "Vérification des factures" → {t('dashboard.title')}
+     - "Télécharger la facture" → {t('dashboard.uploadSection.title')}
+     - "Formats acceptés : PDF et Excel (.xlsx, .xls)" → {t('dashboard.uploadSection.formats')}
+     - "Prototype en développement" → {t('dashboard.prototype.title')}
+     - "Vos factures" → {t('dashboard.invoices.title')}
+   - Ne PAS modifier la logique de React Query, des quotas, ni l’upload.
+
+3. METTRE À JOUR les fichiers de traduction :
+   - client/src/locales/fr/dashboard.json
+   - client/src/locales/en/dashboard.json
+   - client/src/locales/nl/dashboard.json
+
+   Ajouter (ou compléter) les clés suivantes au minimum :
+   {
+     "title": "Vérification des factures",
+     "uploadSection": {
+       "title": "Télécharger la facture",
+       "subtitle": "Téléchargez une facture au format PDF ou Excel pour vérifier sa conformité Peppol",
+       "button": "Choisissez le fichier",
+       "formats": "Formats acceptés : PDF et Excel (.xlsx, .xls)"
+     },
+     "prototype": {
+       "title": "Prototype en développement",
+       "description": "Cette version est un prototype en cours d'amélioration. L'analyse automatique utilise des règles simplifiées et peut contenir des erreurs. Les résultats ne constituent pas une garantie de conformité officielle Peppol. Veuillez toujours vérifier vos factures avant envoi."
+     },
+     "invoices": {
+       "title": "Vos factures",
+       "columns": {
+         "filename": "Nom de fichier",
+         "status": "Statut",
+         "score": "Score de conformité",
+         "errors": "Erreurs",
+         "actions": "Actions"
+       }
+     }
+   }
+
+   Faire les équivalents EN et NL en gardant les mêmes clés.
+
+4. VÉRIFIER :
+   - FR, NL et EN changent correctement le texte sur /dashboard.
+   - Aucun texte FR ne reste en dur dans dashboard.tsx.
+   - Aucun import ou logique métier n’est modifié.
+
+5. À LA FIN :
+   - Lister les fichiers modifiés.
+   - Indiquer les nouvelles clés i18n ajoutées.
+
+NE PAS TOUCHER :
+- Authentification
+- Quotas
+- Upload de fichiers
+- invoiceController
+- Routes backend

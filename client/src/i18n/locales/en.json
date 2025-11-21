@@ -42,7 +42,9 @@
       },
       "deleteConfirm": "Are you sure you want to delete this invoice?",
       "deleteSuccess": "Invoice deleted",
-      "deleteError": "Delete error"
+      "deleteError": "Delete error",
+      "cancelButton": "Cancel",
+      "deleteButton": "Delete"
     }
   },
   "status": {

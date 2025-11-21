@@ -36,13 +36,15 @@
       "columns": {
         "fileName": "Bestandsnaam",
         "status": "Status",
-        "conformiteitsscore": "Conformiteitsscore",
+        "conformityScore": "Conformiteitsscore",
         "errors": "Fouten",
         "actions": "Acties"
       },
       "deleteConfirm": "Weet u zeker dat u deze factuur wilt verwijderen?",
       "deleteSuccess": "Factuur verwijderd",
-      "deleteError": "Fout bij verwijderen"
+      "deleteError": "Fout bij verwijderen",
+      "cancelButton": "Annuleren",
+      "deleteButton": "Verwijderen"
     }
   },
   "status": {

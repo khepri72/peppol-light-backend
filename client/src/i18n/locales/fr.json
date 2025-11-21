@@ -42,7 +42,9 @@
       },
       "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette facture ?",
       "deleteSuccess": "Facture supprimée",
-      "deleteError": "Erreur lors de la suppression"
+      "deleteError": "Erreur lors de la suppression",
+      "cancelButton": "Annuler",
+      "deleteButton": "Supprimer"
     }
   },
   "status": {

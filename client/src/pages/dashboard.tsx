@@ -389,13 +389,13 @@ export default function Dashboard() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-delete">{t('dashboard.invoiceList.columns.actions')}</AlertDialogCancel>
+            <AlertDialogCancel data-testid="button-cancel-delete">{t('dashboard.invoiceList.cancelButton')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteInvoiceId && deleteMutation.mutate(deleteInvoiceId)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               data-testid="button-confirm-delete"
             >
-              {t('dashboard.invoiceList.deleteSuccess')}
+              {t('dashboard.invoiceList.deleteButton')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
