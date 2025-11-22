@@ -8,6 +8,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Register from "@/pages/register";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
+import PricingPage from "@/pages/pricing";
 import NotFound from "@/pages/not-found";
 import { authStorage } from "@/lib/auth";
 
@@ -21,6 +22,7 @@ function Router() {
       </Route>
       <Route path="/register" component={Register} />
       <Route path="/login" component={Login} />
+      <Route path="/pricing" component={PricingPage} />
       <Route path="/dashboard">
         <ProtectedRoute>
           <Dashboard />

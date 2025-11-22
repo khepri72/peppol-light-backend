@@ -6,7 +6,9 @@
     "success": "Succès"
   },
   "nav": {
-    "logout": "Se déconnecter"
+    "logout": "Se déconnecter",
+    "pricing": "Tarifs",
+    "dashboard": "Tableau de bord"
   },
   "dashboard": {
     "title": "Vérification des factures",
@@ -130,7 +132,7 @@
     "yearly": "an",
     "yearlyDiscount": "ou {{price}}/an (-20%)",
     "earlyBird": {
-      "badge": "🎁 -30% à vie",
+      "badge": "-30% à vie",
       "text": "50 premiers : {{price}}/mois"
     },
     "plans": {

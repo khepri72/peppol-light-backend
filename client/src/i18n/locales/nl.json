@@ -6,7 +6,9 @@
     "success": "Succes"
   },
   "nav": {
-    "logout": "Afmelden"
+    "logout": "Afmelden",
+    "pricing": "Prijzen",
+    "dashboard": "Dashboard"
   },
   "dashboard": {
     "title": "Factuurverificatie",
@@ -130,7 +132,7 @@
     "yearly": "jaar",
     "yearlyDiscount": "of {{price}}/jaar (-20%)",
     "earlyBird": {
-      "badge": "🎁 -30% levenslang",
+      "badge": "-30% levenslang",
       "text": "Eerste 50: {{price}}/maand"
     },
     "plans": {

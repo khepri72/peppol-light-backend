@@ -6,7 +6,9 @@
     "success": "Success"
   },
   "nav": {
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "pricing": "Pricing",
+    "dashboard": "Dashboard"
   },
   "dashboard": {
     "title": "Invoice Verification",
@@ -130,7 +132,7 @@
     "yearly": "year",
     "yearlyDiscount": "or {{price}}/year (-20%)",
     "earlyBird": {
-      "badge": "🎁 -30% lifetime",
+      "badge": "-30% lifetime",
       "text": "First 50: {{price}}/month"
     },
     "plans": {

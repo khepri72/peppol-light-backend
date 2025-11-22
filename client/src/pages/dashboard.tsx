@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { useLocation } from 'wouter';
+import { useLocation, Link } from 'wouter';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -89,6 +89,16 @@ export default function Dashboard() {
               limit: quotas.limit 
             }),
         variant: 'destructive',
+        action: (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setLocation('/pricing')}
+            data-testid="button-quota-upgrade"
+          >
+            {t('quotas.upgradePlan')}
+          </Button>
+        ),
       });
       return;
     }
@@ -224,6 +234,13 @@ export default function Dashboard() {
                 }
               </Badge>
             )}
+            <Button
+              variant="ghost"
+              asChild
+              data-testid="button-pricing"
+            >
+              <Link href="/pricing">{t('nav.pricing')}</Link>
+            </Button>
             <LanguageSwitcher />
             <Button
               variant="outline"
