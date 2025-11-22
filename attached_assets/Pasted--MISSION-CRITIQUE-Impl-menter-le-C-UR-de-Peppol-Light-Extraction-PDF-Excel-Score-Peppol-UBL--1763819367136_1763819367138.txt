@@ -1,0 +1,727 @@
+# MISSION CRITIQUE : Implémenter le CŒUR de Peppol Light (Extraction PDF/Excel + Score Peppol + UBL/XML) SANS CASSER L’EXISTANT
+
+## 🎯 OBJECTIF GLOBAL
+
+Construire un vrai cœur de SaaS solide pour Peppol Light :
+
+Upload → Extraction réelle (PDF/Excel) → Score conformité Peppol → Génération UBL/XML → Téléchargement depuis le dashboard.
+
+**IMPORTANT :**
+- Le projet tourne déjà.
+- L’auth, l’upload, le score, l’internationalisation, les quotas, la page /pricing, etc. **fonctionnent**.
+- Tu dois **renforcer** le cœur (extraction + UBL) sans casser ce qui existe.
+
+---
+
+## ÉTAPE 0 – DIAGNOSTIC (NE RIEN MODIFIER AU DÉBUT)
+
+Commence par un diagnostic complet **sans changer de code** :
+
+1. Liste-moi (pour toi-même) la structure exacte du backend :
+   - Tous les fichiers dans `server/` (ou `backend/` si c’est le cas)
+   - Où se trouve la route d’upload de facture ?  
+     → Cherche les routes qui reçoivent un fichier (multer, `upload.single('file')`, etc.).
+   - Quel contrôleur gère l’upload ? (souvent `invoiceController.ts` ou similaire)
+   - Où sont les appels à Airtable pour les factures ? (table `Invoices`)
+
+2. Vérifie aussi :
+   - Si un **service de score Peppol** existe déjà (ex : `peppolValidator.ts` ou similaire)
+   - Si un **service d’extraction** existe déjà (ex : `invoiceParser.ts` ou similaire)
+   - Si un champ Airtable stocke déjà des données JSON de facture (ex: `InvoiceData`, `RawData`, etc.)
+
+3. Ne modifie rien à cette étape.  
+   ➜ Utilise ce diagnostic pour adapter ensuite le code.
+
+---
+
+## CONTRAINTES GÉNÉRALES (À RESPECTER ABSOLUMENT)
+
+- ⚠️ NE PAS :
+  - Réécrire l’authentification
+  - Réécrire entièrement la route d’upload (juste l’enrichir si nécessaire)
+  - Modifier la logique de quotas
+  - Casser les réponses JSON attendues par le frontend
+  - Toucher à l’internationalisation déjà en place (erreurs, dashboard, pricing, etc.)
+
+- ✅ TU PEUX :
+  - Ajouter des **services** : `invoiceParser.ts`, `peppolValidator.ts`, `ublGenerator.ts`
+  - Ajouter des **fonctions utilitaires** dans le contrôleur d’upload
+  - Ajouter une **nouvelle route** pour télécharger le fichier UBL/XML
+  - Ajouter des **champs Airtable** (en gérant les erreurs si le champ n’existe pas)
+
+Le projet est en **TypeScript**, donc tout nouveau code serveurs doit être en `.ts` avec types simples et propres.
+
+---
+
+## ÉTAPE 1 – INSTALLER / VÉRIFIER LES DÉPENDANCES
+
+Assure-toi que ces packages sont installés côté backend :
+
+```bash
+npm install pdf-parse xlsx xmlbuilder2
+Si tu utilises yarn ou pnpm, adapte la commande.
+
+ÉTAPE 2 – SERVICE D’EXTRACTION : server/services/invoiceParser.ts
+👉 Si un fichier d’extraction existe déjà, réutilise-le et complète-le.
+Sinon, crée server/services/invoiceParser.ts avec une interface claire.
+
+But : fournir une fonction :
+
+ts
+Copier le code
+export interface InvoiceData {
+  invoiceNumber: string;
+  invoiceDate: string;
+  dueDate?: string;
+
+  supplierName: string;
+  supplierVAT?: string;
+  supplierAddress?: string;
+  supplierCity?: string;
+  supplierPostalCode?: string;
+  supplierCountry?: string;
+
+  customerName: string;
+  customerVAT?: string;
+  customerAddress?: string;
+  customerCity?: string;
+  customerPostalCode?: string;
+  customerCountry?: string;
+
+  netAmount: number;
+  vatAmount: number;
+  totalAmount: number;
+  currency: string;
+  vatRate: number;
+
+  lineItems: Array<{
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    vatRate: number;
+    amount: number;
+  }>;
+
+  paymentMeans?: string;
+  iban?: string;
+}
+
+export async function extractInvoiceData(
+  filePath: string,
+  mimeType: string
+): Promise<InvoiceData>;
+Implémentation attendue (MVP, mais réelle) :
+Si mimeType = application/pdf → utiliser pdf-parse
+
+Si Excel → utiliser xlsx
+
+Exemple à adapter :
+
+ts
+Copier le code
+import pdfParse from 'pdf-parse';
+import xlsx from 'xlsx';
+import fs from 'fs';
+
+import type { InvoiceData } from './invoiceParser'; // si tu sépares types & impl
+
+export async function extractInvoiceData(filePath: string, mimeType: string): Promise<InvoiceData> {
+  if (mimeType === 'application/pdf') {
+    return extractFromPDF(filePath);
+  } else if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) {
+    return extractFromExcel(filePath);
+  }
+  throw new Error(`Unsupported file type: ${mimeType}`);
+}
+
+async function extractFromPDF(filePath: string): Promise<InvoiceData> {
+  const dataBuffer = fs.readFileSync(filePath);
+  const pdfData = await pdfParse(dataBuffer);
+  const text = pdfData.text;
+
+  return {
+    invoiceNumber: extractInvoiceNumber(text),
+    invoiceDate: extractDate(text, 'invoice'),
+    dueDate: extractDate(text, 'due'),
+
+    supplierName: extractCompanyName(text, 'supplier'),
+    supplierVAT: extractVAT(text, 'supplier'),
+    supplierAddress: undefined,
+    supplierCity: undefined,
+    supplierPostalCode: undefined,
+    supplierCountry: 'BE',
+
+    customerName: extractCompanyName(text, 'customer'),
+    customerVAT: extractVAT(text, 'customer'),
+    customerAddress: undefined,
+    customerCity: undefined,
+    customerPostalCode: undefined,
+    customerCountry: 'BE',
+
+    netAmount: extractAmount(text, 'net'),
+    vatAmount: extractAmount(text, 'vat'),
+    totalAmount: extractAmount(text, 'total'),
+    currency: 'EUR',
+    vatRate: 21,
+
+    lineItems: [
+      {
+        description: 'Service / Produit',
+        quantity: 1,
+        unitPrice: extractAmount(text, 'net'),
+        vatRate: 21,
+        amount: extractAmount(text, 'net'),
+      },
+    ],
+
+    paymentMeans: extractPaymentMeans(text),
+    iban: extractIBAN(text),
+  };
+}
+
+// Fonctions utilitaires simples (regex belges basiques)
+function extractVAT(text: string, type: 'supplier' | 'customer'): string | undefined {
+  const vatPattern = /BE\s*0?\d{9,10}/gi;
+  const matches = text.match(vatPattern);
+  if (!matches) return undefined;
+  return matches[type === 'supplier' ? 0 : 1] || matches[0];
+}
+
+function extractInvoiceNumber(text: string): string {
+  const patterns = [
+    /(?:facture|invoice|factuur)\s*(?:n°|nr|no|#)?\s*:?\s*([A-Z0-9\-\/]+)/i,
+    /(?:n°|nr|no)\s*([A-Z0-9\-\/]+)/i,
+  ];
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) return match[1];
+  }
+  return `INV-${Date.now()}`;
+}
+
+function extractDate(text: string, type: 'invoice' | 'due'): string {
+  const keyword =
+    type === 'invoice'
+      ? '(?:date|datum|facture|invoice)'
+      : '(?:échéance|due|verval)';
+
+  const datePattern = new RegExp(
+    `${keyword}\\s*:?\\s*(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})`,
+    'i'
+  );
+  const match = text.match(datePattern);
+  if (!match || !match[1]) {
+    return new Date().toISOString().slice(0, 10);
+  }
+  return normalizeDate(match[1]);
+}
+
+function normalizeDate(dateStr: string): string {
+  const parts = dateStr.split(/[\/\-\.]/);
+  if (parts.length === 3) {
+    const [day, month, year] = parts;
+    const fullYear = year.length === 2 ? `20${year}` : year;
+    return `${fullYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+  return new Date().toISOString().slice(0, 10);
+}
+
+function extractAmount(text: string, type: 'net' | 'vat' | 'total'): number {
+  const keywords = {
+    net: '(?:total\\s+ht|net\\s+amount|netto)',
+    vat: '(?:tva|vat|btw)',
+    total: '(?:total|ttc|incl\\.?\\s+vat)',
+  } as const;
+
+  const pattern = new RegExp(
+    `${keywords[type]}\\s*:?\\s*€?\\s*([\\d\\s]+[,\\.]\\d{2})`,
+    'i'
+  );
+  const match = text.match(pattern);
+  if (!match || !match[1]) {
+    if (type === 'net') return 100;
+    if (type === 'vat') return 21;
+    return 121;
+  }
+  return parseFloat(match[1].replace(/\s/g, '').replace(',', '.'));
+}
+
+function extractCompanyName(text: string, type: 'supplier' | 'customer'): string {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  if (!lines.length) return type === 'supplier' ? 'Supplier' : 'Customer';
+  return type === 'supplier' ? lines[0] : lines[Math.floor(lines.length / 2)];
+}
+
+function extractPaymentMeans(text: string): string | undefined {
+  if (/virement|transfer|overschrijving/i.test(text)) return 'BANK_TRANSFER';
+  return undefined;
+}
+
+function extractIBAN(text: string): string | undefined {
+  const ibanPattern = /BE\d{2}\s?\d{4}\s?\d{4}\s?\d{4}/gi;
+  const match = text.match(ibanPattern);
+  return match ? match[0].replace(/\s/g, '') : undefined;
+}
+
+async function extractFromExcel(filePath: string): Promise<InvoiceData> {
+  const workbook = xlsx.readFile(filePath);
+  const sheetName = workbook.SheetNames[0];
+  const sheet = workbook.Sheets[sheetName];
+  const data = xlsx.utils.sheet_to_json<any>(sheet);
+  const row = data[0] || {};
+
+  return {
+    invoiceNumber: row['Invoice Number'] || row['Facture'] || `INV-${Date.now()}`,
+    invoiceDate: row['Date'] || new Date().toISOString().slice(0, 10),
+
+    supplierName: row['Supplier'] || 'Supplier',
+    supplierVAT: row['Supplier VAT'],
+    supplierAddress: undefined,
+    supplierCity: undefined,
+    supplierPostalCode: undefined,
+    supplierCountry: 'BE',
+
+    customerName: row['Customer'] || 'Customer',
+    customerVAT: row['Customer VAT'],
+    customerAddress: undefined,
+    customerCity: undefined,
+    customerPostalCode: undefined,
+    customerCountry: 'BE',
+
+    netAmount: Number(row['Net Amount'] || 100),
+    vatAmount: Number(row['VAT Amount'] || 21),
+    totalAmount: Number(row['Total Amount'] || 121),
+    currency: 'EUR',
+    vatRate: 21,
+
+    lineItems: [
+      {
+        description: 'Service',
+        quantity: 1,
+        unitPrice: Number(row['Net Amount'] || 100),
+        vatRate: 21,
+        amount: Number(row['Net Amount'] || 100),
+      },
+    ],
+
+    paymentMeans: 'BANK_TRANSFER',
+    iban: row['IBAN'],
+  };
+}
+ÉTAPE 3 – SERVICE DE SCORE : server/services/peppolValidator.ts
+👉 Si un service de score existe déjà, le renforcer.
+Sinon, créer peppolValidator.ts avec :
+
+ts
+Copier le code
+import type { InvoiceData } from './invoiceParser';
+
+export interface ValidationResult {
+  score: number;
+  maxScore: number;
+  status: 'compliant' | 'warning' | 'non-compliant';
+  errors: string[];
+  warnings: string[];
+}
+
+export function validatePeppolCompliance(data: InvoiceData): ValidationResult {
+  let score = 0;
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  // 1. TVA émetteur (12.5)
+  if (data.supplierVAT && /^BE\d{10}$/.test(data.supplierVAT.replace(/\s/g, ''))) {
+    score += 12.5;
+  } else {
+    errors.push('Supplier VAT number missing or invalid');
+  }
+
+  // 2. Date facture (12.5)
+  if (data.invoiceDate && /^\d{4}-\d{2}-\d{2}$/.test(data.invoiceDate)) {
+    score += 12.5;
+  } else {
+    errors.push('Invoice date missing or invalid');
+  }
+
+  // 3. Numéro facture (12.5)
+  if (data.invoiceNumber && data.invoiceNumber.length > 0) {
+    score += 12.5;
+  } else {
+    errors.push('Invoice number missing');
+  }
+
+  // 4. Montants cohérents (12.5)
+  const expectedTotal = data.netAmount + data.vatAmount;
+  if (Math.abs(expectedTotal - data.totalAmount) < 0.01) {
+    score += 12.5;
+  } else {
+    errors.push('Amount inconsistency (Net + VAT ≠ Total)');
+  }
+
+  // 5. Adresse émetteur (12.5)
+  if (data.supplierAddress && data.supplierCity && data.supplierPostalCode) {
+    score += 12.5;
+  } else {
+    warnings.push('Supplier address incomplete');
+    score += 6;
+  }
+
+  // 6. Adresse client (12.5)
+  if (data.customerAddress && data.customerCity && data.customerPostalCode) {
+    score += 12.5;
+  } else {
+    warnings.push('Customer address incomplete');
+    score += 6;
+  }
+
+  // 7. Lignes (12.5)
+  if (data.lineItems && data.lineItems.length > 0) {
+    score += 12.5;
+  } else {
+    warnings.push('No line items detected');
+  }
+
+  // 8. Paiement (12.5)
+  if (data.iban || data.paymentMeans) {
+    score += 12.5;
+  } else {
+    warnings.push('Payment information missing');
+  }
+
+  const finalScore = Math.round(score);
+
+  return {
+    score: finalScore,
+    maxScore: 100,
+    status:
+      finalScore >= 80 ? 'compliant' : finalScore >= 60 ? 'warning' : 'non-compliant',
+    errors,
+    warnings,
+  };
+}
+⚠️ Important : si un score existe déjà dans le projet, veille à :
+
+soit conserver le même nom de fonction & signature,
+
+soit adapter le contrôleur d’upload pour utiliser cette nouvelle fonction, sans changer le format de réponse attendu par le frontend.
+
+ÉTAPE 4 – SERVICE UBL/XML : server/services/ublGenerator.ts
+Créer (ou compléter) ublGenerator.ts avec :
+
+ts
+Copier le code
+import { create } from 'xmlbuilder2';
+import type { InvoiceData } from './invoiceParser';
+
+export function generatePeppolUblXml(data: InvoiceData): string {
+  const doc = create({ version: '1.0', encoding: 'UTF-8' })
+    .ele('Invoice', {
+      xmlns: 'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2',
+      'xmlns:cac':
+        'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2',
+      'xmlns:cbc':
+        'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2',
+    });
+
+  doc
+    .ele('cbc:CustomizationID')
+    .txt(
+      'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0'
+    );
+  doc
+    .ele('cbc:ProfileID')
+    .txt('urn:fdc:peppol.eu:2017:poacc:billing:01:1.0');
+
+  doc.ele('cbc:ID').txt(data.invoiceNumber || 'INV-UNKNOWN');
+  doc
+    .ele('cbc:IssueDate')
+    .txt(data.invoiceDate || new Date().toISOString().slice(0, 10));
+  doc.ele('cbc:InvoiceTypeCode').txt('380');
+  doc.ele('cbc:DocumentCurrencyCode').txt(data.currency || 'EUR');
+
+  const supplier = doc.ele('cac:AccountingSupplierParty').ele('cac:Party');
+  supplier.ele('cac:PartyName').ele('cbc:Name').txt(data.supplierName || 'Supplier');
+
+  if (data.supplierVAT) {
+    const taxScheme = supplier.ele('cac:PartyTaxScheme');
+    taxScheme.ele('cbc:CompanyID').txt(data.supplierVAT);
+    taxScheme.ele('cac:TaxScheme').ele('cbc:ID').txt('VAT');
+  }
+
+  const customer = doc.ele('cac:AccountingCustomerParty').ele('cac:Party');
+  customer.ele('cac:PartyName').ele('cbc:Name').txt(data.customerName || 'Customer');
+
+  const taxTotal = doc.ele('cac:TaxTotal');
+  taxTotal
+    .ele('cbc:TaxAmount', { currencyID: data.currency || 'EUR' })
+    .txt((data.vatAmount || 0).toFixed(2));
+
+  const monetary = doc.ele('cac:LegalMonetaryTotal');
+  monetary
+    .ele('cbc:LineExtensionAmount', { currencyID: data.currency || 'EUR' })
+    .txt((data.netAmount || 0).toFixed(2));
+  monetary
+    .ele('cbc:TaxExclusiveAmount', { currencyID: data.currency || 'EUR' })
+    .txt((data.netAmount || 0).toFixed(2));
+  monetary
+    .ele('cbc:TaxInclusiveAmount', { currencyID: data.currency || 'EUR' })
+    .txt((data.totalAmount || 0).toFixed(2));
+  monetary
+    .ele('cbc:PayableAmount', { currencyID: data.currency || 'EUR' })
+    .txt((data.totalAmount || 0).toFixed(2));
+
+  const line = doc.ele('cac:InvoiceLine');
+  line.ele('cbc:ID').txt('1');
+  line
+    .ele('cbc:InvoicedQuantity', { unitCode: 'C62' })
+    .txt('1');
+  line
+    .ele('cbc:LineExtensionAmount', { currencyID: data.currency || 'EUR' })
+    .txt((data.netAmount || 0).toFixed(2));
+
+  const item = line.ele('cac:Item');
+  item.ele('cbc:Name').txt('Service / Produit');
+
+  const price = line.ele('cac:Price');
+  price
+    .ele('cbc:PriceAmount', { currencyID: data.currency || 'EUR' })
+    .txt((data.netAmount || 0).toFixed(2));
+
+  return doc.end({ prettyPrint: true });
+}
+C’est un UBL simplifié MVP, suffisant pour montrer la promesse : “Ta facture est convertie en UBL Peppol”.
+
+ÉTAPE 5 – INTÉGRATION DANS LA ROUTE D’UPLOAD EXISTANTE
+Dans le contrôleur qui gère l’upload (ex : server/controllers/invoiceController.ts) :
+
+Ne pas réécrire toute la route.
+
+Ajouter, dans le try après l’enregistrement du fichier :
+
+const invoiceData = await extractInvoiceData(filePath, mimeType);
+
+const validation = validatePeppolCompliance(invoiceData);
+
+Générer le ublXml avec generatePeppolUblXml(invoiceData);
+
+Sauvegarder dans Airtable :
+
+Score
+
+Status (compliant, warning, non-compliant)
+
+Optionnel : InvoiceData (JSON string)
+
+Pas besoin de sauvegarder le fichier XML sur disque si tu fais une route qui le régénère à la volée.
+
+⚠️ Très important : garder le même format de réponse JSON que le frontend attend déjà, mais tu peux l’enrichir avec :
+
+invoiceData
+
+validation.errors
+
+validation.warnings
+
+ÉTAPE 6 – NOUVELLE ROUTE BACKEND : DOWNLOAD UBL/XML
+Dans invoiceController.ts, ajouter une fonction :
+
+ts
+Copier le code
+import { generatePeppolUblXml } from '../services/ublGenerator';
+import { extractInvoiceData, InvoiceData } from '../services/invoiceParser';
+// + client Airtable déjà importé quelque part
+
+export const downloadUbl = async (req: Request, res: Response) => {
+  try {
+    const invoiceId = req.params.id;
+    if (!invoiceId) {
+      return res.status(400).json({ error: 'Missing invoice id' });
+    }
+
+    // Récupérer la facture dans Airtable
+    // Adapter selon ton client existant (base('Invoices').find, etc.)
+    const record = await base('Invoices').find(invoiceId);
+    if (!record) {
+      return res.status(404).json({ error: 'Invoice not found' });
+    }
+
+    const fields: any = record.fields;
+
+    // Si tu stockes déjà InvoiceData en JSON, essaye de le parser d'abord :
+    let invoiceData: InvoiceData | null = null;
+
+    if (fields['InvoiceData']) {
+      try {
+        invoiceData = JSON.parse(fields['InvoiceData']);
+      } catch {
+        invoiceData = null;
+      }
+    }
+
+    // Si pas de InvoiceData stocké, reconstruis un minimum à partir des champs
+    if (!invoiceData) {
+      invoiceData = {
+        invoiceNumber: fields['InvoiceNumber'] || fields['Invoice Number'] || 'INV-UNKNOWN',
+        invoiceDate: fields['InvoiceDate'] || fields['Invoice Date'] || new Date().toISOString().slice(0, 10),
+        dueDate: undefined,
+        supplierName: fields['SupplierName'] || fields['Supplier Name'] || 'Supplier',
+        supplierVAT: fields['SupplierVAT'] || fields['Supplier VAT'],
+        supplierAddress: undefined,
+        supplierCity: undefined,
+        supplierPostalCode: undefined,
+        supplierCountry: 'BE',
+        customerName: fields['CustomerName'] || fields['Customer Name'] || 'Customer',
+        customerVAT: fields['CustomerVAT'] || fields['Customer VAT'],
+        customerAddress: undefined,
+        customerCity: undefined,
+        customerPostalCode: undefined,
+        customerCountry: 'BE',
+        netAmount: Number(fields['NetAmount'] || fields['Net Amount'] || 0),
+        vatAmount: Number(fields['VatAmount'] || fields['VAT Amount'] || 0),
+        totalAmount: Number(fields['TotalAmount'] || fields['Total Amount'] || 0),
+        currency: fields['Currency'] || 'EUR',
+        vatRate: 21,
+        lineItems: [
+          {
+            description: 'Service / Produit',
+            quantity: 1,
+            unitPrice: Number(fields['NetAmount'] || fields['Net Amount'] || 0),
+            vatRate: 21,
+            amount: Number(fields['NetAmount'] || fields['Net Amount'] || 0),
+          },
+        ],
+        paymentMeans: undefined,
+        iban: undefined,
+      };
+    }
+
+    const xml = generatePeppolUblXml(invoiceData);
+
+    const fileName = `peppol-invoice-${invoiceId}.xml`;
+    res.setHeader('Content-Type', 'application/xml');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${fileName}"`
+    );
+    return res.status(200).send(xml);
+  } catch (error: any) {
+    console.error('downloadUbl error:', error);
+    return res.status(500).json({
+      error: 'Failed to generate UBL',
+      details: error.message,
+    });
+  }
+};
+Dans le fichier de routes des factures (ex : server/routes/invoiceRoutes.ts), ajouter :
+
+ts
+Copier le code
+import { downloadUbl } from '../controllers/invoiceController';
+import { authenticateToken } from '../middleware/authMiddleware';
+
+router.get('/:id/ubl', authenticateToken, downloadUbl);
+ÉTAPE 7 – FRONTEND : FONCTION API + BOUTON DANS LE DASHBOARD
+Dans client/src/lib/api.ts (ou équivalent), ajouter :
+
+ts
+Copier le code
+export async function downloadInvoiceUbl(id: string): Promise<void> {
+  const token = localStorage.getItem('token');
+  const response = await fetch(`/api/invoices/${id}/ubl`, {
+    headers: {
+      Authorization: token ? `Bearer ${token}` : '',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to download UBL');
+  }
+
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `peppol-invoice-${id}.xml`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+Dans client/src/pages/dashboard.tsx :
+
+Importer downloadInvoiceUbl
+
+Dans la colonne Actions, ajouter un bouton :
+
+tsx
+Copier le code
+import { downloadInvoiceUbl } from '../lib/api';
+import { useTranslation } from 'react-i18next';
+
+// ...
+
+const { t } = useTranslation();
+
+// ...
+
+<Button
+  variant="outline"
+  size="sm"
+  onClick={() => downloadInvoiceUbl(invoice.id /* ou invoice.recordId si c'est ce champ */)}
+>
+  {t('dashboard.invoiceList.downloadUbl')}
+</Button>
+Et ajouter dans les fichiers i18n :
+
+FR (fr.json) :
+
+json
+Copier le code
+"dashboard": {
+  "invoiceList": {
+    "downloadUbl": "Télécharger UBL/XML"
+  }
+}
+NL (nl.json) :
+
+json
+Copier le code
+"dashboard": {
+  "invoiceList": {
+    "downloadUbl": "UBL/XML downloaden"
+  }
+}
+EN (en.json) :
+
+json
+Copier le code
+"dashboard": {
+  "invoiceList": {
+    "downloadUbl": "Download UBL/XML"
+  }
+}
+TESTS ATTENDUS
+Après ces modifications :
+
+Upload d’une facture PDF/Excel sur le dashboard (comme aujourd’hui)
+
+Vérifier :
+
+Score toujours calculé
+
+Erreurs affichées comme avant
+
+Cliquer sur “Télécharger UBL/XML” :
+
+Un fichier .xml se télécharge
+
+Le contenu contient <Invoice> avec namespaces UBL
+
+Les champs de base (ID, IssueDate, montants, fournisseur/client) sont présents
+
+RÈGLE FINALE
+NE PAS réécrire ce qui existe.
+
+ADAPTER les exemples ci-dessus à la structure réelle de ton projet.
+
+Si un élément existe déjà (service, route…), réutilise-le plutôt que de créer un doublon.
