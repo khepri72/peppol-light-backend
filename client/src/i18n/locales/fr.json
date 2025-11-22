@@ -122,5 +122,128 @@
     "upgradePlan": "Augmenter le forfait",
     "remainingUploads_one": "{{count}} envoi restant",
     "remainingUploads_other": "{{count}} envois restants"
+  },
+  "pricing": {
+    "title": "Choisissez votre plan Peppol Light",
+    "subtitle": "Tarification simple, transparente et sans surprise",
+    "monthly": "mois",
+    "yearly": "an",
+    "yearlyDiscount": "ou {{price}}/an (-20%)",
+    "earlyBird": {
+      "badge": "🎁 -30% à vie",
+      "text": "50 premiers : {{price}}/mois"
+    },
+    "plans": {
+      "free": {
+        "name": "Gratuit",
+        "badge": "Découverte",
+        "price": "0€",
+        "features": {
+          "invoices": "1 facture/mois",
+          "score": "Score Peppol 0-100%",
+          "pdf": "Rapport PDF téléchargeable",
+          "noUbl": "Pas de conversion UBL"
+        },
+        "cta": "Commencer gratuitement"
+      },
+      "starter": {
+        "name": "Starter",
+        "badge": "Pour indépendants",
+        "price": "14,90€",
+        "priceYearly": "143€",
+        "earlyBirdPrice": "10,43€",
+        "features": {
+          "invoices": "30 factures/mois",
+          "ubl": "Conversion UBL/XML automatique",
+          "ai": "Extraction IA standard",
+          "history": "Historique 3 mois",
+          "support": "Support email 48h"
+        },
+        "cta": "Demander activation Early Bird"
+      },
+      "pro": {
+        "name": "Pro",
+        "badge": "🔥 MOST POPULAR",
+        "price": "29,90€",
+        "priceYearly": "287€",
+        "earlyBirdPrice": "20,93€",
+        "features": {
+          "invoices": "Factures ILLIMITÉES 🚀",
+          "aiAdvanced": "Extraction IA avancée",
+          "dashboard": "Dashboard analytique complet",
+          "autoSend": "Envoi auto comptable + Webhooks",
+          "history": "Historique 12 mois",
+          "support": "Support prioritaire 24h",
+          "users": "Multi-utilisateurs (1-3)"
+        },
+        "cta": "Demander activation Early Bird"
+      },
+      "business": {
+        "name": "Business",
+        "badge": "Cabinets comptables",
+        "price": "79,90€",
+        "priceYearly": "767€",
+        "earlyBirdPrice": "55,93€",
+        "clientsIncluded": "10 dossiers inclus",
+        "features": {
+          "clients": "Multi-clients (10 dossiers)",
+          "addClients": "Pack +10 dossiers : +25€/mois",
+          "api": "API Access premium : +30€/mois",
+          "whiteLabel": "White-label : +50€/mois",
+          "phone": "Support téléphonique dédié",
+          "manager": "Account manager"
+        },
+        "cta": "Demander un devis"
+      }
+    },
+    "comparison": {
+      "title": "Pourquoi Peppol Light plutôt qu'ABCinvoice ?",
+      "criteria": {
+        "model": "Modèle pricing",
+        "unlimited": "Plan illimité",
+        "score": "Score conformité Peppol",
+        "ai": "Extraction IA",
+        "language": "Trilingue BE"
+      },
+      "abcinvoice": {
+        "model": "⚠️ Transactionnel (complexe)",
+        "unlimited": "❌ Non",
+        "score": "❌ Non",
+        "ai": "❌ Non",
+        "language": "⚠️ Générique EU"
+      },
+      "peppollight": {
+        "model": "✅ Abonnement fixe simple",
+        "unlimited": "✅ Oui (PRO 29,90€)",
+        "score": "✅ Oui (0-100% auto)",
+        "ai": "✅ Oui (avancée)",
+        "language": "✅ FR/NL/EN optimisé"
+      }
+    },
+    "faq": {
+      "title": "Questions fréquentes",
+      "questions": {
+        "why": {
+          "q": "Pourquoi Peppol Light plutôt qu'ABCinvoice ?",
+          "a": "Peppol Light se différencie par son score de conformité automatique, son modèle d'abonnement fixe simple, et son extraction IA avancée. ABCinvoice facture à la transaction, ce qui peut devenir coûteux."
+        },
+        "change": {
+          "q": "Puis-je changer de plan plus tard ?",
+          "a": "Oui, vous pouvez upgrader ou downgrader à tout moment. Les clients Early Bird conservent leur -30% à vie même en changeant de plan."
+        },
+        "lifetime": {
+          "q": "La réduction Early Bird est-elle vraiment à vie ?",
+          "a": "Oui ! Les 50 premiers clients qui s'inscrivent bénéficient de -30% à vie sur leur abonnement. C'est une offre exceptionnelle réservée aux pionniers qui nous font confiance dès le lancement."
+        },
+        "payment": {
+          "q": "Comment fonctionne le paiement ?",
+          "a": "Pour activer un plan, envoyez-nous un email via le bouton du plan choisi. Nous vous enverrons un lien de paiement Stripe sécurisé. Votre abonnement démarre immédiatement après paiement."
+        },
+        "trial": {
+          "q": "Puis-je tester avant de payer ?",
+          "a": "Oui ! Le plan GRATUIT vous permet de tester avec 1 facture/mois. Vous verrez le score de conformité et le rapport PDF complet."
+        }
+      }
+    }
   }
 }

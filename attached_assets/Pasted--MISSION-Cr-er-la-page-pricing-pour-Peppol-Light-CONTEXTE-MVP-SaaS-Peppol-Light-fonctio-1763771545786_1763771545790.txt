@@ -1,0 +1,325 @@
+# MISSION : Créer la page /pricing pour Peppol Light
+
+## CONTEXTE
+- MVP SaaS Peppol Light fonctionnel (auth, upload, analyse OK)
+- Stack : React + TypeScript + Tailwind + shadcn/ui
+- Tarifs validés par analyse marché complète
+- Early Bird -30% à vie pour 50 premiers clients
+
+## OBJECTIF
+Créer page /pricing professionnelle, responsive, trilingue (FR/NL/EN)
+
+## TARIFS FINAUX VALIDÉS
+
+**GRATUIT : 0€/mois**
+- 1 facture/mois
+- Score Peppol 0-100%
+- Rapport PDF téléchargeable
+- Pas de conversion UBL
+
+**STARTER : 14,90€/mois (ou 143€/an -20%)**
+- 30 factures/mois
+- Conversion UBL/XML automatique
+- Extraction IA standard
+- Historique 3 mois
+- Support email 48h
+
+**PRO : 29,90€/mois (ou 287€/an -20%)** ⭐ MOST POPULAR
+- Factures ILLIMITÉES 🚀
+- Extraction IA avancée
+- Dashboard analytique complet
+- Envoi auto comptable + Webhooks
+- Historique 12 mois
+- Support prioritaire 24h
+- Multi-utilisateurs (1-3)
+
+**BUSINESS : 79,90€/mois (ou 767€/an -20%)**
+- 10 dossiers clients inclus
+- Pack +10 dossiers : +25€/mois
+- API Access premium : +30€/mois
+- White-label : +50€/mois
+- Support téléphonique dédié
+- Account manager
+
+**EARLY BIRD : -30% À VIE pour 50 premiers**
+- STARTER : 10,43€/mois à vie
+- PRO : 20,93€/mois à vie
+- BUSINESS : 55,93€/mois à vie
+
+## ACTIONS
+
+### 1. Créer `client/src/pages/pricing.tsx`
+
+**Design : 4 cartes en grid responsive**
+
+**Structure HTML/JSX :**
+```tsx
+<div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+  {/* Header */}
+  <header className="text-center py-12">
+    <h1>Choisissez votre plan Peppol Light</h1>
+    <p>Tarification simple, transparente et sans surprise</p>
+  </header>
+
+  {/* Pricing Cards Grid */}
+  <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    
+    {/* Carte 1 : GRATUIT */}
+    <Card>
+      <Badge>Gratuit</Badge>
+      <h3>Découverte</h3>
+      <p className="text-4xl font-bold">0€<span>/mois</span></p>
+      <ul>
+        <li>✅ 1 facture/mois</li>
+        <li>✅ Score Peppol 0-100%</li>
+        <li>✅ Rapport PDF</li>
+        <li>❌ Pas de conversion UBL</li>
+      </ul>
+      <Button as="a" href="/register">Commencer gratuitement</Button>
+    </Card>
+
+    {/* Carte 2 : STARTER */}
+    <Card>
+      <Badge variant="blue">Pour indépendants</Badge>
+      <h3>Starter</h3>
+      <p className="text-4xl font-bold">14,90€<span>/mois</span></p>
+      <p className="text-sm text-gray-600">ou 143€/an (-20%)</p>
+      
+      {/* Badge Early Bird */}
+      <div className="bg-orange-50 border border-orange-200 rounded p-3 my-4">
+        <span className="text-orange-600 font-semibold">🎁 -30% à vie</span>
+        <p className="text-sm">50 premiers : 10,43€/mois</p>
+      </div>
+
+      <ul>
+        <li>✅ 30 factures/mois</li>
+        <li>✅ Conversion UBL/XML</li>
+        <li>✅ Extraction IA</li>
+        <li>✅ Historique 3 mois</li>
+        <li>✅ Support email 48h</li>
+      </ul>
+      
+      <Button as="a" href="mailto:contact@peppollight.com?subject=Activation Plan STARTER - Early Bird&body=Bonjour,%0D%0A%0D%0AJe souhaite activer le plan STARTER avec réduction Early Bird (-30% à vie).%0D%0A%0D%0AMon email : [VOTRE EMAIL]%0D%0AMon entreprise : [NOM]%0D%0ANuméro TVA : [BE0...]%0D%0A%0D%0AMerci !">
+        Demander activation Early Bird
+      </Button>
+    </Card>
+
+    {/* Carte 3 : PRO (HIGHLIGHT) */}
+    <Card className="border-2 border-blue-500 shadow-xl relative">
+      <Badge variant="primary">🔥 MOST POPULAR</Badge>
+      <h3>Pro</h3>
+      <p className="text-4xl font-bold text-blue-600">29,90€<span>/mois</span></p>
+      <p className="text-sm text-gray-600">ou 287€/an (-20%)</p>
+      
+      {/* Badge Early Bird */}
+      <div className="bg-orange-50 border border-orange-200 rounded p-3 my-4">
+        <span className="text-orange-600 font-semibold">🎁 -30% à vie</span>
+        <p className="text-sm">50 premiers : 20,93€/mois</p>
+      </div>
+
+      <ul>
+        <li>✅ Factures ILLIMITÉES 🚀</li>
+        <li>✅ Extraction IA avancée</li>
+        <li>✅ Dashboard analytique</li>
+        <li>✅ Envoi auto comptable</li>
+        <li>✅ Historique 12 mois</li>
+        <li>✅ Support prioritaire 24h</li>
+        <li>✅ Multi-utilisateurs (1-3)</li>
+      </ul>
+      
+      <Button variant="primary" as="a" href="mailto:contact@peppollight.com?subject=Activation Plan PRO - Early Bird&body=...">
+        Demander activation Early Bird
+      </Button>
+    </Card>
+
+    {/* Carte 4 : BUSINESS */}
+    <Card>
+      <Badge variant="purple">Cabinets comptables</Badge>
+      <h3>Business</h3>
+      <p className="text-4xl font-bold">79,90€<span>/mois</span></p>
+      <p className="text-sm text-gray-600">ou 767€/an (-20%)</p>
+      <p className="text-xs text-gray-500">10 dossiers inclus</p>
+      
+      {/* Badge Early Bird */}
+      <div className="bg-orange-50 border border-orange-200 rounded p-3 my-4">
+        <span className="text-orange-600 font-semibold">🎁 -30% à vie</span>
+        <p className="text-sm">50 premiers : 55,93€/mois</p>
+      </div>
+
+      <ul>
+        <li>✅ Multi-clients (10 dossiers)</li>
+        <li>✅ Pack +10 dossiers : +25€</li>
+        <li>✅ API Access : +30€/mois</li>
+        <li>✅ White-label : +50€/mois</li>
+        <li>✅ Support téléphone dédié</li>
+        <li>✅ Account manager</li>
+      </ul>
+      
+      <Button as="a" href="mailto:contact@peppollight.com?subject=Demande Partenariat BUSINESS&body=...">
+        Demander un devis
+      </Button>
+    </Card>
+
+  </div>
+
+  {/* Section Comparatif ABCinvoice */}
+  <section className="max-w-5xl mx-auto my-16 px-4">
+    <h2>Pourquoi Peppol Light plutôt qu'ABCinvoice ?</h2>
+    <table className="w-full border">
+      <thead>
+        <tr>
+          <th>Critère</th>
+          <th>ABCinvoice</th>
+          <th>Peppol Light</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Modèle pricing</td>
+          <td>⚠️ Transactionnel (complexe)</td>
+          <td>✅ Abonnement fixe simple</td>
+        </tr>
+        <tr>
+          <td>Plan illimité</td>
+          <td>❌ Non</td>
+          <td>✅ Oui (PRO 29,90€)</td>
+        </tr>
+        <tr>
+          <td>Score conformité Peppol</td>
+          <td>❌ Non</td>
+          <td>✅ Oui (0-100% auto)</td>
+        </tr>
+        <tr>
+          <td>Extraction IA</td>
+          <td>❌ Non</td>
+          <td>✅ Oui (avancée)</td>
+        </tr>
+        <tr>
+          <td>Trilingue BE</td>
+          <td>⚠️ Générique EU</td>
+          <td>✅ FR/NL/EN optimisé</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  {/* FAQ */}
+  <section className="max-w-4xl mx-auto my-16 px-4">
+    <h2>Questions fréquentes</h2>
+    <Accordion>
+      <AccordionItem>
+        <AccordionTrigger>Pourquoi Peppol Light plutôt qu'ABCinvoice ?</AccordionTrigger>
+        <AccordionContent>
+          Peppol Light se différencie par son score de conformité automatique,
+          son modèle d'abonnement fixe simple, et son extraction IA avancée.
+          ABCinvoice facture à la transaction, ce qui peut devenir coûteux.
+        </AccordionContent>
+      </AccordionItem>
+      
+      <AccordionItem>
+        <AccordionTrigger>Puis-je changer de plan plus tard ?</AccordionTrigger>
+        <AccordionContent>
+          Oui, vous pouvez upgrader ou downgrader à tout moment.
+          Les clients Early Bird conservent leur -30% à vie même en changeant de plan.
+        </AccordionContent>
+      </AccordionItem>
+
+      <AccordionItem>
+        <AccordionTrigger>La réduction Early Bird est-elle vraiment à vie ?</AccordionTrigger>
+        <AccordionContent>
+          Oui ! Les 50 premiers clients qui s'inscrivent bénéficient de -30%
+          à vie sur leur abonnement. C'est une offre exceptionnelle réservée
+          aux pionniers qui nous font confiance dès le lancement.
+        </AccordionContent>
+      </AccordionItem>
+
+      <AccordionItem>
+        <AccordionTrigger>Comment fonctionne le paiement ?</AccordionTrigger>
+        <AccordionContent>
+          Pour activer un plan, envoyez-nous un email via le bouton du plan choisi.
+          Nous vous enverrons un lien de paiement Stripe sécurisé.
+          Votre abonnement démarre immédiatement après paiement.
+        </AccordionContent>
+      </AccordionItem>
+
+      <AccordionItem>
+        <AccordionTrigger>Puis-je tester avant de payer ?</AccordionTrigger>
+        <AccordionContent>
+          Oui ! Le plan GRATUIT vous permet de tester avec 1 facture/mois.
+          Vous verrez le score de conformité et le rapport PDF complet.
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  </section>
+</div>
+```
+
+### 2. Ajouter route dans `client/src/App.tsx`
+```tsx
+import PricingPage from './pages/pricing';
+
+// Dans les routes :
+<Route path="/pricing" element={<PricingPage />} />
+```
+
+### 3. Ajouter lien dans Header (navigation)
+
+Dans le Header du dashboard et de toutes les pages :
+```tsx
+<nav>
+  <Link to="/dashboard">Dashboard</Link>
+  <Link to="/pricing">Tarifs</Link>
+  <Link to="/docs">Documentation</Link>
+</nav>
+```
+
+### 4. Ajouter lien depuis Dashboard quand quota dépassé
+
+Dans `client/src/pages/dashboard.tsx`, quand le toast "Quota dépassé" apparaît :
+```tsx
+toast.error("Quota dépassé", {
+  description: "Vous avez utilisé toutes vos factures.",
+  action: {
+    label: "Voir les offres",
+    onClick: () => navigate("/pricing")
+  }
+});
+```
+
+### 5. Traductions i18n complètes
+
+Créer/compléter :
+- `client/src/locales/fr/pricing.json`
+- `client/src/locales/nl/pricing.json`
+- `client/src/locales/en/pricing.json`
+
+Avec toutes les clés : titres plans, features, boutons, FAQ.
+
+## DESIGN REQUIREMENTS
+
+- **Responsive** : Mobile-first, stack vertical sur mobile
+- **Colors** : Bleu #1E5AA8 (primary), Orange #FF6B35 (accent)
+- **Fonts** : Inter ou system fonts, hiérarchie claire
+- **CTA** : Boutons bien visibles
+- **Badge Early Bird** : Couleur orange avec emoji 🎁
+- **Plan PRO** : Border bleu + shadow pour highlight
+
+## VALIDATION
+
+Tester :
+- ✅ Affichage desktop (1920px)
+- ✅ Affichage mobile (375px)
+- ✅ Switch langue FR/NL/EN
+- ✅ Liens mailto fonctionnels
+- ✅ Navigation depuis dashboard
+- ✅ Comparatif ABCinvoice lisible
+- ✅ FAQ accordion fonctionnel
+
+## NE PAS TOUCHER
+
+- Authentification
+- Upload/Analyse
+- Quotas Airtable
+- Dashboard existant (sauf ajout lien)
+
+**IMPORTANT** : Utiliser shadcn/ui Card, Badge, Button, Accordion. Design moderne, pro, startup-friendly.

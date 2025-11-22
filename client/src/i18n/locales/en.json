@@ -122,5 +122,128 @@
     "upgradePlan": "Upgrade plan",
     "remainingUploads_one": "{{count}} upload remaining",
     "remainingUploads_other": "{{count}} uploads remaining"
+  },
+  "pricing": {
+    "title": "Choose your Peppol Light plan",
+    "subtitle": "Simple, transparent and predictable pricing",
+    "monthly": "month",
+    "yearly": "year",
+    "yearlyDiscount": "or {{price}}/year (-20%)",
+    "earlyBird": {
+      "badge": "🎁 -30% lifetime",
+      "text": "First 50: {{price}}/month"
+    },
+    "plans": {
+      "free": {
+        "name": "Free",
+        "badge": "Discovery",
+        "price": "0€",
+        "features": {
+          "invoices": "1 invoice/month",
+          "score": "Peppol score 0-100%",
+          "pdf": "Downloadable PDF report",
+          "noUbl": "No UBL conversion"
+        },
+        "cta": "Start for free"
+      },
+      "starter": {
+        "name": "Starter",
+        "badge": "For freelancers",
+        "price": "14,90€",
+        "priceYearly": "143€",
+        "earlyBirdPrice": "10,43€",
+        "features": {
+          "invoices": "30 invoices/month",
+          "ubl": "Automatic UBL/XML conversion",
+          "ai": "Standard AI extraction",
+          "history": "3-month history",
+          "support": "Email support 48h"
+        },
+        "cta": "Request Early Bird activation"
+      },
+      "pro": {
+        "name": "Pro",
+        "badge": "🔥 MOST POPULAR",
+        "price": "29,90€",
+        "priceYearly": "287€",
+        "earlyBirdPrice": "20,93€",
+        "features": {
+          "invoices": "UNLIMITED invoices 🚀",
+          "aiAdvanced": "Advanced AI extraction",
+          "dashboard": "Complete analytics dashboard",
+          "autoSend": "Auto send to accounting + Webhooks",
+          "history": "12-month history",
+          "support": "Priority support 24h",
+          "users": "Multi-users (1-3)"
+        },
+        "cta": "Request Early Bird activation"
+      },
+      "business": {
+        "name": "Business",
+        "badge": "Accounting firms",
+        "price": "79,90€",
+        "priceYearly": "767€",
+        "earlyBirdPrice": "55,93€",
+        "clientsIncluded": "10 client folders included",
+        "features": {
+          "clients": "Multi-clients (10 folders)",
+          "addClients": "Pack +10 folders: +25€/month",
+          "api": "Premium API access: +30€/month",
+          "whiteLabel": "White-label: +50€/month",
+          "phone": "Dedicated phone support",
+          "manager": "Account manager"
+        },
+        "cta": "Request a quote"
+      }
+    },
+    "comparison": {
+      "title": "Why Peppol Light instead of ABCinvoice?",
+      "criteria": {
+        "model": "Pricing model",
+        "unlimited": "Unlimited plan",
+        "score": "Peppol conformity score",
+        "ai": "AI extraction",
+        "language": "Trilingual BE"
+      },
+      "abcinvoice": {
+        "model": "⚠️ Transactional (complex)",
+        "unlimited": "❌ No",
+        "score": "❌ No",
+        "ai": "❌ No",
+        "language": "⚠️ Generic EU"
+      },
+      "peppollight": {
+        "model": "✅ Simple fixed subscription",
+        "unlimited": "✅ Yes (PRO 29,90€)",
+        "score": "✅ Yes (0-100% auto)",
+        "ai": "✅ Yes (advanced)",
+        "language": "✅ FR/NL/EN optimized"
+      }
+    },
+    "faq": {
+      "title": "Frequently asked questions",
+      "questions": {
+        "why": {
+          "q": "Why Peppol Light instead of ABCinvoice?",
+          "a": "Peppol Light differentiates itself through its automatic conformity score, simple fixed subscription model, and advanced AI extraction. ABCinvoice charges per transaction, which can become expensive."
+        },
+        "change": {
+          "q": "Can I change plans later?",
+          "a": "Yes, you can upgrade or downgrade at any time. Early Bird customers keep their -30% lifetime discount even when changing plans."
+        },
+        "lifetime": {
+          "q": "Is the Early Bird discount really lifetime?",
+          "a": "Yes! The first 50 customers who sign up get -30% lifetime on their subscription. This is an exceptional offer reserved for pioneers who trust us from the launch."
+        },
+        "payment": {
+          "q": "How does payment work?",
+          "a": "To activate a plan, send us an email via the button of your chosen plan. We will send you a secure Stripe payment link. Your subscription starts immediately after payment."
+        },
+        "trial": {
+          "q": "Can I test before paying?",
+          "a": "Yes! The FREE plan allows you to test with 1 invoice/month. You will see the conformity score and the complete PDF report."
+        }
+      }
+    }
   }
 }

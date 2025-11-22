@@ -122,5 +122,128 @@
     "upgradePlan": "Upgrade plan",
     "remainingUploads_one": "{{count}} upload over",
     "remainingUploads_other": "{{count}} uploads over"
+  },
+  "pricing": {
+    "title": "Kies uw Peppol Light-plan",
+    "subtitle": "Eenvoudige, transparante en voorspelbare prijzen",
+    "monthly": "maand",
+    "yearly": "jaar",
+    "yearlyDiscount": "of {{price}}/jaar (-20%)",
+    "earlyBird": {
+      "badge": "🎁 -30% levenslang",
+      "text": "Eerste 50: {{price}}/maand"
+    },
+    "plans": {
+      "free": {
+        "name": "Gratis",
+        "badge": "Ontdekking",
+        "price": "0€",
+        "features": {
+          "invoices": "1 factuur/maand",
+          "score": "Peppol-score 0-100%",
+          "pdf": "Downloadbaar PDF-rapport",
+          "noUbl": "Geen UBL-conversie"
+        },
+        "cta": "Gratis beginnen"
+      },
+      "starter": {
+        "name": "Starter",
+        "badge": "Voor zelfstandigen",
+        "price": "14,90€",
+        "priceYearly": "143€",
+        "earlyBirdPrice": "10,43€",
+        "features": {
+          "invoices": "30 facturen/maand",
+          "ubl": "Automatische UBL/XML-conversie",
+          "ai": "Standaard AI-extractie",
+          "history": "Geschiedenis 3 maanden",
+          "support": "E-mailondersteuning 48u"
+        },
+        "cta": "Activering Early Bird aanvragen"
+      },
+      "pro": {
+        "name": "Pro",
+        "badge": "🔥 MEEST POPULAIR",
+        "price": "29,90€",
+        "priceYearly": "287€",
+        "earlyBirdPrice": "20,93€",
+        "features": {
+          "invoices": "ONBEPERKT facturen 🚀",
+          "aiAdvanced": "Geavanceerde AI-extractie",
+          "dashboard": "Volledig analytisch dashboard",
+          "autoSend": "Auto verzending boekhouding + Webhooks",
+          "history": "Geschiedenis 12 maanden",
+          "support": "Prioritaire ondersteuning 24u",
+          "users": "Multi-gebruikers (1-3)"
+        },
+        "cta": "Activering Early Bird aanvragen"
+      },
+      "business": {
+        "name": "Business",
+        "badge": "Boekhoudkantoren",
+        "price": "79,90€",
+        "priceYearly": "767€",
+        "earlyBirdPrice": "55,93€",
+        "clientsIncluded": "10 klantdossiers inbegrepen",
+        "features": {
+          "clients": "Multi-klanten (10 dossiers)",
+          "addClients": "Pack +10 dossiers: +25€/maand",
+          "api": "Premium API-toegang: +30€/maand",
+          "whiteLabel": "White-label: +50€/maand",
+          "phone": "Toegewijde telefonische ondersteuning",
+          "manager": "Accountmanager"
+        },
+        "cta": "Offerte aanvragen"
+      }
+    },
+    "comparison": {
+      "title": "Waarom Peppol Light in plaats van ABCinvoice?",
+      "criteria": {
+        "model": "Prijsmodel",
+        "unlimited": "Onbeperkt plan",
+        "score": "Peppol-conformiteitsscore",
+        "ai": "AI-extractie",
+        "language": "Drietalig BE"
+      },
+      "abcinvoice": {
+        "model": "⚠️ Transactioneel (complex)",
+        "unlimited": "❌ Nee",
+        "score": "❌ Nee",
+        "ai": "❌ Nee",
+        "language": "⚠️ Generiek EU"
+      },
+      "peppollight": {
+        "model": "✅ Eenvoudig vast abonnement",
+        "unlimited": "✅ Ja (PRO 29,90€)",
+        "score": "✅ Ja (0-100% auto)",
+        "ai": "✅ Ja (geavanceerd)",
+        "language": "✅ FR/NL/EN geoptimaliseerd"
+      }
+    },
+    "faq": {
+      "title": "Veelgestelde vragen",
+      "questions": {
+        "why": {
+          "q": "Waarom Peppol Light in plaats van ABCinvoice?",
+          "a": "Peppol Light onderscheidt zich door zijn automatische conformiteitsscore, eenvoudig vast abonnementsmodel en geavanceerde AI-extractie. ABCinvoice rekent per transactie, wat duur kan worden."
+        },
+        "change": {
+          "q": "Kan ik later van plan veranderen?",
+          "a": "Ja, u kunt op elk moment upgraden of downgraden. Early Bird-klanten behouden hun -30% levenslang, zelfs bij planwijziging."
+        },
+        "lifetime": {
+          "q": "Is de Early Bird-korting echt levenslang?",
+          "a": "Ja! De eerste 50 klanten die zich inschrijven krijgen -30% levenslang op hun abonnement. Dit is een uitzonderlijk aanbod gereserveerd voor pioniers die ons vanaf de lancering vertrouwen."
+        },
+        "payment": {
+          "q": "Hoe werkt de betaling?",
+          "a": "Om een plan te activeren, stuurt u ons een e-mail via de knop van het gekozen plan. Wij sturen u een beveiligde Stripe-betalingslink. Uw abonnement start onmiddellijk na betaling."
+        },
+        "trial": {
+          "q": "Kan ik testen voordat ik betaal?",
+          "a": "Ja! Met het GRATIS plan kunt u testen met 1 factuur/maand. U ziet de conformiteitsscore en het volledige PDF-rapport."
+        }
+      }
+    }
   }
 }
