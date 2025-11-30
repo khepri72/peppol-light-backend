@@ -51,8 +51,6 @@
     "ublColumn": "UBL/XML",
     "downloadUbl": "Telecharger UBL",
     "noUbl": "Non disponible",
-    "noUblGenerated": "Aucun fichier UBL genere pour cette facture",
-    "ublNotFound": "Fichier UBL introuvable sur le serveur",
     "ublDownloaded": "Fichier UBL telecharge avec succes",
     "ublDownloadError": "Erreur lors du telechargement UBL"
   },

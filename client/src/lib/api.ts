@@ -126,81 +126,69 @@ class ApiClient {
   }
 
   async uploadAndAnalyzeInvoice(file: File): Promise<Invoice> {
-    const token = authStorage.getToken();
+    try {
+      // Step 1: Upload the file
+      const formData = new FormData();
+      formData.append('pdf', file);
+      
+      const uploadResponse = await this.request<{ url: string; filename: string }>('/api/upload/pdf', {
+        method: 'POST',
+        body: formData,
+      });
 
-    // 1️⃣ UPLOAD DU FICHIER
-    const formData = new FormData();
-    formData.append("pdf", file);
+      // Step 2: Analyze the file
+      const analyzeFormData = new FormData();
+      analyzeFormData.append('file', file);
+      
+      const analysisResult = await this.request<{
+        success: boolean;
+        score: number;
+        errors: Array<{ field?: string; code: string; severity: string; message: string }>;
+        warnings: Array<{ field?: string; code: string; severity: string; message: string }>;
+        xmlFilename: string | null;
+        ublFileUrl: string | null;
+      }>('/api/invoices/analyze', {
+        method: 'POST',
+        body: analyzeFormData,
+      });
 
-    const uploadResponse = await fetch("/api/upload/pdf", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData
-    });
+      // Step 3: Register in Airtable with analysis results
+      const errorsList = [
+        ...analysisResult.errors.map(e => `ERROR: ${e.message}`),
+        ...analysisResult.warnings.map(w => `WARNING: ${w.message}`)
+      ].join('\n');
 
-    if (!uploadResponse.ok) {
-      const err = await uploadResponse.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to upload file');
-    }
+      // Store structured errors data for i18n translation
+      const errorsData = JSON.stringify({
+        errors: analysisResult.errors,
+        warnings: analysisResult.warnings
+      });
 
-    const uploadData = await uploadResponse.json();
-    console.log("📤 Upload OK:", uploadData.filename);
-
-    // 2️⃣ CRÉATION DU RECORD AIRTABLE (pour obtenir invoiceId + quota)
-    const createResponse = await fetch("/api/invoices", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({
+      const invoiceData = {
         fileName: file.name,
-        fileUrl: uploadData.url,
-        status: "uploaded"
-      })
-    });
+        fileUrl: uploadResponse.url,
+        status: analysisResult.score >= 80 ? 'checked' : 'uploaded',
+        conformityScore: analysisResult.score,
+        errorsList: errorsList || '',
+        errorsData: errorsData,
+        xmlFilename: analysisResult.xmlFilename || '',
+        ublFileUrl: analysisResult.ublFileUrl || '',
+      };
 
-    if (!createResponse.ok) {
-      const err = await createResponse.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to create invoice record');
+      return this.request<Invoice>('/api/invoices', {
+        method: 'POST',
+        body: JSON.stringify(invoiceData),
+      });
+    } catch (error) {
+      console.error('uploadAndAnalyzeInvoice error:', error);
+      // Re-throw with more context if error message is generic
+      if (error instanceof Error) {
+        if (error.message === 'Request failed' || error.message === 'An error occurred') {
+          throw new Error('Failed to process invoice. Please ensure the file is a valid PDF or Excel invoice.');
+        }
+      }
+      throw error;
     }
-
-    const createdInvoice = await createResponse.json();
-    const invoiceId = createdInvoice.id;
-    console.log("📌 Invoice ID:", invoiceId);
-
-    // 3️⃣ ANALYSE AVEC invoiceId (le backend met à jour Airtable automatiquement)
-    const analyzeFormData = new FormData();
-    analyzeFormData.append("file", file);
-    analyzeFormData.append("invoiceId", invoiceId);
-
-    const analyzeResponse = await fetch("/api/invoices/analyze", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: analyzeFormData
-    });
-
-    if (!analyzeResponse.ok) {
-      const err = await analyzeResponse.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to analyze invoice');
-    }
-
-    const result = await analyzeResponse.json();
-    console.log("✅ Analyse OK | Score:", result.score, "| XML:", result.xmlFilename);
-
-    // Le backend a déjà mis à jour Airtable avec tous les champs
-    // On retourne les données de l'analyse
-    return {
-      id: invoiceId,
-      fileName: file.name,
-      fileUrl: uploadData.url,
-      status: result.score >= 80 ? 'checked' : 'pending',
-      conformityScore: result.score,
-      errorsList: result.errorsList,
-      errorsData: result.errorsData,
-      xmlFilename: result.xmlFilename,
-      ublFileUrl: result.ublFileUrl
-    };
   }
 
   async deleteInvoice(id: string): Promise<{ message: string }> {

@@ -51,8 +51,6 @@
     "ublColumn": "UBL/XML",
     "downloadUbl": "Download UBL",
     "noUbl": "Niet beschikbaar",
-    "noUblGenerated": "Geen UBL-bestand gegenereerd voor deze factuur",
-    "ublNotFound": "UBL-bestand niet gevonden op de server",
     "ublDownloaded": "UBL-bestand succesvol gedownload",
     "ublDownloadError": "Fout bij downloaden UBL"
   },

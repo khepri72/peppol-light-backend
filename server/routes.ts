@@ -78,7 +78,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Invoice routes
   app.post('/api/invoices', authenticateToken, invoiceController.registerUploadedInvoice);
   app.get('/api/invoices', authenticateToken, invoiceController.getInvoices);
-  app.patch('/api/invoices/:id', authenticateToken, invoiceController.updateInvoice);
   app.delete('/api/invoices/:id', authenticateToken, invoiceController.deleteInvoice);
   
   // Analyze invoice with Peppol engine (PDF or Excel)

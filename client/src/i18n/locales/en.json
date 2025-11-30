@@ -51,8 +51,6 @@
     "ublColumn": "UBL/XML",
     "downloadUbl": "Download UBL",
     "noUbl": "Not available",
-    "noUblGenerated": "No UBL file generated for this invoice",
-    "ublNotFound": "UBL file not found on server",
     "ublDownloaded": "UBL file downloaded successfully",
     "ublDownloadError": "Error downloading UBL file"
   },
