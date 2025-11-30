@@ -199,13 +199,26 @@ export default function Dashboard() {
     return invoice.errorsList || '';
   };
 
-  const downloadUbl = async (fileUrl: string | undefined) => {
-    if (!fileUrl) return;
-    
+  const downloadUbl = async (invoice: Invoice) => {
     try {
-      // Extract filename from fileUrl (e.g., /api/uploads/invoice-xxx.pdf -> invoice-xxx.pdf)
-      const baseFilename = fileUrl.split('/').pop() || '';
-      const xmlFilename = `${baseFilename}.xml`;
+      // Get real XML filename from Airtable (stored during analysis)
+      // Fallback chain: xmlFilename -> ublFileUrl -> derive from fileUrl
+      let xmlFilename = invoice.xmlFilename;
+      
+      if (!xmlFilename && invoice.ublFileUrl) {
+        // Extract from ublFileUrl (/api/invoices/download-ubl/xxx.xml -> xxx.xml)
+        xmlFilename = invoice.ublFileUrl.split('/').pop();
+      }
+      
+      if (!xmlFilename && invoice.fileUrl) {
+        // Fallback: derive from fileUrl (legacy records)
+        const baseFilename = invoice.fileUrl.split('/').pop() || '';
+        xmlFilename = `${baseFilename}.xml`;
+      }
+      
+      if (!xmlFilename) {
+        throw new Error('No XML file available for this invoice');
+      }
       
       const token = authStorage.getToken();
       const response = await fetch(`/api/invoices/download-ubl/${xmlFilename}`, {
@@ -215,7 +228,7 @@ export default function Dashboard() {
       });
       
       if (!response.ok) {
-        throw new Error('UBL file not found');
+        throw new Error(`Download failed: ${response.status}`);
       }
       
       // Download file
@@ -233,11 +246,11 @@ export default function Dashboard() {
         title: t('common.success'),
         description: t('dashboard.ublDownloaded'),
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error downloading UBL:', error);
       toast({
         title: t('common.error'),
-        description: t('dashboard.ublDownloadError'),
+        description: `${t('dashboard.ublDownloadError')}: ${error.message}`,
         variant: 'destructive',
       });
     }
@@ -414,11 +427,11 @@ export default function Dashboard() {
                         )}
                       </TableCell>
                       <TableCell className="text-center">
-                        {invoice.fileUrl ? (
+                        {(invoice.xmlFilename || invoice.ublFileUrl || invoice.fileUrl) ? (
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => downloadUbl(invoice.fileUrl)}
+                            onClick={() => downloadUbl(invoice)}
                             data-testid={`button-download-ubl-${invoice.id}`}
                           >
                             <Download className="mr-2 h-4 w-4" />

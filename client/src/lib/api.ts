@@ -40,6 +40,8 @@ export interface Invoice {
   conformityScore?: number;
   errorsList?: string;
   errorsData?: string; // JSON string containing { errors: [], warnings: [] }
+  xmlFilename?: string; // Real XML filename for UBL download
+  ublFileUrl?: string; // Direct URL for UBL download
 }
 
 export interface InvoicesResponse {
@@ -143,7 +145,8 @@ class ApiClient {
         score: number;
         errors: Array<{ field?: string; code: string; severity: string; message: string }>;
         warnings: Array<{ field?: string; code: string; severity: string; message: string }>;
-        xmlPath: string | null;
+        xmlFilename: string | null;
+        ublFileUrl: string | null;
       }>('/api/invoices/analyze', {
         method: 'POST',
         body: analyzeFormData,
@@ -168,6 +171,8 @@ class ApiClient {
         conformityScore: analysisResult.score,
         errorsList: errorsList || '',
         errorsData: errorsData,
+        xmlFilename: analysisResult.xmlFilename || '',
+        ublFileUrl: analysisResult.ublFileUrl || '',
       };
 
       return this.request<Invoice>('/api/invoices', {

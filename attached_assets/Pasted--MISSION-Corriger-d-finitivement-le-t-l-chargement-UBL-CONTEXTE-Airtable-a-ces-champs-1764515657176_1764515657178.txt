@@ -1,0 +1,143 @@
+🎯 MISSION : Corriger définitivement le téléchargement UBL
+
+🟦 CONTEXTE :
+- Airtable a ces champs : "Invoice Number", "Invoice Date", "Total Amount", "Invoice Data", "XML Filename"
+- "UBL File URL" existe déjà
+- Les fichiers XML sont générés dans server/uploads/
+- BUG : le frontend essaie de télécharger "fileName.pdf.xml" au lieu du vrai nom "invoice-TIMESTAMP.pdf.xml"
+
+🟩 OBJECTIF :
+1. Sauvegarder le vrai nom du XML dans Airtable après génération
+2. Utiliser ce nom stocké dans le frontend pour télécharger
+
+────────────────────────
+1️⃣ BACKEND
+────────────────────────
+
+FICHIER : server/routes.ts OU server/controllers/invoiceController.ts
+(cherche dans les 2, utilise celui qui contient la route POST /api/invoices/analyze)
+
+TROUVE la section qui génère le fichier XML :
+```typescript
+const xmlPath = path.join(uploadsDir, ...);
+fs.writeFileSync(xmlPath, xmlContent);
+```
+
+JUSTE APRÈS fs.writeFileSync, AJOUTE :
+```typescript
+// Sauvegarder nom XML dans Airtable
+const xmlFilename = path.basename(xmlPath);
+await base('Invoices').update(invoiceRecord.id, {
+  'XML Filename': xmlFilename,
+  'UBL File URL': `/api/invoices/download-ubl/${xmlFilename}`,
+  'Invoice Number': extractedData.invoiceNumber || '',
+  'Invoice Date': extractedData.invoiceDate || '',
+  'Total Amount': extractedData.totalAmount || 0,
+  'Invoice Data': JSON.stringify(extractedData, null, 2)
+});
+```
+
+⚠️ IMPORTANT :
+- Utilise l'ID du record Airtable existant (invoiceRecord.id ou record.id selon le code)
+- NE crée PAS de nouveau record
+- Vérifie que 'base' est bien importé de '../config/airtable'
+
+────────────────────────
+2️⃣ FRONTEND
+────────────────────────
+
+FICHIER : client/src/pages/dashboard.tsx
+
+REMPLACE la fonction downloadUbl par :
+```typescript
+const downloadUbl = async (invoice: any) => {
+  try {
+    // Récupérer nom XML depuis Airtable
+    const xmlFilename = invoice['XML Filename'] || 
+                       invoice.xmlFilename ||
+                       (invoice['UBL File URL'] ? invoice['UBL File URL'].split('/').pop() : null);
+    
+    if (!xmlFilename) {
+      throw new Error('No XML file generated for this invoice');
+    }
+    
+    const response = await fetch(`/api/invoices/download-ubl/${xmlFilename}`, {
+      headers: { 
+        'Authorization': `Bearer ${localStorage.getItem('token')}` 
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Download failed: ${response.status}`);
+    }
+    
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = xmlFilename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast.success(t('dashboard.ublDownloaded'));
+  } catch (error: any) {
+    console.error('UBL download error:', error);
+    toast.error(`${t('dashboard.ublDownloadError')}: ${error.message}`);
+  }
+};
+```
+
+ET change l'appel du bouton de :
+```typescript
+onClick={() => downloadUbl(invoice.fileName)}
+```
+
+À :
+```typescript
+onClick={() => downloadUbl(invoice)}
+```
+
+────────────────────────
+3️⃣ VALIDATION
+────────────────────────
+
+Après modifications :
+1. ✅ Compilation TypeScript sans erreur
+2. ✅ Upload nouvelle facture
+3. ✅ Vérifie Airtable : "XML Filename" rempli avec "invoice-XXXXX.pdf.xml"
+4. ✅ Clique "Download UBL" → fichier téléchargé
+
+NE MODIFIE RIEN D'AUTRE.
+FAIS EXACTEMENT CES MODIFICATIONS.
+```
+
+---
+
+## 📊 POURQUOI CETTE VERSION EST OPTIMALE
+
+| Amélioration | Bénéfice |
+|--------------|----------|
+| ✅ UN seul prompt | Pas de confusion |
+| ✅ Cherche dans 2 fichiers | S'adapte au vrai code |
+| ✅ Code exact fourni | Copier-coller direct |
+| ✅ Gestion erreurs | Messages clairs |
+| ✅ Fallback multiples | Ancien + nouveau champs |
+| ✅ Validation 4 étapes | Test structuré |
+
+---
+
+## ⏱️ TIMELINE FINALE
+```
+[00:00] Copie le prompt ci-dessus
+[00:01] Colle dans Replit Agent
+[00:04] Agent analyse les fichiers
+[00:07] Agent modifie backend + frontend
+[00:10] Compilation OK
+[00:12] Upload nouveau PDF
+[00:14] Vérifie Airtable
+[00:15] Clique Download UBL
+[00:16] ✅ FICHIER XML TÉLÉCHARGÉ !
+
+TOTAL : 16 MIN
