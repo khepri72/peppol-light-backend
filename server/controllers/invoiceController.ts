@@ -197,6 +197,26 @@ export const analyzeInvoice = async (req: AuthRequest, res: Response) => {
       xmlFilename = `${req.file.filename}.xml`;
       fs.writeFileSync(xmlPath, ublXml);
       console.log(`✅ UBL XML généré: ${xmlFilename}`);
+      
+      // 🔵 Sauvegarde Airtable des infos UBL
+      try {
+        const invoiceId = req.body.invoiceId;
+        if (invoiceId) {
+          await base(TABLES.INVOICES).update(invoiceId, {
+            'XML Filename': xmlFilename,
+            'UBL File URL': `/api/invoices/download-ubl/${xmlFilename}`,
+            'Invoice Number': invoiceData.invoiceNumber || '',
+            'Invoice Date': invoiceData.issueDate || invoiceData.issueDateISO || '',
+            'Total Amount': invoiceData.totals?.grossAmount || 0,
+            'Invoice Data': JSON.stringify(invoiceData, null, 2),
+          });
+          console.log("✅ Airtable UBL fields saved:", xmlFilename);
+        } else {
+          console.log("⚠️ Pas d'ID facture pour mise à jour Airtable");
+        }
+      } catch (e) {
+        console.error("❌ Erreur sauvegarde Airtable:", e);
+      }
     } catch (ublError) {
       console.error('Erreur génération UBL:', ublError);
     }
