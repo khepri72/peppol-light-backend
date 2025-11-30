@@ -199,39 +199,40 @@ export default function Dashboard() {
     return invoice.errorsList || '';
   };
 
-  const downloadUbl = async (invoice: Invoice) => {
+  const downloadUbl = async (invoice: any) => {
     try {
-      // Get real XML filename from Airtable (stored during analysis)
-      // Fallback chain: xmlFilename -> ublFileUrl -> derive from fileUrl
-      let xmlFilename = invoice.xmlFilename;
+      // Try multiple field name formats (Airtable raw vs camelCase)
+      let xmlFilename = invoice['XML Filename'] || invoice.xmlFilename;
       
-      if (!xmlFilename && invoice.ublFileUrl) {
-        // Extract from ublFileUrl (/api/invoices/download-ubl/xxx.xml -> xxx.xml)
-        xmlFilename = invoice.ublFileUrl.split('/').pop();
+      if (!xmlFilename && (invoice['UBL File URL'] || invoice.ublFileUrl)) {
+        xmlFilename = (invoice['UBL File URL'] || invoice.ublFileUrl).split('/').pop();
       }
       
+      if (!xmlFilename && (invoice['File Name'] || invoice.fileName)) {
+        const fileName = invoice['File Name'] || invoice.fileName;
+        xmlFilename = fileName.replace(/\.[^/.]+$/, '') + '.xml';
+      }
+      
+      // Last resort: derive from fileUrl
       if (!xmlFilename && invoice.fileUrl) {
-        // Fallback: derive from fileUrl (legacy records)
         const baseFilename = invoice.fileUrl.split('/').pop() || '';
         xmlFilename = `${baseFilename}.xml`;
       }
       
       if (!xmlFilename) {
-        throw new Error('No XML file available for this invoice');
+        throw new Error('Aucun fichier UBL généré');
       }
       
-      const token = authStorage.getToken();
+      console.log('🔍 DEBUG - XML Filename:', xmlFilename);
+      
       const response = await fetch(`/api/invoices/download-ubl/${xmlFilename}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       
       if (!response.ok) {
-        throw new Error(`Download failed: ${response.status}`);
+        throw new Error(`Fichier non trouvé: ${xmlFilename}`);
       }
       
-      // Download file
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -247,7 +248,7 @@ export default function Dashboard() {
         description: t('dashboard.ublDownloaded'),
       });
     } catch (error: any) {
-      console.error('Error downloading UBL:', error);
+      console.error('❌ Download error:', error);
       toast({
         title: t('common.error'),
         description: `${t('dashboard.ublDownloadError')}: ${error.message}`,
