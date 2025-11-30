@@ -47,7 +47,12 @@
       "deleteError": "Delete error",
       "cancelButton": "Cancel",
       "deleteButton": "Delete"
-    }
+    },
+    "ublColumn": "UBL/XML",
+    "downloadUbl": "Download UBL",
+    "noUbl": "Not available",
+    "ublDownloaded": "UBL file downloaded successfully",
+    "ublDownloadError": "Error downloading UBL file"
   },
   "status": {
     "uploaded": "Pending",

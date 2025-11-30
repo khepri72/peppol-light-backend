@@ -26,7 +26,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { api, Invoice } from '@/lib/api';
 import { authStorage, logout } from '@/lib/auth';
-import { Upload, FileText, Trash2, LogOut, Loader2, AlertCircle, AlertTriangle } from 'lucide-react';
+import { Upload, FileText, Trash2, LogOut, Loader2, AlertCircle, AlertTriangle, Download } from 'lucide-react';
 import { queryClient } from '@/lib/queryClient';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -199,6 +199,50 @@ export default function Dashboard() {
     return invoice.errorsList || '';
   };
 
+  const downloadUbl = async (fileUrl: string | undefined) => {
+    if (!fileUrl) return;
+    
+    try {
+      // Extract filename from fileUrl (e.g., /api/uploads/invoice-xxx.pdf -> invoice-xxx.pdf)
+      const baseFilename = fileUrl.split('/').pop() || '';
+      const xmlFilename = `${baseFilename}.xml`;
+      
+      const token = authStorage.getToken();
+      const response = await fetch(`/api/invoices/download-ubl/${xmlFilename}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('UBL file not found');
+      }
+      
+      // Download file
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = xmlFilename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: t('common.success'),
+        description: t('dashboard.ublDownloaded'),
+      });
+    } catch (error) {
+      console.error('Error downloading UBL:', error);
+      toast({
+        title: t('common.error'),
+        description: t('dashboard.ublDownloadError'),
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (!authStorage.isAuthenticated()) {
     setLocation('/login');
     return null;
@@ -335,6 +379,7 @@ export default function Dashboard() {
                     <TableHead>{t('dashboard.invoiceList.columns.status')}</TableHead>
                     <TableHead>{t('dashboard.invoiceList.columns.conformityScore')}</TableHead>
                     <TableHead>{t('dashboard.invoiceList.columns.errors')}</TableHead>
+                    <TableHead className="text-center">{t('dashboard.ublColumn')}</TableHead>
                     <TableHead className="text-right">{t('dashboard.invoiceList.columns.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -366,6 +411,23 @@ export default function Dashboard() {
                           </div>
                         ) : (
                           <span className="text-muted-foreground text-sm">{t('dashboard.invoiceList.columns.errors')}</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {invoice.fileUrl ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => downloadUbl(invoice.fileUrl)}
+                            data-testid={`button-download-ubl-${invoice.id}`}
+                          >
+                            <Download className="mr-2 h-4 w-4" />
+                            {t('dashboard.downloadUbl')}
+                          </Button>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">
+                            {t('dashboard.noUbl')}
+                          </span>
                         )}
                       </TableCell>
                       <TableCell className="text-right">

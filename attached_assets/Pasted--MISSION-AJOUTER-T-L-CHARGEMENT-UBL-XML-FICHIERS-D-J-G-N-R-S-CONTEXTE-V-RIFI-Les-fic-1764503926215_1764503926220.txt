@@ -1,0 +1,212 @@
+🎯 MISSION : AJOUTER TÉLÉCHARGEMENT UBL/XML (FICHIERS DÉJÀ GÉNÉRÉS)
+
+CONTEXTE VÉRIFIÉ :
+- Les fichiers XML sont DÉJÀ générés dans server/uploads/ 
+  (ex: invoice-1763532619571-856803650.pdf.xml)
+- Airtable a DÉJÀ le champ "UBL File URL"
+- generateUbl.ts fonctionne parfaitement
+- Il manque SEULEMENT : route download + bouton frontend
+
+⚠️ CONTRAINTES STRICTES :
+- NE MODIFIE QUE 3 fichiers :
+  1. server/routes.ts (ajouter 1 route)
+  2. client/src/pages/Dashboard.tsx (ajouter 1 colonne + bouton)
+  3. client/src/locales/*.json (ajouter traductions)
+- NE TOUCHE PAS : auth, quotas, upload, peppolAnalyzer, controllers
+- NE CASSE PAS les réponses JSON existantes
+
+─────────────────────────────────────────────────
+
+📋 TÂCHE 1 : ROUTE BACKEND (5 min)
+
+FICHIER : server/routes.ts
+
+1. Ajoute ces imports en haut (si absents) :
+import path from 'path';
+import fs from 'fs';
+
+2. Ajoute cette route APRÈS les routes existantes, AVANT export default router :
+
+/**
+ * Téléchargement fichier UBL/XML déjà généré
+ * GET /api/invoices/download-ubl/:filename
+ */
+router.get('/api/invoices/download-ubl/:filename', authenticateToken, async (req, res) => {
+  try {
+    const { filename } = req.params;
+    
+    // Sécurité : vérifier extension .xml
+    if (!filename || !filename.endsWith('.xml')) {
+      return res.status(400).json({ error: 'Invalid filename format' });
+    }
+    
+    // Chemin du fichier XML déjà généré
+    const filePath = path.join(__dirname, 'uploads', filename);
+    
+    // Vérifier existence
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'UBL file not found' });
+    }
+    
+    // Servir le fichier
+    res.setHeader('Content-Type', 'application/xml');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.sendFile(filePath);
+    
+  } catch (error) {
+    console.error('Error downloading UBL:', error);
+    res.status(500).json({ error: 'Failed to download UBL file' });
+  }
+});
+
+─────────────────────────────────────────────────
+
+📋 TÂCHE 2 : BOUTON FRONTEND (10 min)
+
+FICHIER : client/src/pages/Dashboard.tsx
+
+1. Trouve le tableau qui affiche les factures (liste des invoices)
+
+2. Dans l'en-tête du tableau (<thead>), APRÈS la colonne "Status" ou "Conformity Score", 
+   ajoute une nouvelle colonne :
+   
+<TableHead className="text-center">{t('dashboard.ublColumn')}</TableHead>
+
+3. Dans le corps du tableau (<tbody>), pour chaque ligne de facture, 
+   APRÈS la cellule Status/Score, ajoute :
+
+<TableCell className="text-center">
+  {invoice.ublFileUrl ? (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => downloadUbl(invoice.fileName)}
+      className="gap-2"
+    >
+      <Download className="h-4 w-4" />
+      {t('dashboard.downloadUbl')}
+    </Button>
+  ) : (
+    <span className="text-muted-foreground text-sm">
+      {t('dashboard.noUbl')}
+    </span>
+  )}
+</TableCell>
+
+4. Ajoute cette fonction DANS le composant Dashboard (avant le return) :
+
+const downloadUbl = async (fileName: string) => {
+  try {
+    // Construire nom fichier XML
+    const xmlFilename = `${fileName}.xml`;
+    
+    // Appeler route download
+    const response = await fetch(`/api/invoices/download-ubl/${xmlFilename}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to download UBL');
+    }
+    
+    // Télécharger fichier
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = xmlFilename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+    toast.success(t('dashboard.ublDownloaded'));
+  } catch (error) {
+    console.error('Error downloading UBL:', error);
+    toast.error(t('dashboard.ublDownloadError'));
+  }
+};
+
+5. Ajoute l'import (si manquant) :
+import { Download } from 'lucide-react';
+
+─────────────────────────────────────────────────
+
+📋 TÂCHE 3 : TRADUCTIONS (2 min)
+
+FICHIER : client/src/locales/fr.json
+Dans la section "dashboard", ajoute :
+"ublColumn": "UBL/XML",
+"downloadUbl": "Télécharger UBL",
+"noUbl": "Non disponible",
+"ublDownloaded": "Fichier UBL téléchargé avec succès",
+"ublDownloadError": "Erreur lors du téléchargement UBL"
+
+FICHIER : client/src/locales/nl.json
+"ublColumn": "UBL/XML",
+"downloadUbl": "Download UBL",
+"noUbl": "Niet beschikbaar",
+"ublDownloaded": "UBL-bestand succesvol gedownload",
+"ublDownloadError": "Fout bij downloaden UBL"
+
+FICHIER : client/src/locales/en.json
+"ublColumn": "UBL/XML",
+"downloadUbl": "Download UBL",
+"noUbl": "Not available",
+"ublDownloaded": "UBL file downloaded successfully",
+"ublDownloadError": "Error downloading UBL file"
+
+─────────────────────────────────────────────────
+
+✅ VALIDATION FINALE
+
+Après modifications :
+1. ✅ Projet compile sans erreur TypeScript
+2. ✅ Route /api/invoices/download-ubl/:filename fonctionne
+3. ✅ Bouton "Download UBL" visible dans dashboard
+4. ✅ Clic bouton → téléchargement XML
+5. ✅ Toast succès s'affiche
+6. ✅ Aucune régression sur auth/quotas/upload
+
+MONTRE-MOI UNIQUEMENT :
+- Les fichiers modifiés
+- Confirmation compilation OK
+- Screenshot du bouton dans le dashboard
+
+NE MODIFIE RIEN D'AUTRE.
+```
+
+---
+
+## 🎬 INSTRUCTIONS D'UTILISATION
+
+### **1. Copie le prompt** ⬆️
+Sélectionne tout le texte dans le bloc gris ci-dessus
+
+### **2. Ouvre Replit Agent**
+- Va sur ton projet Replit
+- Clique sur l'icône Agent (ou Ctrl+K)
+
+### **3. Colle et lance**
+- Colle le prompt complet
+- Appuie sur Enter
+- **NE CLIQUE PAS** sur "Approve all" immédiatement
+
+### **4. Vérifie avant de valider**
+L'Agent va te montrer les modifications. Vérifie qu'il :
+- ✅ Modifie SEULEMENT 3 fichiers (routes.ts, Dashboard.tsx, locales)
+- ✅ N'a PAS touché à auth, controllers, peppolAnalyzer
+- ❌ Si il veut modifier autre chose → **REFUSE** et montre-moi
+
+---
+
+## ⏱️ CE QUI VA SE PASSER
+```
+[00:00] Agent démarre analyse
+[00:02] Localise les 3 fichiers
+[00:05] Génère les modifications
+[00:08] Te montre le diff
+[00:10] Tu valides ✅
+[00:15] Compilation terminée

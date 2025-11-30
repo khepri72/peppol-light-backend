@@ -47,7 +47,12 @@
       "deleteError": "Fout bij verwijderen",
       "cancelButton": "Annuleren",
       "deleteButton": "Verwijderen"
-    }
+    },
+    "ublColumn": "UBL/XML",
+    "downloadUbl": "Download UBL",
+    "noUbl": "Niet beschikbaar",
+    "ublDownloaded": "UBL-bestand succesvol gedownload",
+    "ublDownloadError": "Fout bij downloaden UBL"
   },
   "status": {
     "uploaded": "In afwachting",

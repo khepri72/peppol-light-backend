@@ -143,6 +143,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   });
 
+  // Download UBL/XML file (already generated)
+  app.get('/api/invoices/download-ubl/:filename', authenticateToken, (req, res) => {
+    try {
+      const { filename } = req.params;
+      
+      // Security: verify .xml extension
+      if (!filename || !filename.endsWith('.xml')) {
+        return res.status(400).json({ error: 'Invalid filename format' });
+      }
+      
+      // Prevent directory traversal attacks
+      if (filename.includes('..') || filename.includes('/')) {
+        return res.status(400).json({ error: 'Invalid filename' });
+      }
+      
+      // Path to already generated XML file
+      const filePath = path.join(__dirname, 'uploads', filename);
+      
+      // Check if file exists
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: 'UBL file not found' });
+      }
+      
+      // Serve the file as download
+      res.setHeader('Content-Type', 'application/xml');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.sendFile(filePath);
+      
+    } catch (error) {
+      console.error('Error downloading UBL:', error);
+      res.status(500).json({ error: 'Failed to download UBL file' });
+    }
+  });
+
   // Serve uploaded files with authentication (SECURE)
   app.get('/api/uploads/:filename', authenticateToken, (req, res) => {
     try {
