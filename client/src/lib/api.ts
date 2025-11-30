@@ -134,20 +134,20 @@ class ApiClient {
 
     const uploadResponse = await fetch("/api/upload/pdf", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
+      headers: { Authorization: `Bearer ${token}` },
       body: formData
     });
 
     if (!uploadResponse.ok) {
-      throw new Error('Failed to upload file');
+      const err = await uploadResponse.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to upload file');
     }
 
     const uploadData = await uploadResponse.json();
+    console.log("📤 Upload OK:", uploadData.filename);
 
-    // 2️⃣ CRÉATION DU RECORD AIRTABLE (pour obtenir invoiceId)
-    const createInvoiceResponse = await fetch("/api/invoices", {
+    // 2️⃣ CRÉATION DU RECORD AIRTABLE (pour obtenir invoiceId + quota)
+    const createResponse = await fetch("/api/invoices", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -155,76 +155,51 @@ class ApiClient {
       },
       body: JSON.stringify({
         fileName: file.name,
-        fileUrl: uploadData.url || uploadData.fileUrl,
+        fileUrl: uploadData.url,
         status: "uploaded"
       })
     });
 
-    if (!createInvoiceResponse.ok) {
-      throw new Error('Failed to create invoice record');
+    if (!createResponse.ok) {
+      const err = await createResponse.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to create invoice record');
     }
 
-    const createdInvoice = await createInvoiceResponse.json();
+    const createdInvoice = await createResponse.json();
     const invoiceId = createdInvoice.id;
+    console.log("📌 Invoice ID:", invoiceId);
 
-    console.log("📌 Invoice ID créé :", invoiceId);
-
-    // 3️⃣ ANALYSE AVEC invoiceId (via FormData + invoiceId)
+    // 3️⃣ ANALYSE AVEC invoiceId (le backend met à jour Airtable automatiquement)
     const analyzeFormData = new FormData();
     analyzeFormData.append("file", file);
     analyzeFormData.append("invoiceId", invoiceId);
 
     const analyzeResponse = await fetch("/api/invoices/analyze", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
+      headers: { Authorization: `Bearer ${token}` },
       body: analyzeFormData
     });
 
     if (!analyzeResponse.ok) {
-      throw new Error('Failed to analyze invoice');
+      const err = await analyzeResponse.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to analyze invoice');
     }
 
-    const analyzeData = await analyzeResponse.json();
+    const result = await analyzeResponse.json();
+    console.log("✅ Analyse OK | Score:", result.score, "| XML:", result.xmlFilename);
 
-    // 4️⃣ MISE À JOUR AVEC RÉSULTATS D'ANALYSE
-    const errorsList = [
-      ...(analyzeData.errors || []).map((e: any) => `ERROR: ${e.message}`),
-      ...(analyzeData.warnings || []).map((w: any) => `WARNING: ${w.message}`)
-    ].join('\n');
-
-    const errorsData = JSON.stringify({
-      errors: analyzeData.errors || [],
-      warnings: analyzeData.warnings || []
-    });
-
-    // Update the invoice with analysis results
-    const updateResponse = await fetch(`/api/invoices/${invoiceId}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        status: analyzeData.score >= 80 ? 'checked' : 'pending',
-        conformityScore: analyzeData.score,
-        errorsList: errorsList,
-        errorsData: errorsData
-      })
-    });
-
-    // Return combined result
+    // Le backend a déjà mis à jour Airtable avec tous les champs
+    // On retourne les données de l'analyse
     return {
       id: invoiceId,
       fileName: file.name,
-      fileUrl: uploadData.url || uploadData.fileUrl,
-      status: analyzeData.score >= 80 ? 'checked' : 'pending',
-      conformityScore: analyzeData.score,
-      errorsList: errorsList,
-      errorsData: errorsData,
-      xmlFilename: analyzeData.xmlFilename,
-      ublFileUrl: analyzeData.ublFileUrl
+      fileUrl: uploadData.url,
+      status: result.score >= 80 ? 'checked' : 'pending',
+      conformityScore: result.score,
+      errorsList: result.errorsList,
+      errorsData: result.errorsData,
+      xmlFilename: result.xmlFilename,
+      ublFileUrl: result.ublFileUrl
     };
   }
 

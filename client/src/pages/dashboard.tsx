@@ -199,38 +199,28 @@ export default function Dashboard() {
     return invoice.errorsList || '';
   };
 
-  const downloadUbl = async (invoice: any) => {
+  const downloadUbl = async (invoice: Invoice) => {
     try {
-      // Try multiple field name formats (Airtable raw vs camelCase)
-      let xmlFilename = invoice['XML Filename'] || invoice.xmlFilename;
-      
-      if (!xmlFilename && (invoice['UBL File URL'] || invoice.ublFileUrl)) {
-        xmlFilename = (invoice['UBL File URL'] || invoice.ublFileUrl).split('/').pop();
-      }
-      
-      if (!xmlFilename && (invoice['File Name'] || invoice.fileName)) {
-        const fileName = invoice['File Name'] || invoice.fileName;
-        xmlFilename = fileName.replace(/\.[^/.]+$/, '') + '.xml';
-      }
-      
-      // Last resort: derive from fileUrl
-      if (!xmlFilename && invoice.fileUrl) {
-        const baseFilename = invoice.fileUrl.split('/').pop() || '';
-        xmlFilename = `${baseFilename}.xml`;
-      }
+      // UNIQUEMENT utiliser xmlFilename depuis Airtable (source of truth)
+      // Ne PAS construire le nom à partir de fileName ou fileUrl !
+      const xmlFilename = invoice.xmlFilename;
       
       if (!xmlFilename) {
-        throw new Error('Aucun fichier UBL généré');
+        throw new Error(t('dashboard.noUblGenerated') || 'No UBL file generated for this invoice');
       }
       
-      console.log('🔍 DEBUG - XML Filename:', xmlFilename);
+      console.log('📥 Downloading UBL:', xmlFilename);
       
+      const token = authStorage.getToken();
       const response = await fetch(`/api/invoices/download-ubl/${xmlFilename}`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       
       if (!response.ok) {
-        throw new Error(`Fichier non trouvé: ${xmlFilename}`);
+        if (response.status === 404) {
+          throw new Error(t('dashboard.ublNotFound') || 'UBL file not found on server');
+        }
+        throw new Error(`Download failed (${response.status})`);
       }
       
       const blob = await response.blob();
@@ -251,7 +241,7 @@ export default function Dashboard() {
       console.error('❌ Download error:', error);
       toast({
         title: t('common.error'),
-        description: `${t('dashboard.ublDownloadError')}: ${error.message}`,
+        description: error.message,
         variant: 'destructive',
       });
     }
@@ -428,7 +418,7 @@ export default function Dashboard() {
                         )}
                       </TableCell>
                       <TableCell className="text-center">
-                        {(invoice.xmlFilename || invoice.ublFileUrl || invoice.fileUrl) ? (
+                        {invoice.xmlFilename ? (
                           <Button
                             variant="outline"
                             size="sm"

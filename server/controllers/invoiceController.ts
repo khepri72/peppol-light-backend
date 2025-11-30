@@ -198,35 +198,59 @@ export const analyzeInvoice = async (req: AuthRequest, res: Response) => {
       fs.writeFileSync(xmlPath, ublXml);
       console.log(`✅ UBL XML généré: ${xmlFilename}`);
       
-      // 🔵 Sauvegarde Airtable des infos UBL
-      try {
-        const invoiceId = req.body.invoiceId;
-        if (invoiceId) {
-          await base(TABLES.INVOICES).update(invoiceId, {
-            'XML Filename': xmlFilename,
-            'UBL File URL': `/api/invoices/download-ubl/${xmlFilename}`,
-            'Invoice Number': invoiceData.invoiceNumber || '',
-            'Invoice Date': invoiceData.issueDate || invoiceData.issueDateISO || '',
-            'Total Amount': invoiceData.totals?.grossAmount || 0,
-            'Invoice Data': JSON.stringify(invoiceData, null, 2),
-          });
-          console.log("✅ Airtable UBL fields saved:", xmlFilename);
-        } else {
-          console.log("⚠️ Pas d'ID facture pour mise à jour Airtable");
-        }
-      } catch (e) {
-        console.error("❌ Erreur sauvegarde Airtable:", e);
-      }
     } catch (ublError) {
       console.error('Erreur génération UBL:', ublError);
     }
     
-    // 5. Réponse avec le vrai nom du fichier XML
+    // 5. Préparer les données d'erreurs
+    const errors = validationResults.filter(v => v.severity === 'error');
+    const warnings = validationResults.filter(v => v.severity === 'warning');
+    const errorsList = [
+      ...errors.map(e => `ERROR: ${e.message}`),
+      ...warnings.map(w => `WARNING: ${w.message}`)
+    ].join('\n');
+    const errorsData = JSON.stringify({ errors, warnings });
+    
+    // 6. Sauvegarde COMPLÈTE dans Airtable (score + errors + UBL)
+    // Note: Cette mise à jour ne doit PAS bloquer la réponse au frontend
+    const invoiceId = req.body.invoiceId;
+    if (invoiceId) {
+      try {
+        // Sanitize invoiceData fields (may be null/undefined if extraction failed)
+        const safeInvoiceNumber = invoiceData?.invoiceNumber || '';
+        const safeIssueDate = invoiceData?.issueDate || invoiceData?.issueDateISO || '';
+        const safeTotalAmount = invoiceData?.totals?.grossAmount || 0;
+        const safeInvoiceDataJson = invoiceData ? JSON.stringify(invoiceData, null, 2) : '{}';
+        
+        await base(TABLES.INVOICES).update(invoiceId, {
+          'Status': score >= 80 ? 'checked' : 'pending',
+          'Conformity Score': score,
+          'Errors List': errorsList,
+          'Errors Data': errorsData,
+          'XML Filename': xmlFilename || '',
+          'UBL File URL': xmlFilename ? `/api/invoices/download-ubl/${xmlFilename}` : '',
+          'Invoice Number': safeInvoiceNumber,
+          'Invoice Date': safeIssueDate,
+          'Total Amount': safeTotalAmount,
+          'Invoice Data': safeInvoiceDataJson,
+        });
+        console.log(`✅ Airtable updated: ${invoiceId} | Score: ${score}% | XML: ${xmlFilename}`);
+      } catch (airtableError: any) {
+        // Log but don't abort - frontend still needs the analysis results
+        console.error("❌ Erreur sauvegarde Airtable (non-bloquante):", airtableError.message || airtableError);
+      }
+    } else {
+      console.log("⚠️ Pas d'invoiceId - Airtable non mis à jour");
+    }
+    
+    // 7. Réponse avec toutes les données
     res.json({
       success: true,
       score,
-      errors: validationResults.filter(v => v.severity === 'error'),
-      warnings: validationResults.filter(v => v.severity === 'warning'),
+      errors,
+      warnings,
+      errorsList,
+      errorsData,
       xmlFilename: xmlFilename || null,
       ublFileUrl: xmlFilename ? `/api/invoices/download-ubl/${xmlFilename}` : null,
       extractedData: invoiceData
@@ -238,6 +262,61 @@ export const analyzeInvoice = async (req: AuthRequest, res: Response) => {
       success: false, 
       error: 'Erreur lors de l\'analyse de la facture' 
     });
+  }
+};
+
+/**
+ * Update an invoice (partial update)
+ * PATCH /api/invoices/:id
+ */
+export const updateInvoice = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId!;
+    const { id } = req.params;
+    const updateData = req.body;
+
+    // First, fetch the record to verify ownership
+    const record = await base(TABLES.INVOICES).find(id);
+
+    // Check if the user owns this invoice
+    // User field is a linked record array - Airtable returns array of record IDs
+    const userLinks = record.fields['User'] as string[] | undefined;
+    if (!userLinks || !userLinks.includes(userId)) {
+      return res.status(403).json({ error: 'Access denied to this invoice' });
+    }
+
+    // Build update fields (only update provided fields)
+    const fieldsToUpdate: Record<string, any> = {};
+    
+    if (updateData.status !== undefined) fieldsToUpdate['Status'] = updateData.status;
+    if (updateData.conformityScore !== undefined) fieldsToUpdate['Conformity Score'] = updateData.conformityScore;
+    if (updateData.errorsList !== undefined) fieldsToUpdate['Errors List'] = updateData.errorsList;
+    if (updateData.errorsData !== undefined) fieldsToUpdate['Errors Data'] = updateData.errorsData;
+    if (updateData.xmlFilename !== undefined) fieldsToUpdate['XML Filename'] = updateData.xmlFilename;
+    if (updateData.ublFileUrl !== undefined) fieldsToUpdate['UBL File URL'] = updateData.ublFileUrl;
+
+    // Update the invoice
+    const updatedRecord = await base(TABLES.INVOICES).update(id, fieldsToUpdate);
+
+    res.json({
+      id: updatedRecord.id,
+      fileName: updatedRecord.fields['File Name'],
+      fileUrl: updatedRecord.fields['File URL'],
+      status: updatedRecord.fields['Status'],
+      conformityScore: updatedRecord.fields['Conformity Score'],
+      errorsList: updatedRecord.fields['Errors List'],
+      errorsData: updatedRecord.fields['Errors Data'],
+      xmlFilename: updatedRecord.fields['XML Filename'],
+      ublFileUrl: updatedRecord.fields['UBL File URL'],
+    });
+  } catch (error: any) {
+    console.error('Update invoice error:', error);
+    
+    if (error.statusCode === 404 || error.message?.includes('NOT_FOUND')) {
+      return res.status(404).json({ error: 'Invoice not found' });
+    }
+    
+    res.status(500).json({ error: 'Failed to update invoice' });
   }
 };
 
