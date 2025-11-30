@@ -1,0 +1,91 @@
+🎯 OBJECTIF : Corriger la fonction uploadAndAnalyzeInvoice pour que l’ID Airtable (invoiceId) soit envoyé AVANT l’analyse, afin que le backend puisse remplir automatiquement : XML Filename, UBL File URL, Invoice Date, Total Amount, Invoice Data.
+
+👉 NE MODIFIER QUE : client/src/lib/api.ts
+👉 NE TOUCHER A RIEN D’AUTRE.
+
+────────────────────────────────────────────
+🔧 ACTION : MODIFIER uploadAndAnalyzeInvoice
+────────────────────────────────────────────
+
+1️⃣ OUVRIR le fichier :
+client/src/lib/api.ts
+
+2️⃣ TROUVER la fonction :
+uploadAndAnalyzeInvoice
+
+3️⃣ REMPLACER TOUT SON CONTENU par EXACTEMENT ceci :
+
+----------------------------------------------------------
+export async function uploadAndAnalyzeInvoice(file: File): Promise<any> {
+  const token = localStorage.getItem("token");
+  const formData = new FormData();
+  formData.append("pdf", file);
+
+  // 1️⃣ UPLOAD DU FICHIER
+  const uploadResponse = await fetch("/api/upload/pdf", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    body: formData
+  });
+
+  const uploadData = await uploadResponse.json();
+
+  // 2️⃣ CRÉATION DU RECORD AIRTABLE (pour obtenir invoiceId)
+  const createInvoiceResponse = await fetch("/api/invoices", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      fileName: uploadData.fileName,
+      fileUrl: uploadData.fileUrl,
+      status: "uploaded"
+    })
+  });
+
+  const createdInvoice = await createInvoiceResponse.json();
+  const invoiceId = createdInvoice.id;
+
+  console.log("📌 Invoice ID créé :", invoiceId);
+
+  // 3️⃣ ANALYSE AVEC invoiceId
+  const analyzeResponse = await fetch("/api/invoices/analyze", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      invoiceId: invoiceId,
+      fileUrl: uploadData.fileUrl
+    })
+  });
+
+  const analyzeData = await analyzeResponse.json();
+
+  return {
+    ...analyzeData,
+    invoiceId
+  };
+}
+----------------------------------------------------------
+
+4️⃣ SAUVEGARDER
+5️⃣ COMPILER
+6️⃣ REDÉMARRER LE PROJET
+
+7️⃣ TEST :
+• Upload une NOUVELLE facture
+• Vérifie Airtable → 5 champs doivent se remplir :
+   - Invoice Number
+   - Invoice Date
+   - Total Amount
+   - Invoice Data
+   - XML Filename
+• Dashboard → Download UBL doit fonctionner sans erreur.
+────────────────────────────────────────────
+
+NE TOUCHER À RIEN D’AUTRE.

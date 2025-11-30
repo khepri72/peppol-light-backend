@@ -126,69 +126,106 @@ class ApiClient {
   }
 
   async uploadAndAnalyzeInvoice(file: File): Promise<Invoice> {
-    try {
-      // Step 1: Upload the file
-      const formData = new FormData();
-      formData.append('pdf', file);
-      
-      const uploadResponse = await this.request<{ url: string; filename: string }>('/api/upload/pdf', {
-        method: 'POST',
-        body: formData,
-      });
+    const token = authStorage.getToken();
 
-      // Step 2: Analyze the file
-      const analyzeFormData = new FormData();
-      analyzeFormData.append('file', file);
-      
-      const analysisResult = await this.request<{
-        success: boolean;
-        score: number;
-        errors: Array<{ field?: string; code: string; severity: string; message: string }>;
-        warnings: Array<{ field?: string; code: string; severity: string; message: string }>;
-        xmlFilename: string | null;
-        ublFileUrl: string | null;
-      }>('/api/invoices/analyze', {
-        method: 'POST',
-        body: analyzeFormData,
-      });
+    // 1️⃣ UPLOAD DU FICHIER
+    const formData = new FormData();
+    formData.append("pdf", file);
 
-      // Step 3: Register in Airtable with analysis results
-      const errorsList = [
-        ...analysisResult.errors.map(e => `ERROR: ${e.message}`),
-        ...analysisResult.warnings.map(w => `WARNING: ${w.message}`)
-      ].join('\n');
+    const uploadResponse = await fetch("/api/upload/pdf", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: formData
+    });
 
-      // Store structured errors data for i18n translation
-      const errorsData = JSON.stringify({
-        errors: analysisResult.errors,
-        warnings: analysisResult.warnings
-      });
-
-      const invoiceData = {
-        fileName: file.name,
-        fileUrl: uploadResponse.url,
-        status: analysisResult.score >= 80 ? 'checked' : 'uploaded',
-        conformityScore: analysisResult.score,
-        errorsList: errorsList || '',
-        errorsData: errorsData,
-        xmlFilename: analysisResult.xmlFilename || '',
-        ublFileUrl: analysisResult.ublFileUrl || '',
-      };
-
-      return this.request<Invoice>('/api/invoices', {
-        method: 'POST',
-        body: JSON.stringify(invoiceData),
-      });
-    } catch (error) {
-      console.error('uploadAndAnalyzeInvoice error:', error);
-      // Re-throw with more context if error message is generic
-      if (error instanceof Error) {
-        if (error.message === 'Request failed' || error.message === 'An error occurred') {
-          throw new Error('Failed to process invoice. Please ensure the file is a valid PDF or Excel invoice.');
-        }
-      }
-      throw error;
+    if (!uploadResponse.ok) {
+      throw new Error('Failed to upload file');
     }
+
+    const uploadData = await uploadResponse.json();
+
+    // 2️⃣ CRÉATION DU RECORD AIRTABLE (pour obtenir invoiceId)
+    const createInvoiceResponse = await fetch("/api/invoices", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        fileName: file.name,
+        fileUrl: uploadData.url || uploadData.fileUrl,
+        status: "uploaded"
+      })
+    });
+
+    if (!createInvoiceResponse.ok) {
+      throw new Error('Failed to create invoice record');
+    }
+
+    const createdInvoice = await createInvoiceResponse.json();
+    const invoiceId = createdInvoice.id;
+
+    console.log("📌 Invoice ID créé :", invoiceId);
+
+    // 3️⃣ ANALYSE AVEC invoiceId (via FormData + invoiceId)
+    const analyzeFormData = new FormData();
+    analyzeFormData.append("file", file);
+    analyzeFormData.append("invoiceId", invoiceId);
+
+    const analyzeResponse = await fetch("/api/invoices/analyze", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: analyzeFormData
+    });
+
+    if (!analyzeResponse.ok) {
+      throw new Error('Failed to analyze invoice');
+    }
+
+    const analyzeData = await analyzeResponse.json();
+
+    // 4️⃣ MISE À JOUR AVEC RÉSULTATS D'ANALYSE
+    const errorsList = [
+      ...(analyzeData.errors || []).map((e: any) => `ERROR: ${e.message}`),
+      ...(analyzeData.warnings || []).map((w: any) => `WARNING: ${w.message}`)
+    ].join('\n');
+
+    const errorsData = JSON.stringify({
+      errors: analyzeData.errors || [],
+      warnings: analyzeData.warnings || []
+    });
+
+    // Update the invoice with analysis results
+    const updateResponse = await fetch(`/api/invoices/${invoiceId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        status: analyzeData.score >= 80 ? 'checked' : 'pending',
+        conformityScore: analyzeData.score,
+        errorsList: errorsList,
+        errorsData: errorsData
+      })
+    });
+
+    // Return combined result
+    return {
+      id: invoiceId,
+      fileName: file.name,
+      fileUrl: uploadData.url || uploadData.fileUrl,
+      status: analyzeData.score >= 80 ? 'checked' : 'pending',
+      conformityScore: analyzeData.score,
+      errorsList: errorsList,
+      errorsData: errorsData,
+      xmlFilename: analyzeData.xmlFilename,
+      ublFileUrl: analyzeData.ublFileUrl
+    };
   }
 
   async deleteInvoice(id: string): Promise<{ message: string }> {
