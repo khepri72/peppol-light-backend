@@ -159,7 +159,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Path to already generated XML file
-      const filePath = path.join(__dirname, 'uploads', filename);
+      const filePath = path.join(process.cwd(), 'server', 'uploads', filename);
+
       
       // Check if file exists
       if (!fs.existsSync(filePath)) {
