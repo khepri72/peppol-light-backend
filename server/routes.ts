@@ -193,17 +193,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Invalid filename' });
       }
       
-      const filePath = path.join(__dirname, 'uploads', filename);
+      // UTILISER LE MÊME DOSSIER QUE MULTER ET LA GÉNÉRATION XML
+      const uploadsPath = ensureUploadsDir();
+      const filePath = path.join(uploadsPath, filename);
+      
+      console.log('🔍 Serving file:', filePath);
       
       // Check if file exists and send it
       res.sendFile(filePath, (err) => {
         if (err) {
-          console.error('File send error:', err);
+          console.error('❌ File send error:', err);
           return res.status(404).json({ error: 'File not found' });
         }
       });
     } catch (error) {
-      console.error('File access error:', error);
+      console.error('❌ File access error:', error);
       res.status(500).json({ error: 'Failed to access file' });
     }
   });

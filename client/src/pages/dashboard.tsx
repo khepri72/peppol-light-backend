@@ -212,13 +212,21 @@ export default function Dashboard() {
       
       if (!xmlFilename && invoice.fileUrl) {
         // Fallback: derive from fileUrl (legacy records)
+        // fileUrl = /api/uploads/invoice-123.pdf → baseFilename = invoice-123.pdf
         const baseFilename = invoice.fileUrl.split('/').pop() || '';
-        xmlFilename = `${baseFilename}.xml`;
+        // Remove .pdf/.xlsx extension before adding .xml (avoid .pdf.xml)
+        const cleanBase = baseFilename.replace(/\.(pdf|xlsx|xls)$/i, '');
+        xmlFilename = `${cleanBase}.xml`;
       }
       
       if (!xmlFilename) {
         throw new Error('No XML file available for this invoice');
       }
+      
+      // Nettoyer les doubles extensions si présentes (.pdf.xml → .xml)
+      xmlFilename = xmlFilename.replace(/\.(pdf|xlsx|xls)\.xml$/i, '.xml');
+      
+      console.log('🔍 Downloading UBL:', xmlFilename);
       
       const token = authStorage.getToken();
       const response = await fetch(`/api/invoices/download-ubl/${xmlFilename}`, {
@@ -228,6 +236,8 @@ export default function Dashboard() {
       });
       
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Download failed:', response.status, errorText);
         throw new Error(`Download failed: ${response.status}`);
       }
       
@@ -247,7 +257,7 @@ export default function Dashboard() {
         description: t('dashboard.ublDownloaded'),
       });
     } catch (error: any) {
-      console.error('Error downloading UBL:', error);
+      console.error('❌ Error downloading UBL:', error);
       toast({
         title: t('common.error'),
         description: `${t('dashboard.ublDownloadError')}: ${error.message}`,

@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import fs from 'fs';
+import path from 'path';
 import { base, TABLES } from '../config/airtable';
 import { AuthRequest } from '../middlewares/auth';
 import { buildSafeFilterFormula } from '../utils/airtableHelpers';
@@ -192,11 +193,23 @@ export const analyzeInvoice = async (req: AuthRequest, res: Response) => {
     try {
       ublXml = generatePeppolUBL(invoiceData);
       
-      // Sauvegarder XML avec le vrai nom de fichier
-      xmlPath = `${filePath}.xml`;
-      xmlFilename = `${req.file.filename}.xml`;
+      // Calculer le nom XML SANS double extension (.pdf.xml → .xml)
+      // req.file.filename = "invoice-123456789.pdf" → baseFilename = "invoice-123456789"
+      const originalFilename = req.file.filename;
+      const extname = path.extname(originalFilename); // ".pdf" ou ".xlsx"
+      const baseFilename = originalFilename.replace(extname, ''); // "invoice-123456789"
+      xmlFilename = `${baseFilename}.xml`; // "invoice-123456789.xml"
+      
+      // Utiliser le même dossier uploads que Multer (process.cwd()/server/uploads)
+      const uploadsDir = path.join(process.cwd(), 'server', 'uploads');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+        console.log('📁 Created uploads directory at', uploadsDir);
+      }
+      
+      xmlPath = path.join(uploadsDir, xmlFilename);
       fs.writeFileSync(xmlPath, ublXml);
-      console.log(`✅ UBL XML généré: ${xmlFilename}`);
+      console.log(`✅ UBL XML généré: ${xmlFilename} → ${xmlPath}`);
       
       // Mise à jour Airtable avec les métadonnées UBL
       const { invoiceId } = req.body;
