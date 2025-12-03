@@ -148,33 +148,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { filename } = req.params;
       
-      // Security: verify .xml extension
+      // 1) Vérification du nom de fichier
       if (!filename || !filename.endsWith('.xml')) {
         return res.status(400).json({ error: 'Invalid filename format' });
       }
       
-      // Prevent directory traversal attacks
+      // 2) Sécurité chemin
       if (filename.includes('..') || filename.includes('/')) {
         return res.status(400).json({ error: 'Invalid filename' });
       }
       
-      // Path to already generated XML file
-      const filePath = path.join(process.cwd(), 'server', 'uploads', filename);
-
+      // 3) UTILISER EXACTEMENT LE MÊME DOSSIER QUE L'UPLOAD
+      const uploadsPath = ensureUploadsDir();            // ← MÊME FONCTION
+      const filePath = path.join(uploadsPath, filename); // ← MÊME BASE
       
-      // Check if file exists
+      console.log('🔍 Searching UBL file at:', filePath);
+      
+      // 4) Vérifier l'existence du fichier
       if (!fs.existsSync(filePath)) {
+        console.error('❌ UBL file not found at path:', filePath);
         return res.status(404).json({ error: 'UBL file not found' });
       }
       
-      // Serve the file as download
+      console.log('✅ UBL file found, sending:', filename);
+      
+      // 5) Envoyer le fichier
       res.setHeader('Content-Type', 'application/xml');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      res.sendFile(filePath);
+      return res.sendFile(filePath);
       
     } catch (error) {
-      console.error('Error downloading UBL:', error);
-      res.status(500).json({ error: 'Failed to download UBL file' });
+      console.error('❌ Error downloading UBL:', error);
+      return res.status(500).json({ error: 'Failed to download UBL file' });
     }
   });
 
