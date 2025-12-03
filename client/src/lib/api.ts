@@ -127,19 +127,37 @@ class ApiClient {
 
   async uploadAndAnalyzeInvoice(file: File): Promise<Invoice> {
     try {
-      // Step 1: Upload the file
-      const formData = new FormData();
-      formData.append('pdf', file);
+      // Step 1: Upload du fichier
+      const uploadFormData = new FormData();
+      uploadFormData.append('pdf', file);
       
       const uploadResponse = await this.request<{ url: string; filename: string }>('/api/upload/pdf', {
         method: 'POST',
-        body: formData,
+        body: uploadFormData,
       });
 
-      // Step 2: Analyze the file
+      // Step 2: Créer record Airtable IMMÉDIATEMENT → obtenir invoiceId
+      const initialInvoiceData = {
+        fileName: file.name,
+        fileUrl: uploadResponse.url,
+        status: 'uploaded',
+        conformityScore: 0,
+        errorsList: '',
+        errorsData: '',
+        xmlFilename: '',
+        ublFileUrl: '',
+      };
+
+      const createdInvoice = await this.request<Invoice>('/api/invoices', {
+        method: 'POST',
+        body: JSON.stringify(initialInvoiceData),
+      });
+
+      // Step 3: Analyser la facture EN PASSANT invoiceId au backend
       const analyzeFormData = new FormData();
       analyzeFormData.append('file', file);
-      
+      analyzeFormData.append('invoiceId', createdInvoice.id); // AJOUT CRITIQUE
+
       const analysisResult = await this.request<{
         success: boolean;
         score: number;
@@ -152,33 +170,14 @@ class ApiClient {
         body: analyzeFormData,
       });
 
-      // Step 3: Register in Airtable with analysis results
-      const errorsList = [
-        ...analysisResult.errors.map(e => `ERROR: ${e.message}`),
-        ...analysisResult.warnings.map(w => `WARNING: ${w.message}`)
-      ].join('\n');
-
-      // Store structured errors data for i18n translation
-      const errorsData = JSON.stringify({
-        errors: analysisResult.errors,
-        warnings: analysisResult.warnings
-      });
-
-      const invoiceData = {
-        fileName: file.name,
-        fileUrl: uploadResponse.url,
-        status: analysisResult.score >= 80 ? 'checked' : 'uploaded',
+      // Step 4: Retourner l'invoice avec les données d'analyse
+      return {
+        ...createdInvoice,
         conformityScore: analysisResult.score,
-        errorsList: errorsList || '',
-        errorsData: errorsData,
+        status: analysisResult.score >= 80 ? 'checked' : 'uploaded',
         xmlFilename: analysisResult.xmlFilename || '',
         ublFileUrl: analysisResult.ublFileUrl || '',
       };
-
-      return this.request<Invoice>('/api/invoices', {
-        method: 'POST',
-        body: JSON.stringify(invoiceData),
-      });
     } catch (error) {
       console.error('uploadAndAnalyzeInvoice error:', error);
       // Re-throw with more context if error message is generic
