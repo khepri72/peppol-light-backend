@@ -159,23 +159,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // 3) UTILISER EXACTEMENT LE MÊME DOSSIER QUE L'UPLOAD
-      const uploadsPath = ensureUploadsDir();            // ← MÊME FONCTION
-      const filePath = path.join(uploadsPath, filename); // ← MÊME BASE
+      const uploadsPath = ensureUploadsDir();
       
-      console.log('🔍 Searching UBL file at:', filePath);
+      // 4) Essayer plusieurs formats de nom (nouveau puis ancien)
+      // Nouveau format: invoice-123.xml
+      // Ancien format: invoice-123.pdf.xml ou invoice-123.xlsx.xml
+      const possibleNames = [
+        filename,                                    // Exact match (nouveau format)
+        filename.replace('.xml', '.pdf.xml'),        // Ancien format PDF
+        filename.replace('.xml', '.xlsx.xml'),       // Ancien format Excel
+      ];
       
-      // 4) Vérifier l'existence du fichier
-      if (!fs.existsSync(filePath)) {
-        console.error('❌ UBL file not found at path:', filePath);
+      let foundPath: string | null = null;
+      let foundFilename: string = filename;
+      
+      for (const name of possibleNames) {
+        const testPath = path.join(uploadsPath, name);
+        console.log('🔍 Trying:', testPath);
+        if (fs.existsSync(testPath)) {
+          foundPath = testPath;
+          foundFilename = name;
+          break;
+        }
+      }
+      
+      if (!foundPath) {
+        console.error('❌ UBL file not found. Tried:', possibleNames.join(', '));
         return res.status(404).json({ error: 'UBL file not found' });
       }
       
-      console.log('✅ UBL file found, sending:', filename);
+      console.log('✅ UBL file found:', foundFilename);
       
       // 5) Envoyer le fichier
       res.setHeader('Content-Type', 'application/xml');
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      return res.sendFile(filePath);
+      res.setHeader('Content-Disposition', `attachment; filename="${foundFilename}"`);
+      return res.sendFile(foundPath);
       
     } catch (error) {
       console.error('❌ Error downloading UBL:', error);
