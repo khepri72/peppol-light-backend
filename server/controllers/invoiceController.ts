@@ -162,57 +162,90 @@ export const getInvoices = async (req: AuthRequest, res: Response) => {
  * POST /api/invoices/analyze
  */
 export const analyzeInvoice = async (req: AuthRequest, res: Response) => {
+  console.log('🔵 [ANALYZE] Fonction analyzeInvoice appelée');
+  console.log('🔵 [ANALYZE] req.file:', req.file ? req.file.filename : 'UNDEFINED');
+  console.log('🔵 [ANALYZE] req.body:', JSON.stringify(req.body));
+  
   try {
     if (!req.file) {
+      console.error('🔴 [ANALYZE] Pas de fichier uploadé!');
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
     const filePath = req.file.path;
     const fileType = req.file.mimetype;
+    console.log('🔵 [ANALYZE] filePath:', filePath);
+    console.log('🔵 [ANALYZE] fileType:', fileType);
     
     // 1. Extraction selon type
     let invoiceData;
+    console.log('🔵 [ANALYZE] Étape 1: Extraction...');
     if (fileType === 'application/pdf') {
       invoiceData = await extractPdfData(filePath);
     } else if (fileType.includes('spreadsheet') || fileType.includes('excel')) {
       invoiceData = extractExcelData(filePath);
     } else {
+      console.error('🔴 [ANALYZE] Type de fichier non supporté:', fileType);
       return res.status(400).json({ error: 'Type de fichier non supporté. Utilisez PDF ou Excel.' });
     }
+    console.log('🔵 [ANALYZE] Données extraites:', JSON.stringify(invoiceData).substring(0, 200));
     
     // 2. Validation
+    console.log('🔵 [ANALYZE] Étape 2: Validation...');
     const validationResults = validatePeppolRules(invoiceData);
+    console.log('🔵 [ANALYZE] Résultats validation:', validationResults.length, 'règles');
     
     // 3. Score
+    console.log('🔵 [ANALYZE] Étape 3: Calcul du score...');
     const score = calculateConformityScore(validationResults);
+    console.log('🔵 [ANALYZE] Score:', score);
     
     // 4. Génération UBL
+    console.log('🔵 [ANALYZE] Étape 4: Génération UBL...');
     let ublXml = '';
     let xmlPath = '';
     let xmlFilename = '';
+    
     try {
+      console.log('🔵 [ANALYZE] Appel generatePeppolUBL...');
       ublXml = generatePeppolUBL(invoiceData);
+      console.log('🔵 [ANALYZE] XML généré, longueur:', ublXml.length, 'caractères');
       
       // Calculer le nom XML SANS double extension (.pdf.xml → .xml)
-      // req.file.filename = "invoice-123456789.pdf" → baseFilename = "invoice-123456789"
       const originalFilename = req.file.filename;
       const extname = path.extname(originalFilename); // ".pdf" ou ".xlsx"
       const baseFilename = originalFilename.replace(extname, ''); // "invoice-123456789"
       xmlFilename = `${baseFilename}.xml`; // "invoice-123456789.xml"
+      console.log('🔵 [ANALYZE] xmlFilename calculé:', xmlFilename);
       
       // Utiliser le même dossier uploads que Multer (process.cwd()/server/uploads)
       const uploadsDir = path.join(process.cwd(), 'server', 'uploads');
+      console.log('🔵 [ANALYZE] uploadsDir:', uploadsDir);
+      
       if (!fs.existsSync(uploadsDir)) {
         fs.mkdirSync(uploadsDir, { recursive: true });
         console.log('📁 Created uploads directory at', uploadsDir);
       }
       
       xmlPath = path.join(uploadsDir, xmlFilename);
+      console.log('🔵 [ANALYZE] xmlPath COMPLET:', xmlPath);
+      console.log('🔵 [ANALYZE] Écriture du fichier XML...');
+      
       fs.writeFileSync(xmlPath, ublXml);
-      console.log(`✅ UBL XML généré: ${xmlFilename} → ${xmlPath}`);
+      
+      // Vérifier que le fichier existe après écriture
+      const fileExists = fs.existsSync(xmlPath);
+      console.log('🔵 [ANALYZE] Fichier créé?', fileExists);
+      if (fileExists) {
+        const stats = fs.statSync(xmlPath);
+        console.log('✅ [ANALYZE] UBL XML créé avec succès:', xmlFilename, '- Taille:', stats.size, 'bytes');
+      } else {
+        console.error('🔴 [ANALYZE] ERREUR: Le fichier n\'existe pas après writeFileSync!');
+      }
       
       // Mise à jour Airtable avec les métadonnées UBL
       const { invoiceId } = req.body;
+      console.log('🔵 [ANALYZE] invoiceId pour update Airtable:', invoiceId);
       if (invoiceId) {
         try {
           await base(TABLES.INVOICES).update(invoiceId, {
@@ -224,14 +257,20 @@ export const analyzeInvoice = async (req: AuthRequest, res: Response) => {
             'Invoice Data': JSON.stringify(invoiceData, null, 2),
             'Status': 'UBL Generated',
           });
-          console.log(`✅ Airtable mis à jour pour invoice ${invoiceId}`);
+          console.log(`✅ [ANALYZE] Airtable mis à jour pour invoice ${invoiceId}`);
         } catch (airtableError) {
-          console.error('⚠️ Erreur mise à jour Airtable:', airtableError);
+          console.error('⚠️ [ANALYZE] Erreur mise à jour Airtable:', airtableError);
         }
+      } else {
+        console.log('⚠️ [ANALYZE] Pas de invoiceId fourni, pas de mise à jour Airtable');
       }
-    } catch (ublError) {
-      console.error('Erreur génération UBL:', ublError);
+    } catch (ublError: any) {
+      console.error('🔴 [ANALYZE] ERREUR dans bloc génération UBL:', ublError);
+      console.error('🔴 [ANALYZE] Stack trace:', ublError?.stack);
     }
+    
+    console.log('🔵 [ANALYZE] Étape 5: Envoi réponse...');
+    console.log('🔵 [ANALYZE] xmlFilename final:', xmlFilename || 'NULL');
     
     // 5. Réponse avec le vrai nom du fichier XML
     res.json({
@@ -244,8 +283,9 @@ export const analyzeInvoice = async (req: AuthRequest, res: Response) => {
       extractedData: invoiceData
     });
     
-  } catch (error) {
-    console.error('Erreur analyse:', error);
+  } catch (error: any) {
+    console.error('🔴 [ANALYZE] ERREUR GLOBALE:', error);
+    console.error('🔴 [ANALYZE] Stack:', error?.stack);
     res.status(500).json({ 
       success: false, 
       error: 'Erreur lors de l\'analyse de la facture' 
