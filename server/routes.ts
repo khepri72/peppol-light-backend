@@ -14,8 +14,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Utility function to ensure uploads directory exists
+// IMPORTANT: Utilise process.cwd() pour un chemin cohérent avec invoiceController
 function ensureUploadsDir(): string {
-  const uploadsPath = path.join(__dirname, 'uploads');
+  const uploadsPath = path.join(process.cwd(), 'server', 'uploads');
   if (!fs.existsSync(uploadsPath)) {
     fs.mkdirSync(uploadsPath, { recursive: true });
     console.log('📁 Created uploads directory at', uploadsPath);

@@ -248,16 +248,18 @@ export const analyzeInvoice = async (req: AuthRequest, res: Response) => {
       console.log('🔵 [ANALYZE] invoiceId pour update Airtable:', invoiceId);
       if (invoiceId) {
         try {
+          console.log('🔵 [ANALYZE] Score de conformité à sauvegarder:', score);
           await base(TABLES.INVOICES).update(invoiceId, {
             'XML Filename': xmlFilename,
             'UBL File URL': `/api/invoices/download-ubl/${xmlFilename}`,
+            'Conformity Score': score, // IMPORTANT: Sauvegarde du score!
             'Invoice Number': invoiceData.invoiceNumber || '',
             'Invoice Date': invoiceData.issueDate || '',
             'Total Amount': invoiceData.totals?.grossAmount || 0,
             'Invoice Data': JSON.stringify(invoiceData, null, 2),
             'Status': 'UBL Generated',
           });
-          console.log(`✅ [ANALYZE] Airtable mis à jour pour invoice ${invoiceId}`);
+          console.log(`✅ [ANALYZE] Airtable mis à jour pour invoice ${invoiceId} avec score ${score}%`);
         } catch (airtableError) {
           console.error('⚠️ [ANALYZE] Erreur mise à jour Airtable:', airtableError);
         }
