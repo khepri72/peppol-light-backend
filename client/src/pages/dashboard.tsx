@@ -201,44 +201,24 @@ export default function Dashboard() {
 
   const downloadUbl = async (invoice: Invoice) => {
     try {
-      // Get real XML filename from Airtable (stored during analysis)
-      // Fallback chain: xmlFilename -> ublFileUrl -> derive from fileUrl
-      let xmlFilename = invoice.xmlFilename;
+      // Utiliser l'invoiceId pour télécharger le UBL depuis Airtable
+      // (compatible avec le filesystem éphémère de Render)
+      const invoiceId = invoice.id;
+      const xmlFilename = invoice.xmlFilename || `invoice-${invoiceId}.xml`;
       
-      if (!xmlFilename && invoice.ublFileUrl) {
-        // Extract from ublFileUrl (/api/invoices/download-ubl/xxx.xml -> xxx.xml)
-        xmlFilename = invoice.ublFileUrl.split('/').pop();
-      }
-      
-      if (!xmlFilename && invoice.fileUrl) {
-        // Fallback: derive from fileUrl (legacy records)
-        // fileUrl = /api/uploads/invoice-123.pdf → baseFilename = invoice-123.pdf
-        const baseFilename = invoice.fileUrl.split('/').pop() || '';
-        // Remove .pdf/.xlsx extension before adding .xml (avoid .pdf.xml)
-        const cleanBase = baseFilename.replace(/\.(pdf|xlsx|xls)$/i, '');
-        xmlFilename = `${cleanBase}.xml`;
-      }
-      
-      if (!xmlFilename) {
-        throw new Error('No XML file available for this invoice');
-      }
-      
-      // Nettoyer les doubles extensions si présentes (.pdf.xml → .xml)
-      xmlFilename = xmlFilename.replace(/\.(pdf|xlsx|xls)\.xml$/i, '.xml');
-      
-      console.log('🔍 Downloading UBL:', xmlFilename);
+      console.log('🔍 Downloading UBL for invoice:', invoiceId);
       
       const token = authStorage.getToken();
-      const response = await fetch(`/api/invoices/download-ubl/${xmlFilename}`, {
+      const response = await fetch(`/api/invoices/download-ubl/${invoiceId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
       
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Download failed:', response.status, errorText);
-        throw new Error(`Download failed: ${response.status}`);
+        const errorData = await response.json().catch(() => ({ error: 'Download failed' }));
+        console.error('❌ Download failed:', response.status, errorData);
+        throw new Error(errorData.error || `Download failed: ${response.status}`);
       }
       
       // Download file

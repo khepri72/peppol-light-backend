@@ -203,7 +203,6 @@ export const analyzeInvoice = async (req: AuthRequest, res: Response) => {
     // 4. Génération UBL
     console.log('🔵 [ANALYZE] Étape 4: Génération UBL...');
     let ublXml = '';
-    let xmlPath = '';
     let xmlFilename = '';
     
     try {
@@ -218,32 +217,10 @@ export const analyzeInvoice = async (req: AuthRequest, res: Response) => {
       xmlFilename = `${baseFilename}.xml`; // "invoice-123456789.xml"
       console.log('🔵 [ANALYZE] xmlFilename calculé:', xmlFilename);
       
-      // Utiliser le même dossier uploads que Multer (process.cwd()/server/uploads)
-      const uploadsDir = path.join(process.cwd(), 'server', 'uploads');
-      console.log('🔵 [ANALYZE] uploadsDir:', uploadsDir);
+      // ⚠️ IMPORTANT: Sur Render (plan gratuit), le filesystem est éphémère!
+      // On stocke le contenu XML directement dans Airtable au lieu du disque
       
-      if (!fs.existsSync(uploadsDir)) {
-        fs.mkdirSync(uploadsDir, { recursive: true });
-        console.log('📁 Created uploads directory at', uploadsDir);
-      }
-      
-      xmlPath = path.join(uploadsDir, xmlFilename);
-      console.log('🔵 [ANALYZE] xmlPath COMPLET:', xmlPath);
-      console.log('🔵 [ANALYZE] Écriture du fichier XML...');
-      
-      fs.writeFileSync(xmlPath, ublXml);
-      
-      // Vérifier que le fichier existe après écriture
-      const fileExists = fs.existsSync(xmlPath);
-      console.log('🔵 [ANALYZE] Fichier créé?', fileExists);
-      if (fileExists) {
-        const stats = fs.statSync(xmlPath);
-        console.log('✅ [ANALYZE] UBL XML créé avec succès:', xmlFilename, '- Taille:', stats.size, 'bytes');
-      } else {
-        console.error('🔴 [ANALYZE] ERREUR: Le fichier n\'existe pas après writeFileSync!');
-      }
-      
-      // Mise à jour Airtable avec les métadonnées UBL
+      // Mise à jour Airtable avec le contenu UBL complet
       const { invoiceId } = req.body;
       console.log('🔵 [ANALYZE] invoiceId pour update Airtable:', invoiceId);
       if (invoiceId) {
@@ -251,17 +228,33 @@ export const analyzeInvoice = async (req: AuthRequest, res: Response) => {
           console.log('🔵 [ANALYZE] Score de conformité à sauvegarder:', score);
           await base(TABLES.INVOICES).update(invoiceId, {
             'XML Filename': xmlFilename,
-            'UBL File URL': `/api/invoices/download-ubl/${xmlFilename}`,
-            'Conformity Score': score, // IMPORTANT: Sauvegarde du score!
+            'UBL File URL': `/api/invoices/download-ubl/${invoiceId}`, // Utiliser invoiceId au lieu du filename
+            'UBL Content': ublXml, // ⭐ NOUVEAU: Stocker le XML directement dans Airtable
+            'Conformity Score': score,
             'Invoice Number': invoiceData.invoiceNumber || '',
             'Invoice Date': invoiceData.issueDate || '',
             'Total Amount': invoiceData.totals?.grossAmount || 0,
             'Invoice Data': JSON.stringify(invoiceData, null, 2),
             'Status': 'UBL Generated',
           });
-          console.log(`✅ [ANALYZE] Airtable mis à jour pour invoice ${invoiceId} avec score ${score}%`);
-        } catch (airtableError) {
-          console.error('⚠️ [ANALYZE] Erreur mise à jour Airtable:', airtableError);
+          console.log(`✅ [ANALYZE] Airtable mis à jour pour invoice ${invoiceId} avec score ${score}% et contenu UBL`);
+        } catch (airtableError: any) {
+          // Si le champ UBL Content n'existe pas encore, essayer sans
+          if (airtableError.statusCode === 422 || airtableError.message?.includes('INVALID_FIELD_NAME')) {
+            console.log('⚠️ [ANALYZE] Champ UBL Content non trouvé, mise à jour sans le contenu XML');
+            await base(TABLES.INVOICES).update(invoiceId, {
+              'XML Filename': xmlFilename,
+              'UBL File URL': `/api/invoices/download-ubl/${invoiceId}`,
+              'Conformity Score': score,
+              'Invoice Number': invoiceData.invoiceNumber || '',
+              'Invoice Date': invoiceData.issueDate || '',
+              'Total Amount': invoiceData.totals?.grossAmount || 0,
+              'Invoice Data': JSON.stringify(invoiceData, null, 2),
+              'Status': 'UBL Generated',
+            });
+          } else {
+            console.error('⚠️ [ANALYZE] Erreur mise à jour Airtable:', airtableError);
+          }
         }
       } else {
         console.log('⚠️ [ANALYZE] Pas de invoiceId fourni, pas de mise à jour Airtable');

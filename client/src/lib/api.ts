@@ -171,12 +171,13 @@ class ApiClient {
       });
 
       // Step 4: Retourner l'invoice avec les données d'analyse
+      // Note: ublFileUrl utilise maintenant l'invoiceId (compatible Render)
       return {
         ...createdInvoice,
         conformityScore: analysisResult.score,
         status: analysisResult.score >= 80 ? 'checked' : 'uploaded',
         xmlFilename: analysisResult.xmlFilename || '',
-        ublFileUrl: analysisResult.ublFileUrl || '',
+        ublFileUrl: `/api/invoices/download-ubl/${createdInvoice.id}`,
       };
     } catch (error) {
       console.error('uploadAndAnalyzeInvoice error:', error);

@@ -144,60 +144,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   });
 
-  // Download UBL/XML file (already generated)
-  app.get('/api/invoices/download-ubl/:filename', authenticateToken, (req, res) => {
+  // Download UBL/XML file from Airtable (compatible Render ephemeral filesystem)
+  app.get('/api/invoices/download-ubl/:invoiceId', authenticateToken, async (req, res) => {
     try {
-      const { filename } = req.params;
+      const { invoiceId } = req.params;
+      const userId = (req as any).userId;
       
-      // 1) Vérification du nom de fichier
-      if (!filename || !filename.endsWith('.xml')) {
-        return res.status(400).json({ error: 'Invalid filename format' });
+      console.log('🔍 [DOWNLOAD-UBL] Demande pour invoiceId:', invoiceId);
+      
+      if (!invoiceId) {
+        return res.status(400).json({ error: 'Invoice ID required' });
       }
       
-      // 2) Sécurité chemin
-      if (filename.includes('..') || filename.includes('/')) {
-        return res.status(400).json({ error: 'Invalid filename' });
+      // Importer Airtable config
+      const { base, TABLES } = await import('./config/airtable');
+      
+      // Récupérer l'invoice depuis Airtable
+      let record;
+      try {
+        record = await base(TABLES.INVOICES).find(invoiceId);
+      } catch (findError: any) {
+        console.error('❌ [DOWNLOAD-UBL] Invoice non trouvée:', findError.message);
+        return res.status(404).json({ error: 'Invoice not found' });
       }
       
-      // 3) UTILISER EXACTEMENT LE MÊME DOSSIER QUE L'UPLOAD
-      const uploadsPath = ensureUploadsDir();
-      
-      // 4) Essayer plusieurs formats de nom (nouveau puis ancien)
-      // Nouveau format: invoice-123.xml
-      // Ancien format: invoice-123.pdf.xml ou invoice-123.xlsx.xml
-      const possibleNames = [
-        filename,                                    // Exact match (nouveau format)
-        filename.replace('.xml', '.pdf.xml'),        // Ancien format PDF
-        filename.replace('.xml', '.xlsx.xml'),       // Ancien format Excel
-      ];
-      
-      let foundPath: string | null = null;
-      let foundFilename: string = filename;
-      
-      for (const name of possibleNames) {
-        const testPath = path.join(uploadsPath, name);
-        console.log('🔍 Trying:', testPath);
-        if (fs.existsSync(testPath)) {
-          foundPath = testPath;
-          foundFilename = name;
-          break;
-        }
+      // Vérifier que l'utilisateur est propriétaire de cette facture
+      const userIds = record.fields['User'] as string[];
+      if (!userIds || !userIds.includes(userId)) {
+        console.error('❌ [DOWNLOAD-UBL] Accès refusé pour user:', userId);
+        return res.status(403).json({ error: 'Access denied' });
       }
       
-      if (!foundPath) {
-        console.error('❌ UBL file not found. Tried:', possibleNames.join(', '));
-        return res.status(404).json({ error: 'UBL file not found' });
+      // Récupérer le contenu UBL depuis Airtable
+      const ublContent = record.fields['UBL Content'] as string;
+      const xmlFilename = record.fields['XML Filename'] as string || `invoice-${invoiceId}.xml`;
+      
+      if (!ublContent) {
+        console.error('❌ [DOWNLOAD-UBL] Pas de contenu UBL pour cette facture');
+        return res.status(404).json({ error: 'UBL content not found. Please re-analyze the invoice.' });
       }
       
-      console.log('✅ UBL file found:', foundFilename);
+      console.log('✅ [DOWNLOAD-UBL] UBL trouvé, taille:', ublContent.length, 'caractères');
       
-      // 5) Envoyer le fichier
+      // Envoyer le contenu XML directement
       res.setHeader('Content-Type', 'application/xml');
-      res.setHeader('Content-Disposition', `attachment; filename="${foundFilename}"`);
-      return res.sendFile(foundPath);
+      res.setHeader('Content-Disposition', `attachment; filename="${xmlFilename}"`);
+      res.setHeader('Content-Length', Buffer.byteLength(ublContent, 'utf8'));
+      return res.send(ublContent);
       
     } catch (error) {
-      console.error('❌ Error downloading UBL:', error);
+      console.error('❌ [DOWNLOAD-UBL] Erreur:', error);
       return res.status(500).json({ error: 'Failed to download UBL file' });
     }
   });
