@@ -240,16 +240,27 @@ export const analyzeInvoice = async (req: AuthRequest, res: Response) => {
           // Ne pas abandonner - continuer avec les autres champs
         }
         
-        // ⭐ ÉTAPE 2: Mettre à jour les autres champs (score, status, etc.)
-        console.log('🔵 [ANALYZE] Étape 4b: Mise à jour des métadonnées...');
+        // ⭐ ÉTAPE 2: Mettre à jour le score et status (CRITIQUE - ne pas ignorer les erreurs)
+        console.log('🔵 [ANALYZE] Étape 4b: Mise à jour du score et status...');
+        console.log('🔵 [ANALYZE] Score à sauvegarder:', score, '(type:', typeof score, ')');
         try {
+          // S'assurer que le score est un nombre valide
+          const scoreValue = typeof score === 'number' ? score : parseInt(String(score), 10) || 0;
+          console.log('🔵 [ANALYZE] Score normalisé:', scoreValue);
+          
+          // Le status dépend du score : 'checked' si >= 80%, sinon reste 'uploaded'
+          const newStatus = scoreValue >= 80 ? 'checked' : 'uploaded';
+          console.log('🔵 [ANALYZE] Nouveau status:', newStatus);
+          
           await base(TABLES.INVOICES).update(invoiceId, {
-            'Conformity Score': score,
-            'Status': 'UBL Generated',
+            'Conformity Score': scoreValue,
+            'Status': newStatus,
           });
-          console.log(`✅ [ANALYZE] Score ${score}% et Status mis à jour pour invoice ${invoiceId}`);
+          console.log(`✅ [ANALYZE] Score ${scoreValue}% et Status '${newStatus}' mis à jour pour invoice ${invoiceId}`);
         } catch (metaError: any) {
-          console.error('⚠️ [ANALYZE] Erreur mise à jour métadonnées:', metaError.message);
+          console.error('🔴 [ANALYZE] ERREUR CRITIQUE mise à jour score:', metaError.message);
+          console.error('🔴 [ANALYZE] Code erreur:', metaError.statusCode);
+          console.error('🔴 [ANALYZE] Détails:', JSON.stringify(metaError.error || metaError));
         }
         
         // ⭐ ÉTAPE 3: Mettre à jour les champs optionnels (peuvent ne pas exister)

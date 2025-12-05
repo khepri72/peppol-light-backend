@@ -123,19 +123,21 @@ export default function Dashboard() {
     try {
       await api.uploadAndAnalyzeInvoice(file);
       
-      // Invalidate queries to refresh the invoice list
+      // Reset file input AVANT d'invalider les queries pour éviter conflits DOM
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      
+      // Invalider les queries SEQUENTIELLEMENT pour éviter les conflits de rendu
       await queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
+      // Petit délai avant la deuxième invalidation pour éviter les conflits
+      await new Promise(resolve => setTimeout(resolve, 50));
       await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       
       toast({
         title: t('dashboard.uploadSection.uploadSuccess'),
         description: t('dashboard.uploadSection.analysisComplete'),
       });
-      
-      // Reset file input to allow re-uploading the same file
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
     } catch (error) {
       console.error('Upload error:', error);
       
@@ -171,7 +173,8 @@ export default function Dashboard() {
   };
 
   const getScoreColor = (score?: number) => {
-    if (!score) return 'text-muted-foreground';
+    // score === 0 est un score valide (0%), !== undefined pour vérifier si défini
+    if (score === undefined || score === null) return 'text-muted-foreground';
     if (score >= 90) return 'text-green-600';
     if (score >= 70) return 'text-amber-600';
     return 'text-red-600';
@@ -221,16 +224,27 @@ export default function Dashboard() {
         throw new Error(errorData.error || `Download failed: ${response.status}`);
       }
       
-      // Download file
+      // Download file - méthode plus sûre sans manipulation DOM directe
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = xmlFilename;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      
+      // Utiliser window.open ou une méthode qui n'interfère pas avec React
+      const link = document.createElement('a');
+      link.style.display = 'none';
+      link.href = url;
+      link.download = xmlFilename;
+      
+      // Ajouter au body, cliquer, puis nettoyer de manière asynchrone
+      document.body.appendChild(link);
+      link.click();
+      
+      // Nettoyer après un délai pour éviter les conflits avec React
+      setTimeout(() => {
+        if (link.parentNode) {
+          link.parentNode.removeChild(link);
+        }
+        window.URL.revokeObjectURL(url);
+      }, 100);
       
       toast({
         title: t('common.success'),
