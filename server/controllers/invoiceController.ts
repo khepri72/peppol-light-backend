@@ -223,39 +223,49 @@ export const analyzeInvoice = async (req: AuthRequest, res: Response) => {
       // Mise à jour Airtable avec le contenu UBL complet
       const { invoiceId } = req.body;
       console.log('🔵 [ANALYZE] invoiceId pour update Airtable:', invoiceId);
+      
       if (invoiceId) {
+        // ⭐ ÉTAPE 1: Sauvegarder le UBL Content EN PREMIER (priorité absolue)
+        console.log('🔵 [ANALYZE] Étape 4a: Sauvegarde UBL Content dans Airtable...');
         try {
-          console.log('🔵 [ANALYZE] Score de conformité à sauvegarder:', score);
           await base(TABLES.INVOICES).update(invoiceId, {
+            'UBL Content': ublXml,
             'XML Filename': xmlFilename,
-            'UBL File URL': `/api/invoices/download-ubl/${invoiceId}`, // Utiliser invoiceId au lieu du filename
-            'UBL Content': ublXml, // ⭐ NOUVEAU: Stocker le XML directement dans Airtable
+            'UBL File URL': `/api/invoices/download-ubl/${invoiceId}`,
+          });
+          console.log(`✅ [ANALYZE] UBL Content sauvegardé pour invoice ${invoiceId} (${ublXml.length} caractères)`);
+        } catch (ublSaveError: any) {
+          console.error('🔴 [ANALYZE] ERREUR sauvegarde UBL Content:', ublSaveError.message);
+          console.error('🔴 [ANALYZE] Code erreur:', ublSaveError.statusCode);
+          // Ne pas abandonner - continuer avec les autres champs
+        }
+        
+        // ⭐ ÉTAPE 2: Mettre à jour les autres champs (score, status, etc.)
+        console.log('🔵 [ANALYZE] Étape 4b: Mise à jour des métadonnées...');
+        try {
+          await base(TABLES.INVOICES).update(invoiceId, {
             'Conformity Score': score,
+            'Status': 'UBL Generated',
+          });
+          console.log(`✅ [ANALYZE] Score ${score}% et Status mis à jour pour invoice ${invoiceId}`);
+        } catch (metaError: any) {
+          console.error('⚠️ [ANALYZE] Erreur mise à jour métadonnées:', metaError.message);
+        }
+        
+        // ⭐ ÉTAPE 3: Mettre à jour les champs optionnels (peuvent ne pas exister)
+        console.log('🔵 [ANALYZE] Étape 4c: Mise à jour des champs optionnels...');
+        try {
+          await base(TABLES.INVOICES).update(invoiceId, {
             'Invoice Number': invoiceData.invoiceNumber || '',
             'Invoice Date': invoiceData.issueDate || '',
             'Total Amount': invoiceData.totals?.grossAmount || 0,
-            'Invoice Data': JSON.stringify(invoiceData, null, 2),
-            'Status': 'UBL Generated',
           });
-          console.log(`✅ [ANALYZE] Airtable mis à jour pour invoice ${invoiceId} avec score ${score}% et contenu UBL`);
-        } catch (airtableError: any) {
-          // Si le champ UBL Content n'existe pas encore, essayer sans
-          if (airtableError.statusCode === 422 || airtableError.message?.includes('INVALID_FIELD_NAME')) {
-            console.log('⚠️ [ANALYZE] Champ UBL Content non trouvé, mise à jour sans le contenu XML');
-            await base(TABLES.INVOICES).update(invoiceId, {
-              'XML Filename': xmlFilename,
-              'UBL File URL': `/api/invoices/download-ubl/${invoiceId}`,
-              'Conformity Score': score,
-              'Invoice Number': invoiceData.invoiceNumber || '',
-              'Invoice Date': invoiceData.issueDate || '',
-              'Total Amount': invoiceData.totals?.grossAmount || 0,
-              'Invoice Data': JSON.stringify(invoiceData, null, 2),
-              'Status': 'UBL Generated',
-            });
-          } else {
-            console.error('⚠️ [ANALYZE] Erreur mise à jour Airtable:', airtableError);
-          }
+          console.log(`✅ [ANALYZE] Champs optionnels mis à jour pour invoice ${invoiceId}`);
+        } catch (optionalError: any) {
+          // Ces champs sont optionnels, on ignore les erreurs
+          console.log('⚠️ [ANALYZE] Champs optionnels non mis à jour (normal si non existants)');
         }
+        
       } else {
         console.log('⚠️ [ANALYZE] Pas de invoiceId fourni, pas de mise à jour Airtable');
       }
@@ -267,14 +277,17 @@ export const analyzeInvoice = async (req: AuthRequest, res: Response) => {
     console.log('🔵 [ANALYZE] Étape 5: Envoi réponse...');
     console.log('🔵 [ANALYZE] xmlFilename final:', xmlFilename || 'NULL');
     
-    // 5. Réponse avec le vrai nom du fichier XML
+    // Récupérer invoiceId pour la réponse
+    const responseInvoiceId = req.body.invoiceId;
+    
+    // 5. Réponse avec le vrai nom du fichier XML et l'URL basée sur invoiceId
     res.json({
       success: true,
       score,
       errors: validationResults.filter(v => v.severity === 'error'),
       warnings: validationResults.filter(v => v.severity === 'warning'),
       xmlFilename: xmlFilename || null,
-      ublFileUrl: xmlFilename ? `/api/invoices/download-ubl/${xmlFilename}` : null,
+      ublFileUrl: responseInvoiceId ? `/api/invoices/download-ubl/${responseInvoiceId}` : null,
       extractedData: invoiceData
     });
     
