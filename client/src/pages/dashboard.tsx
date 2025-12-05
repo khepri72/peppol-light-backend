@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useLocation, Link } from 'wouter';
 import { useTranslation } from 'react-i18next';
@@ -202,10 +202,12 @@ export default function Dashboard() {
     return invoice.errorsList || '';
   };
 
+  // Ref pour le lien de téléchargement (évite manipulation DOM directe)
+  const downloadLinkRef = useRef<HTMLAnchorElement>(null);
+  const [downloadData, setDownloadData] = useState<{ url: string; filename: string } | null>(null);
+
   const downloadUbl = async (invoice: Invoice) => {
     try {
-      // Utiliser l'invoiceId pour télécharger le UBL depuis Airtable
-      // (compatible avec le filesystem éphémère de Render)
       const invoiceId = invoice.id;
       const xmlFilename = invoice.xmlFilename || `invoice-${invoiceId}.xml`;
       
@@ -224,27 +226,12 @@ export default function Dashboard() {
         throw new Error(errorData.error || `Download failed: ${response.status}`);
       }
       
-      // Download file - méthode plus sûre sans manipulation DOM directe
+      // Créer le blob et l'URL
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       
-      // Utiliser window.open ou une méthode qui n'interfère pas avec React
-      const link = document.createElement('a');
-      link.style.display = 'none';
-      link.href = url;
-      link.download = xmlFilename;
-      
-      // Ajouter au body, cliquer, puis nettoyer de manière asynchrone
-      document.body.appendChild(link);
-      link.click();
-      
-      // Nettoyer après un délai pour éviter les conflits avec React
-      setTimeout(() => {
-        if (link.parentNode) {
-          link.parentNode.removeChild(link);
-        }
-        window.URL.revokeObjectURL(url);
-      }, 100);
+      // Méthode 100% React-safe : utiliser un état pour déclencher le téléchargement
+      setDownloadData({ url, filename: xmlFilename });
       
       toast({
         title: t('common.success'),
@@ -259,6 +246,20 @@ export default function Dashboard() {
       });
     }
   };
+
+  // Effect pour déclencher le téléchargement quand downloadData change
+  useEffect(() => {
+    if (downloadData && downloadLinkRef.current) {
+      downloadLinkRef.current.click();
+      // Nettoyer après le téléchargement
+      const urlToRevoke = downloadData.url;
+      setDownloadData(null);
+      // Révoquer l'URL après un court délai
+      setTimeout(() => {
+        window.URL.revokeObjectURL(urlToRevoke);
+      }, 100);
+    }
+  }, [downloadData]);
 
   if (!authStorage.isAuthenticated()) {
     setLocation('/login');
@@ -419,16 +420,36 @@ export default function Dashboard() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {(invoice.errorsList || invoice.errorsData) ? (
-                          <div className="flex items-center gap-2">
-                            <AlertCircle className="h-4 w-4 text-[#FF6B35]" />
-                            <span className="text-sm whitespace-pre-line" data-testid={`text-errors-${invoice.id}`}>
-                              {getTranslatedErrors(invoice)}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">{t('dashboard.invoiceList.columns.errors')}</span>
-                        )}
+                        {(() => {
+                          const translatedErrors = getTranslatedErrors(invoice);
+                          const hasErrors = translatedErrors && translatedErrors.trim().length > 0;
+                          const scoreIsLow = invoice.conformityScore !== undefined && invoice.conformityScore < 100;
+                          
+                          if (hasErrors) {
+                            return (
+                              <div className="flex items-start gap-2">
+                                <AlertCircle className="h-4 w-4 text-[#FF6B35] mt-0.5 flex-shrink-0" />
+                                <span className="text-sm whitespace-pre-line" data-testid={`text-errors-${invoice.id}`}>
+                                  {translatedErrors}
+                                </span>
+                              </div>
+                            );
+                          } else if (scoreIsLow) {
+                            // Score < 100% mais pas d'erreurs stockées = facture uploadée avant le fix
+                            return (
+                              <span className="text-muted-foreground text-sm italic">
+                                {t('dashboard.invoiceList.noErrorsStored', 'Re-uploadez pour voir les erreurs')}
+                              </span>
+                            );
+                          } else {
+                            // Score = 100% ou non défini
+                            return (
+                              <span className="text-green-600 text-sm">
+                                {t('dashboard.invoiceList.noErrors', 'Aucune erreur')}
+                              </span>
+                            );
+                          }
+                        })()}
                       </TableCell>
                       <TableCell className="text-center">
                         {(invoice.xmlFilename || invoice.ublFileUrl || invoice.fileUrl) ? (
@@ -496,6 +517,15 @@ export default function Dashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Lien invisible pour téléchargement UBL - 100% React-safe, pas de manipulation DOM */}
+      <a
+        ref={downloadLinkRef}
+        href={downloadData?.url || '#'}
+        download={downloadData?.filename || 'invoice.xml'}
+        style={{ display: 'none' }}
+        aria-hidden="true"
+      />
     </div>
   );
 }

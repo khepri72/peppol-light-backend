@@ -240,8 +240,8 @@ export const analyzeInvoice = async (req: AuthRequest, res: Response) => {
           // Ne pas abandonner - continuer avec les autres champs
         }
         
-        // ⭐ ÉTAPE 2: Mettre à jour le score et status (CRITIQUE - ne pas ignorer les erreurs)
-        console.log('🔵 [ANALYZE] Étape 4b: Mise à jour du score et status...');
+        // ⭐ ÉTAPE 2: Mettre à jour le score, status ET les erreurs
+        console.log('🔵 [ANALYZE] Étape 4b: Mise à jour du score, status et erreurs...');
         console.log('🔵 [ANALYZE] Score à sauvegarder:', score, '(type:', typeof score, ')');
         try {
           // S'assurer que le score est un nombre valide
@@ -252,15 +252,48 @@ export const analyzeInvoice = async (req: AuthRequest, res: Response) => {
           const newStatus = scoreValue >= 80 ? 'checked' : 'uploaded';
           console.log('🔵 [ANALYZE] Nouveau status:', newStatus);
           
+          // Préparer les erreurs et warnings pour stockage
+          const errors = validationResults.filter(v => v.severity === 'error');
+          const warnings = validationResults.filter(v => v.severity === 'warning');
+          
+          // Format legacy (texte simple) pour Errors List
+          const errorsList = [
+            ...errors.map(e => `ERREUR: ${e.message}`),
+            ...warnings.map(w => `AVERTISSEMENT: ${w.message}`)
+          ].join('\n');
+          
+          // Format JSON structuré pour Errors Data (i18n)
+          const errorsData = JSON.stringify({ errors, warnings });
+          
+          console.log('🔵 [ANALYZE] Erreurs:', errors.length, '| Warnings:', warnings.length);
+          
           await base(TABLES.INVOICES).update(invoiceId, {
             'Conformity Score': scoreValue,
             'Status': newStatus,
+            'Errors List': errorsList,
+            'Errors Data': errorsData,
           });
-          console.log(`✅ [ANALYZE] Score ${scoreValue}% et Status '${newStatus}' mis à jour pour invoice ${invoiceId}`);
+          console.log(`✅ [ANALYZE] Score ${scoreValue}%, Status '${newStatus}' et ${errors.length + warnings.length} erreurs/warnings mis à jour pour invoice ${invoiceId}`);
         } catch (metaError: any) {
           console.error('🔴 [ANALYZE] ERREUR CRITIQUE mise à jour score:', metaError.message);
           console.error('🔴 [ANALYZE] Code erreur:', metaError.statusCode);
           console.error('🔴 [ANALYZE] Détails:', JSON.stringify(metaError.error || metaError));
+          
+          // Fallback : essayer sans Errors List/Errors Data si ces champs n'existent pas
+          if (metaError.statusCode === 422) {
+            console.log('⚠️ [ANALYZE] Retry sans Errors List/Errors Data...');
+            try {
+              const scoreValue = typeof score === 'number' ? score : parseInt(String(score), 10) || 0;
+              const newStatus = scoreValue >= 80 ? 'checked' : 'uploaded';
+              await base(TABLES.INVOICES).update(invoiceId, {
+                'Conformity Score': scoreValue,
+                'Status': newStatus,
+              });
+              console.log(`✅ [ANALYZE] Score ${scoreValue}% et Status mis à jour (sans erreurs)`);
+            } catch (fallbackError: any) {
+              console.error('🔴 [ANALYZE] Fallback aussi échoué:', fallbackError.message);
+            }
+          }
         }
         
         // ⭐ ÉTAPE 3: Mettre à jour les champs optionnels (peuvent ne pas exister)
