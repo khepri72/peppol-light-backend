@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useLocation, Link } from 'wouter';
 import { useTranslation } from 'react-i18next';
@@ -202,16 +202,20 @@ export default function Dashboard() {
     return invoice.errorsList || '';
   };
 
-  // Ref pour le lien de téléchargement (évite manipulation DOM directe)
-  const downloadLinkRef = useRef<HTMLAnchorElement>(null);
-  const [downloadData, setDownloadData] = useState<{ url: string; filename: string } | null>(null);
+  // État pour gérer le téléchargement en cours
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
+  /**
+   * Téléchargement UBL - Version 100% sans manipulation DOM
+   * Utilise window.open() pour ouvrir le blob dans un nouvel onglet
+   * AUCUN: document.createElement, appendChild, removeChild, insertBefore
+   */
   const downloadUbl = async (invoice: Invoice) => {
+    console.log('📥 [downloadUbl] START - Invoice:', invoice.id);
+    setDownloadingId(invoice.id);
+    
     try {
       const invoiceId = invoice.id;
-      const xmlFilename = invoice.xmlFilename || `invoice-${invoiceId}.xml`;
-      
-      console.log('🔍 Downloading UBL for invoice:', invoiceId);
       
       const token = authStorage.getToken();
       const response = await fetch(`/api/invoices/download-ubl/${invoiceId}`, {
@@ -222,7 +226,7 @@ export default function Dashboard() {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Download failed' }));
-        console.error('❌ Download failed:', response.status, errorData);
+        console.error('❌ [downloadUbl] Failed:', response.status, errorData);
         throw new Error(errorData.error || `Download failed: ${response.status}`);
       }
       
@@ -230,36 +234,47 @@ export default function Dashboard() {
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       
-      // Méthode 100% React-safe : utiliser un état pour déclencher le téléchargement
-      setDownloadData({ url, filename: xmlFilename });
+      console.log('📥 [downloadUbl] Blob URL created, opening in new tab');
       
-      toast({
-        title: t('common.success'),
-        description: t('dashboard.ublDownloaded'),
-      });
+      // Ouvrir dans un nouvel onglet (100% sans manipulation DOM)
+      // Le navigateur affichera le XML ou proposera de le télécharger
+      const newWindow = window.open(url, '_blank');
+      
+      // Si le popup est bloqué, informer l'utilisateur
+      if (!newWindow) {
+        console.warn('📥 [downloadUbl] Popup blocked by browser');
+        toast({
+          title: t('common.warning', 'Attention'),
+          description: t('dashboard.popupBlocked', 'Autorisez les popups pour télécharger le fichier, ou cliquez à nouveau.'),
+          variant: 'destructive',
+        });
+        // Alternative: navigation directe (remplace la page actuelle)
+        // window.location.href = url;
+      } else {
+        toast({
+          title: t('common.success'),
+          description: t('dashboard.ublDownloaded'),
+        });
+      }
+      
+      // Révoquer l'URL après un délai
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        console.log('📥 [downloadUbl] URL revoked');
+      }, 10000);
+      
+      console.log('📥 [downloadUbl] END');
     } catch (error: any) {
-      console.error('❌ Error downloading UBL:', error);
+      console.error('❌ [downloadUbl] ERROR:', error);
       toast({
         title: t('common.error'),
         description: `${t('dashboard.ublDownloadError')}: ${error.message}`,
         variant: 'destructive',
       });
+    } finally {
+      setDownloadingId(null);
     }
   };
-
-  // Effect pour déclencher le téléchargement quand downloadData change
-  useEffect(() => {
-    if (downloadData && downloadLinkRef.current) {
-      downloadLinkRef.current.click();
-      // Nettoyer après le téléchargement
-      const urlToRevoke = downloadData.url;
-      setDownloadData(null);
-      // Révoquer l'URL après un court délai
-      setTimeout(() => {
-        window.URL.revokeObjectURL(urlToRevoke);
-      }, 100);
-    }
-  }, [downloadData]);
 
   if (!authStorage.isAuthenticated()) {
     setLocation('/login');
@@ -457,9 +472,14 @@ export default function Dashboard() {
                             variant="outline"
                             size="sm"
                             onClick={() => downloadUbl(invoice)}
+                            disabled={downloadingId === invoice.id}
                             data-testid={`button-download-ubl-${invoice.id}`}
                           >
-                            <Download className="mr-2 h-4 w-4" />
+                            {downloadingId === invoice.id ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Download className="mr-2 h-4 w-4" />
+                            )}
                             {t('dashboard.downloadUbl')}
                           </Button>
                         ) : (
@@ -517,15 +537,6 @@ export default function Dashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Lien invisible pour téléchargement UBL - 100% React-safe, pas de manipulation DOM */}
-      <a
-        ref={downloadLinkRef}
-        href={downloadData?.url || '#'}
-        download={downloadData?.filename || 'invoice.xml'}
-        style={{ display: 'none' }}
-        aria-hidden="true"
-      />
     </div>
   );
 }
