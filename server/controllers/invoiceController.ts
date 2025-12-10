@@ -9,6 +9,7 @@ import { extractExcelData } from '../utils/peppolAnalyzer/extractExcel';
 import { validatePeppolRules } from '../utils/peppolAnalyzer/validate';
 import { calculateConformityScore } from '../utils/peppolAnalyzer/score';
 import { generatePeppolUBL } from '../utils/peppolAnalyzer/generateUbl';
+import { validateInvoiceForPeppol } from '../utils/peppolAnalyzer/validateInvoiceCompleteness';
 
 /**
  * Register an uploaded invoice in Airtable
@@ -200,6 +201,25 @@ export const analyzeInvoice = async (req: AuthRequest, res: Response) => {
     console.log('🔵 [ANALYZE] Étape 3: Calcul du score...');
     const score = calculateConformityScore(validationResults);
     console.log('🔵 [ANALYZE] Score:', score);
+    
+    // 3.5 Validation des champs critiques AVANT génération XML
+    console.log('🔵 [ANALYZE] Étape 3.5: Validation des champs critiques...');
+    const completenessErrors = validateInvoiceForPeppol(invoiceData);
+    
+    if (completenessErrors.length > 0) {
+      console.log('🔴 [ANALYZE] Facture incomplète, champs manquants:', completenessErrors.map(e => e.field).join(', '));
+      return res.status(422).json({
+        success: false,
+        code: 'INVOICE_INCOMPLETE',
+        message: 'La facture est incomplète pour générer un XML Peppol conforme.',
+        errors: completenessErrors,
+        score,
+        validationResults: validationResults.filter(v => v.severity === 'error'),
+        warnings: validationResults.filter(v => v.severity === 'warning'),
+        extractedData: invoiceData
+      });
+    }
+    console.log('✅ [ANALYZE] Tous les champs critiques sont présents');
     
     // 4. Génération UBL
     console.log('🔵 [ANALYZE] Étape 4: Génération UBL...');
