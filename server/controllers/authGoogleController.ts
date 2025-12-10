@@ -3,7 +3,7 @@ import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import { base, TABLES } from '../config/airtable';
 import { buildSafeFilterFormula } from '../utils/airtableHelpers';
-import { getNextMonthFirstDayUTC } from '../utils/dateHelpers';
+import { PLANS, PlanId } from '../config/plans';
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -67,12 +67,12 @@ export async function googleAuth(req: Request, res: Response) {
       userId = existingUser.id;
       
       // Extract quota fields with defaults for legacy users
-      const plan = existingUser.fields.plan || 'FREE';
-      const quotaUsed = existingUser.fields.quotaUsed !== undefined ? existingUser.fields.quotaUsed : 0;
-      const quotaLimit = existingUser.fields.quotaLimit !== undefined ? existingUser.fields.quotaLimit : 1;
-      
-      // Calculate quota reset date (first day of next month in UTC) if not set
-      const quotaResetDate = existingUser.fields.quotaResetDate || getNextMonthFirstDayUTC();
+      const userPlan = (existingUser.fields.userPlan as PlanId) || 'free';
+      const invoicesThisMonth = existingUser.fields.invoicesThisMonth !== undefined ? Number(existingUser.fields.invoicesThisMonth) : 0;
+      const planConfig = PLANS[userPlan] || PLANS.free;
+      const maxInvoicesPerMonth = existingUser.fields.maxInvoicesPerMonth !== undefined 
+        ? Number(existingUser.fields.maxInvoicesPerMonth) 
+        : planConfig.maxInvoicesPerMonth;
 
       const updateData: any = {};
       if (!existingUser.fields.googleId) {
@@ -82,10 +82,9 @@ export async function googleAuth(req: Request, res: Response) {
         updateData.picture = picture;
       }
       // Persist defaults to Airtable for legacy users
-      if (!existingUser.fields.plan) updateData.plan = plan;
-      if (existingUser.fields.quotaUsed === undefined) updateData.quotaUsed = quotaUsed;
-      if (existingUser.fields.quotaLimit === undefined) updateData.quotaLimit = quotaLimit;
-      if (!existingUser.fields.quotaResetDate) updateData.quotaResetDate = quotaResetDate;
+      if (!existingUser.fields.userPlan) updateData.userPlan = userPlan;
+      if (existingUser.fields.invoicesThisMonth === undefined) updateData.invoicesThisMonth = invoicesThisMonth;
+      if (existingUser.fields.maxInvoicesPerMonth === undefined) updateData.maxInvoicesPerMonth = maxInvoicesPerMonth;
 
       if (Object.keys(updateData).length > 0) {
         await usersTable.update(userId, updateData);
@@ -96,25 +95,20 @@ export async function googleAuth(req: Request, res: Response) {
         email: existingUser.fields.email,
         companyName: existingUser.fields.companyName || name,
         googleId: existingUser.fields.googleId || googleId,
-        plan,
-        quotaUsed,
-        quotaLimit,
-        quotaResetDate,
+        userPlan,
+        invoicesThisMonth,
+        maxInvoicesPerMonth,
         picture: existingUser.fields.picture || picture
       };
     } else {
-      // Calculate quota reset date (first day of next month in UTC)
-      const quotaResetDateStr = getNextMonthFirstDayUTC();
-      
       // Create new user
       const newUser = await usersTable.create({
         email,
         companyName: name,
         googleId,
-        plan: 'FREE',
-        quotaUsed: 0,
-        quotaLimit: 1,
-        quotaResetDate: quotaResetDateStr,
+        userPlan: 'free',
+        invoicesThisMonth: 0,
+        maxInvoicesPerMonth: PLANS.free.maxInvoicesPerMonth,
         picture: picture || '',
         // No password needed for Google auth
       });
@@ -125,10 +119,9 @@ export async function googleAuth(req: Request, res: Response) {
         email,
         companyName: name,
         googleId,
-        plan: 'FREE',
-        quotaUsed: 0,
-        quotaLimit: 1,
-        quotaResetDate: newUser.fields.quotaResetDate,
+        userPlan: 'free',
+        invoicesThisMonth: 0,
+        maxInvoicesPerMonth: PLANS.free.maxInvoicesPerMonth,
         picture
       };
     }
@@ -143,10 +136,9 @@ export async function googleAuth(req: Request, res: Response) {
         userId, 
         email,
         googleId,
-        plan: user.plan,
-        quotaUsed: user.quotaUsed,
-        quotaLimit: user.quotaLimit,
-        quotaResetDate: user.quotaResetDate
+        userPlan: user.userPlan,
+        invoicesThisMonth: user.invoicesThisMonth,
+        maxInvoicesPerMonth: user.maxInvoicesPerMonth
       },
       process.env.JWT_SECRET,
       { 
@@ -165,10 +157,9 @@ export async function googleAuth(req: Request, res: Response) {
         email: user.email,
         companyName: user.companyName,
         googleId: user.googleId,
-        plan: user.plan,
-        quotaUsed: user.quotaUsed,
-        quotaLimit: user.quotaLimit,
-        quotaResetDate: user.quotaResetDate,
+        userPlan: user.userPlan,
+        invoicesThisMonth: user.invoicesThisMonth,
+        maxInvoicesPerMonth: user.maxInvoicesPerMonth,
         picture: user.picture
       }
     });

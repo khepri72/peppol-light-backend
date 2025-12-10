@@ -8,6 +8,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { config } from "./config/env";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
+import plansRouter from './routes/plans';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -40,6 +41,9 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false }));
+
+// Plans API route
+app.use('/api', plansRouter);
 
 app.use((req, res, next) => {
   const start = Date.now();

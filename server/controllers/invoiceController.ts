@@ -34,14 +34,15 @@ export const registerUploadedInvoice = async (req: AuthRequest, res: Response) =
 
     // Check user quota before creating invoice
     const user = await base(TABLES.USERS).find(userId);
-    const quotaLimit = user.fields.quotaLimit !== undefined ? Number(user.fields.quotaLimit) : 1;
-    const quotaUsed = user.fields.quotaUsed !== undefined ? Number(user.fields.quotaUsed) : 0;
-    const isUnlimited = quotaLimit === -1;
+    const userPlan = (user.fields.userPlan as string) || 'free';
+    const invoicesThisMonth = user.fields.invoicesThisMonth !== undefined ? Number(user.fields.invoicesThisMonth) : 0;
+    const maxInvoicesPerMonth = user.fields.maxInvoicesPerMonth !== undefined ? Number(user.fields.maxInvoicesPerMonth) : 3;
+    const isUnlimited = userPlan === 'business' || maxInvoicesPerMonth === null;
 
     // Block if quota exceeded
-    if (!isUnlimited && quotaUsed >= quotaLimit) {
+    if (!isUnlimited && invoicesThisMonth >= maxInvoicesPerMonth) {
       return res.status(403).json({ 
-        error: `Quota limit reached. You have used ${quotaUsed}/${quotaLimit} uploads this month. Upgrade your plan to continue.` 
+        error: `Quota limit reached. You have used ${invoicesThisMonth}/${maxInvoicesPerMonth} uploads this month. Upgrade your plan to continue.` 
       });
     }
 
@@ -90,10 +91,10 @@ export const registerUploadedInvoice = async (req: AuthRequest, res: Response) =
 
     const invoice = records[0];
 
-    // Increment quotaUsed after successful upload (only if not unlimited)
+    // Increment invoicesThisMonth after successful upload (only if not unlimited)
     if (!isUnlimited) {
       await base(TABLES.USERS).update(userId, {
-        quotaUsed: quotaUsed + 1
+        invoicesThisMonth: invoicesThisMonth + 1
       });
     }
 

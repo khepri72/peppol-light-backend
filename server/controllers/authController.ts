@@ -5,7 +5,7 @@ import { base, TABLES } from '../config/airtable';
 import { insertUserSchema, loginSchema } from '../../shared/schema';
 import { config } from '../config/env';
 import { buildSafeFilterFormula } from '../utils/airtableHelpers';
-import { getNextMonthFirstDayUTC } from '../utils/dateHelpers';
+import { PLANS, PlanId } from '../config/plans';
 
 const SALT_ROUNDS = 10;
 
@@ -28,9 +28,6 @@ export const register = async (req: Request, res: Response) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(validatedData.password, SALT_ROUNDS);
 
-    // Calculate quota reset date (first day of next month in UTC)
-    const quotaResetDateStr = getNextMonthFirstDayUTC();
-    
     // Create user in Airtable with quota fields
     const records = await base(TABLES.USERS).create([
       {
@@ -38,10 +35,9 @@ export const register = async (req: Request, res: Response) => {
           email: validatedData.email,
           password: hashedPassword,
           companyName: validatedData.companyName || '',
-          plan: 'FREE',
-          quotaUsed: 0,
-          quotaLimit: 1,
-          quotaResetDate: quotaResetDateStr,
+          userPlan: 'free',
+          invoicesThisMonth: 0,
+          maxInvoicesPerMonth: PLANS.free.maxInvoicesPerMonth,
           createdAt: new Date().toISOString(),
         },
       },
@@ -55,10 +51,9 @@ export const register = async (req: Request, res: Response) => {
       { 
         userId,
         email: validatedData.email,
-        plan: 'FREE',
-        quotaUsed: 0,
-        quotaLimit: 1,
-        quotaResetDate: user.fields.quotaResetDate
+        userPlan: 'free',
+        invoicesThisMonth: 0,
+        maxInvoicesPerMonth: PLANS.free.maxInvoicesPerMonth
       }, 
       config.jwt.secret,
       { 
@@ -75,10 +70,9 @@ export const register = async (req: Request, res: Response) => {
         id: userId,
         email: validatedData.email,
         companyName: validatedData.companyName,
-        plan: 'FREE',
-        quotaUsed: 0,
-        quotaLimit: 1,
-        quotaResetDate: user.fields.quotaResetDate,
+        userPlan: 'free',
+        invoicesThisMonth: 0,
+        maxInvoicesPerMonth: PLANS.free.maxInvoicesPerMonth,
       },
     });
   } catch (error: any) {
@@ -118,17 +112,18 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Extract quota fields with defaults for legacy users
-    const plan = user.fields.plan || 'FREE';
-    const quotaUsed = user.fields.quotaUsed !== undefined ? user.fields.quotaUsed : 0;
-    const quotaLimit = user.fields.quotaLimit !== undefined ? user.fields.quotaLimit : 1;
-    const quotaResetDate = user.fields.quotaResetDate || getNextMonthFirstDayUTC();
+    const userPlan = (user.fields.userPlan as PlanId) || 'free';
+    const invoicesThisMonth = user.fields.invoicesThisMonth !== undefined ? Number(user.fields.invoicesThisMonth) : 0;
+    const planConfig = PLANS[userPlan] || PLANS.free;
+    const maxInvoicesPerMonth = user.fields.maxInvoicesPerMonth !== undefined 
+      ? Number(user.fields.maxInvoicesPerMonth) 
+      : planConfig.maxInvoicesPerMonth;
 
     // Persist defaults to Airtable for legacy users
     const updateData: any = {};
-    if (!user.fields.plan) updateData.plan = plan;
-    if (user.fields.quotaUsed === undefined) updateData.quotaUsed = quotaUsed;
-    if (user.fields.quotaLimit === undefined) updateData.quotaLimit = quotaLimit;
-    if (!user.fields.quotaResetDate) updateData.quotaResetDate = quotaResetDate;
+    if (!user.fields.userPlan) updateData.userPlan = userPlan;
+    if (user.fields.invoicesThisMonth === undefined) updateData.invoicesThisMonth = invoicesThisMonth;
+    if (user.fields.maxInvoicesPerMonth === undefined) updateData.maxInvoicesPerMonth = maxInvoicesPerMonth;
 
     if (Object.keys(updateData).length > 0) {
       await base(TABLES.USERS).update(userId, updateData);
@@ -139,10 +134,9 @@ export const login = async (req: Request, res: Response) => {
       { 
         userId,
         email: user.fields.email,
-        plan,
-        quotaUsed,
-        quotaLimit,
-        quotaResetDate
+        userPlan,
+        invoicesThisMonth,
+        maxInvoicesPerMonth
       }, 
       config.jwt.secret,
       { 
@@ -160,10 +154,9 @@ export const login = async (req: Request, res: Response) => {
         email: user.fields.email,
         companyName: user.fields.companyName || '',
         googleId: user.fields.googleId,
-        plan,
-        quotaUsed,
-        quotaLimit,
-        quotaResetDate,
+        userPlan,
+        invoicesThisMonth,
+        maxInvoicesPerMonth,
         picture: user.fields.picture,
       },
     });
@@ -183,17 +176,18 @@ export const getCurrentUser = async (req: Request, res: Response) => {
     const user = await base(TABLES.USERS).find(userId);
 
     // Extract quota fields with defaults for legacy users
-    const plan = user.fields.plan || 'FREE';
-    const quotaUsed = user.fields.quotaUsed !== undefined ? user.fields.quotaUsed : 0;
-    const quotaLimit = user.fields.quotaLimit !== undefined ? user.fields.quotaLimit : 1;
-    const quotaResetDate = user.fields.quotaResetDate || getNextMonthFirstDayUTC();
+    const userPlan = (user.fields.userPlan as PlanId) || 'free';
+    const invoicesThisMonth = user.fields.invoicesThisMonth !== undefined ? Number(user.fields.invoicesThisMonth) : 0;
+    const planConfig = PLANS[userPlan] || PLANS.free;
+    const maxInvoicesPerMonth = user.fields.maxInvoicesPerMonth !== undefined 
+      ? Number(user.fields.maxInvoicesPerMonth) 
+      : planConfig.maxInvoicesPerMonth;
 
     // Persist defaults to Airtable for legacy users
     const updateData: any = {};
-    if (!user.fields.plan) updateData.plan = plan;
-    if (user.fields.quotaUsed === undefined) updateData.quotaUsed = quotaUsed;
-    if (user.fields.quotaLimit === undefined) updateData.quotaLimit = quotaLimit;
-    if (!user.fields.quotaResetDate) updateData.quotaResetDate = quotaResetDate;
+    if (!user.fields.userPlan) updateData.userPlan = userPlan;
+    if (user.fields.invoicesThisMonth === undefined) updateData.invoicesThisMonth = invoicesThisMonth;
+    if (user.fields.maxInvoicesPerMonth === undefined) updateData.maxInvoicesPerMonth = maxInvoicesPerMonth;
 
     if (Object.keys(updateData).length > 0) {
       await base(TABLES.USERS).update(userId, updateData);
@@ -205,10 +199,9 @@ export const getCurrentUser = async (req: Request, res: Response) => {
         email: user.fields.email,
         companyName: user.fields.companyName || '',
         googleId: user.fields.googleId,
-        plan,
-        quotaUsed,
-        quotaLimit,
-        quotaResetDate,
+        userPlan,
+        invoicesThisMonth,
+        maxInvoicesPerMonth,
         picture: user.fields.picture,
       },
     });

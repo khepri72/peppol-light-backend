@@ -5,6 +5,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from 'url';
 import { authenticateToken } from "./middlewares/auth";
+import { checkQuota } from "./middlewares/checkQuota";
 import * as authController from "./controllers/authController";
 import * as authGoogleController from "./controllers/authGoogleController";
 import * as invoiceController from "./controllers/invoiceController";
@@ -82,7 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/invoices/:id', authenticateToken, invoiceController.deleteInvoice);
   
   // Analyze invoice with Peppol engine (PDF or Excel)
-  app.post('/api/invoices/analyze', authenticateToken, upload.single('file'), invoiceController.analyzeInvoice);
+  app.post('/api/invoices/analyze', authenticateToken, checkQuota, upload.single('file'), invoiceController.analyzeInvoice);
 
   // File upload route (PDF or Excel)
   app.post('/api/upload/pdf', authenticateToken, upload.single('pdf'), (req, res, next) => {
