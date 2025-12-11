@@ -33,19 +33,8 @@ export const registerUploadedInvoice = async (req: AuthRequest, res: Response) =
       });
     }
 
-    // Check user quota before creating invoice
-    const user = await base(TABLES.USERS).find(userId);
-    const userPlan = (user.fields.userPlan as string) || 'free';
-    const invoicesThisMonth = user.fields.invoicesThisMonth !== undefined ? Number(user.fields.invoicesThisMonth) : 0;
-    const maxInvoicesPerMonth = user.fields.maxInvoicesPerMonth !== undefined ? Number(user.fields.maxInvoicesPerMonth) : 3;
-    const isUnlimited = userPlan === 'business' || maxInvoicesPerMonth === null;
-
-    // Block if quota exceeded
-    if (!isUnlimited && invoicesThisMonth >= maxInvoicesPerMonth) {
-      return res.status(403).json({ 
-        error: `Quota limit reached. You have used ${invoicesThisMonth}/${maxInvoicesPerMonth} uploads this month. Upgrade your plan to continue.` 
-      });
-    }
+    // Note: La vérification et l'incrémentation du quota sont gérées par le middleware checkQuota
+    // sur la route /api/invoices/analyze. Cette fonction ne fait que créer l'enregistrement.
 
     // Create invoice record in Airtable
     // Try to save with all fields, fallback gracefully if some fields don't exist
@@ -92,12 +81,8 @@ export const registerUploadedInvoice = async (req: AuthRequest, res: Response) =
 
     const invoice = records[0];
 
-    // Increment invoicesThisMonth after successful upload (only if not unlimited)
-    if (!isUnlimited) {
-      await base(TABLES.USERS).update(userId, {
-        invoicesThisMonth: invoicesThisMonth + 1
-      });
-    }
+    // Note: L'incrémentation du quota est gérée par le middleware checkQuota
+    // sur la route /api/invoices/analyze - pas besoin de le faire ici
 
     res.status(201).json({
       id: invoice.id,
@@ -162,6 +147,15 @@ export const getInvoices = async (req: AuthRequest, res: Response) => {
 /**
  * Analyze an uploaded invoice with Peppol engine
  * POST /api/invoices/analyze
+ * 
+ * FLUX:
+ * 1. Extraction données PDF/Excel → invoiceData
+ * 2. Validation Peppol → validationResults
+ * 3. Calcul score → score
+ * 4. Validation champs critiques → completenessErrors
+ * 5. Création enregistrement Airtable (TOUJOURS, même si incomplet)
+ * 6. Si incomplet → HTTP 422 avec status="Incomplète"
+ * 7. Si complet → Génération XML + HTTP 200 avec status="Analysée"
  */
 export const analyzeInvoice = async (req: AuthRequest, res: Response) => {
   console.log('🔵 [ANALYZE] Fonction analyzeInvoice appelée');
@@ -169,6 +163,8 @@ export const analyzeInvoice = async (req: AuthRequest, res: Response) => {
   console.log('🔵 [ANALYZE] req.body:', JSON.stringify(req.body));
   
   try {
+    const userId = req.userId!;
+    
     if (!req.file) {
       console.error('🔴 [ANALYZE] Pas de fichier uploadé!');
       return res.status(400).json({ error: 'No file uploaded' });
@@ -176,10 +172,16 @@ export const analyzeInvoice = async (req: AuthRequest, res: Response) => {
 
     const filePath = req.file.path;
     const fileType = req.file.mimetype;
+    const originalFilename = req.file.originalname;
+    const storedFilename = req.file.filename;
+    const fileUrl = `/api/uploads/${storedFilename}`;
+    
     console.log('🔵 [ANALYZE] filePath:', filePath);
     console.log('🔵 [ANALYZE] fileType:', fileType);
     
-    // 1. Extraction selon type
+    // ========================================
+    // ÉTAPE 1: Extraction selon type de fichier
+    // ========================================
     let invoiceData;
     console.log('🔵 [ANALYZE] Étape 1: Extraction...');
     if (fileType === 'application/pdf') {
@@ -192,168 +194,174 @@ export const analyzeInvoice = async (req: AuthRequest, res: Response) => {
     }
     console.log('🔵 [ANALYZE] Données extraites:', JSON.stringify(invoiceData).substring(0, 200));
     
-    // 2. Validation
-    console.log('🔵 [ANALYZE] Étape 2: Validation...');
+    // ========================================
+    // ÉTAPE 2: Validation Peppol (règles)
+    // ========================================
+    console.log('🔵 [ANALYZE] Étape 2: Validation Peppol...');
     const validationResults = validatePeppolRules(invoiceData);
+    const validationErrors = validationResults.filter(v => v.severity === 'error');
+    const validationWarnings = validationResults.filter(v => v.severity === 'warning');
     console.log('🔵 [ANALYZE] Résultats validation:', validationResults.length, 'règles');
     
-    // 3. Score
+    // ========================================
+    // ÉTAPE 3: Calcul du score
+    // ========================================
     console.log('🔵 [ANALYZE] Étape 3: Calcul du score...');
     const score = calculateConformityScore(validationResults);
-    console.log('🔵 [ANALYZE] Score:', score);
+    const scoreValue = typeof score === 'number' ? score : parseInt(String(score), 10) || 0;
+    console.log('🔵 [ANALYZE] Score:', scoreValue);
     
-    // 3.5 Validation des champs critiques AVANT génération XML
-    console.log('🔵 [ANALYZE] Étape 3.5: Validation des champs critiques...');
+    // ========================================
+    // ÉTAPE 4: Validation des champs critiques
+    // ========================================
+    console.log('🔵 [ANALYZE] Étape 4: Validation des champs critiques...');
     const completenessErrors = validateInvoiceForPeppol(invoiceData);
+    const isComplete = completenessErrors.length === 0;
+    console.log('🔵 [ANALYZE] Facture complète:', isComplete);
+    if (!isComplete) {
+      console.log('🔴 [ANALYZE] Champs manquants:', completenessErrors.map(e => e.field).join(', '));
+    }
     
-    if (completenessErrors.length > 0) {
-      console.log('🔴 [ANALYZE] Facture incomplète, champs manquants:', completenessErrors.map(e => e.field).join(', '));
+    // ========================================
+    // ÉTAPE 5: Création enregistrement Airtable (TOUJOURS)
+    // ========================================
+    console.log('🔵 [ANALYZE] Étape 5: Création enregistrement Airtable...');
+    
+    // Préparer les données pour Airtable
+    const status = isComplete ? 'Analysée' : 'Incomplète';
+    
+    // Format des erreurs pour stockage
+    const allErrors = isComplete 
+      ? validationErrors 
+      : [...completenessErrors.map(e => ({ field: e.field, code: 'MISSING_FIELD', severity: 'error' as const, message: e.message })), ...validationErrors];
+    
+    const errorsList = [
+      ...allErrors.map(e => `ERREUR: ${e.message}`),
+      ...validationWarnings.map(w => `AVERTISSEMENT: ${w.message}`)
+    ].join('\n');
+    
+    const errorsData = JSON.stringify({ 
+      errors: allErrors, 
+      warnings: validationWarnings,
+      completenessErrors: isComplete ? [] : completenessErrors
+    });
+    
+    let invoiceRecord;
+    try {
+      const records = await base(TABLES.INVOICES).create([
+        {
+          fields: {
+            'User': [userId],
+            'File Name': originalFilename,
+            'File URL': fileUrl,
+            'Status': status,
+            'Conformity Score': scoreValue,
+            'Errors List': errorsList,
+            'Errors Data': errorsData,
+            'XML Filename': '',
+            'UBL File URL': '',
+          },
+        },
+      ]);
+      invoiceRecord = records[0];
+      console.log(`✅ [ANALYZE] Invoice créée avec ID: ${invoiceRecord.id}, Status: ${status}`);
+    } catch (createError: any) {
+      // Fallback si certains champs n'existent pas
+      if (createError.statusCode === 422 || createError.message?.includes('INVALID_FIELD_NAME')) {
+        console.log('⚠️ [ANALYZE] Retry création sans certains champs...');
+        const records = await base(TABLES.INVOICES).create([
+          {
+            fields: {
+              'User': [userId],
+              'File Name': originalFilename,
+              'File URL': fileUrl,
+              'Status': status,
+              'Conformity Score': scoreValue,
+              'Errors List': errorsList,
+            },
+          },
+        ]);
+        invoiceRecord = records[0];
+        console.log(`✅ [ANALYZE] Invoice créée (mode compatibilité) avec ID: ${invoiceRecord.id}`);
+      } else {
+        throw createError;
+      }
+    }
+    
+    const invoiceId = invoiceRecord.id;
+    
+    // ========================================
+    // ÉTAPE 6: Si INCOMPLET → Retourner 422
+    // ========================================
+    if (!isComplete) {
+      console.log('🔴 [ANALYZE] Facture incomplète, retour HTTP 422');
       return res.status(422).json({
         success: false,
         code: 'INVOICE_INCOMPLETE',
         message: 'La facture est incomplète pour générer un XML Peppol conforme.',
         errors: completenessErrors,
-        score,
-        validationResults: validationResults.filter(v => v.severity === 'error'),
-        warnings: validationResults.filter(v => v.severity === 'warning'),
-        extractedData: invoiceData
+        score: scoreValue,
+        validationResults: validationErrors,
+        warnings: validationWarnings,
+        extractedData: invoiceData,
+        invoiceId: invoiceId
       });
     }
-    console.log('✅ [ANALYZE] Tous les champs critiques sont présents');
     
-    // 4. Génération UBL
-    console.log('🔵 [ANALYZE] Étape 4: Génération UBL...');
+    // ========================================
+    // ÉTAPE 7: Si COMPLET → Génération UBL/XML
+    // ========================================
+    console.log('✅ [ANALYZE] Facture complète, génération UBL...');
     let ublXml = '';
     let xmlFilename = '';
     
     try {
-      console.log('🔵 [ANALYZE] Appel generatePeppolUBL...');
       ublXml = generatePeppolUBL(invoiceData);
       console.log('🔵 [ANALYZE] XML généré, longueur:', ublXml.length, 'caractères');
       
-      // Calculer le nom XML SANS double extension (.pdf.xml → .xml)
-      const originalFilename = req.file.filename;
-      const extname = path.extname(originalFilename); // ".pdf" ou ".xlsx"
-      const baseFilename = originalFilename.replace(extname, ''); // "invoice-123456789"
-      xmlFilename = `${baseFilename}.xml`; // "invoice-123456789.xml"
-      console.log('🔵 [ANALYZE] xmlFilename calculé:', xmlFilename);
+      // Calculer le nom XML
+      const extname = path.extname(storedFilename);
+      const baseFilename = storedFilename.replace(extname, '');
+      xmlFilename = `${baseFilename}.xml`;
       
-      // ⚠️ IMPORTANT: Sur Render (plan gratuit), le filesystem est éphémère!
-      // On stocke le contenu XML directement dans Airtable au lieu du disque
+      // Mettre à jour l'enregistrement avec le XML
+      await base(TABLES.INVOICES).update(invoiceId, {
+        'UBL Content': ublXml,
+        'XML Filename': xmlFilename,
+        'UBL File URL': `/api/invoices/download-ubl/${invoiceId}`,
+      });
+      console.log(`✅ [ANALYZE] UBL Content sauvegardé pour invoice ${invoiceId}`);
       
-      // Mise à jour Airtable avec le contenu UBL complet
-      const { invoiceId } = req.body;
-      console.log('🔵 [ANALYZE] invoiceId pour update Airtable:', invoiceId);
-      
-      if (invoiceId) {
-        // ⭐ ÉTAPE 1: Sauvegarder le UBL Content EN PREMIER (priorité absolue)
-        console.log('🔵 [ANALYZE] Étape 4a: Sauvegarde UBL Content dans Airtable...');
-        try {
-          await base(TABLES.INVOICES).update(invoiceId, {
-            'UBL Content': ublXml,
-            'XML Filename': xmlFilename,
-            'UBL File URL': `/api/invoices/download-ubl/${invoiceId}`,
-          });
-          console.log(`✅ [ANALYZE] UBL Content sauvegardé pour invoice ${invoiceId} (${ublXml.length} caractères)`);
-        } catch (ublSaveError: any) {
-          console.error('🔴 [ANALYZE] ERREUR sauvegarde UBL Content:', ublSaveError.message);
-          console.error('🔴 [ANALYZE] Code erreur:', ublSaveError.statusCode);
-          // Ne pas abandonner - continuer avec les autres champs
-        }
-        
-        // ⭐ ÉTAPE 2: Mettre à jour le score, status ET les erreurs
-        console.log('🔵 [ANALYZE] Étape 4b: Mise à jour du score, status et erreurs...');
-        console.log('🔵 [ANALYZE] Score à sauvegarder:', score, '(type:', typeof score, ')');
-        try {
-          // S'assurer que le score est un nombre valide
-          const scoreValue = typeof score === 'number' ? score : parseInt(String(score), 10) || 0;
-          console.log('🔵 [ANALYZE] Score normalisé:', scoreValue);
-          
-          // Le status dépend du score : 'checked' si >= 80%, sinon reste 'uploaded'
-          const newStatus = scoreValue >= 80 ? 'checked' : 'uploaded';
-          console.log('🔵 [ANALYZE] Nouveau status:', newStatus);
-          
-          // Préparer les erreurs et warnings pour stockage
-          const errors = validationResults.filter(v => v.severity === 'error');
-          const warnings = validationResults.filter(v => v.severity === 'warning');
-          
-          // Format legacy (texte simple) pour Errors List
-          const errorsList = [
-            ...errors.map(e => `ERREUR: ${e.message}`),
-            ...warnings.map(w => `AVERTISSEMENT: ${w.message}`)
-          ].join('\n');
-          
-          // Format JSON structuré pour Errors Data (i18n)
-          const errorsData = JSON.stringify({ errors, warnings });
-          
-          console.log('🔵 [ANALYZE] Erreurs:', errors.length, '| Warnings:', warnings.length);
-          
-          await base(TABLES.INVOICES).update(invoiceId, {
-            'Conformity Score': scoreValue,
-            'Status': newStatus,
-            'Errors List': errorsList,
-            'Errors Data': errorsData,
-          });
-          console.log(`✅ [ANALYZE] Score ${scoreValue}%, Status '${newStatus}' et ${errors.length + warnings.length} erreurs/warnings mis à jour pour invoice ${invoiceId}`);
-        } catch (metaError: any) {
-          console.error('🔴 [ANALYZE] ERREUR CRITIQUE mise à jour score:', metaError.message);
-          console.error('🔴 [ANALYZE] Code erreur:', metaError.statusCode);
-          console.error('🔴 [ANALYZE] Détails:', JSON.stringify(metaError.error || metaError));
-          
-          // Fallback : essayer sans Errors List/Errors Data si ces champs n'existent pas
-          if (metaError.statusCode === 422) {
-            console.log('⚠️ [ANALYZE] Retry sans Errors List/Errors Data...');
-            try {
-              const scoreValue = typeof score === 'number' ? score : parseInt(String(score), 10) || 0;
-              const newStatus = scoreValue >= 80 ? 'checked' : 'uploaded';
-              await base(TABLES.INVOICES).update(invoiceId, {
-                'Conformity Score': scoreValue,
-                'Status': newStatus,
-              });
-              console.log(`✅ [ANALYZE] Score ${scoreValue}% et Status mis à jour (sans erreurs)`);
-            } catch (fallbackError: any) {
-              console.error('🔴 [ANALYZE] Fallback aussi échoué:', fallbackError.message);
-            }
-          }
-        }
-        
-        // ⭐ ÉTAPE 3: Mettre à jour les champs optionnels (peuvent ne pas exister)
-        console.log('🔵 [ANALYZE] Étape 4c: Mise à jour des champs optionnels...');
-        try {
-          await base(TABLES.INVOICES).update(invoiceId, {
-            'Invoice Number': invoiceData.invoiceNumber || '',
-            'Invoice Date': invoiceData.issueDate || '',
-            'Total Amount': invoiceData.totals?.grossAmount || 0,
-          });
-          console.log(`✅ [ANALYZE] Champs optionnels mis à jour pour invoice ${invoiceId}`);
-        } catch (optionalError: any) {
-          // Ces champs sont optionnels, on ignore les erreurs
-          console.log('⚠️ [ANALYZE] Champs optionnels non mis à jour (normal si non existants)');
-        }
-        
-      } else {
-        console.log('⚠️ [ANALYZE] Pas de invoiceId fourni, pas de mise à jour Airtable');
-      }
     } catch (ublError: any) {
-      console.error('🔴 [ANALYZE] ERREUR dans bloc génération UBL:', ublError);
-      console.error('🔴 [ANALYZE] Stack trace:', ublError?.stack);
+      console.error('🔴 [ANALYZE] ERREUR génération/sauvegarde UBL:', ublError.message);
+      // On continue même si le XML échoue - l'invoice est créée
     }
     
-    console.log('🔵 [ANALYZE] Étape 5: Envoi réponse...');
-    console.log('🔵 [ANALYZE] xmlFilename final:', xmlFilename || 'NULL');
+    // Mettre à jour les champs optionnels
+    try {
+      await base(TABLES.INVOICES).update(invoiceId, {
+        'Invoice Number': invoiceData.invoiceNumber || '',
+        'Invoice Date': invoiceData.issueDate || '',
+        'Total Amount': invoiceData.totals?.grossAmount || 0,
+      });
+    } catch (optionalError: any) {
+      console.log('⚠️ [ANALYZE] Champs optionnels non mis à jour');
+    }
     
-    // Récupérer invoiceId pour la réponse
-    const responseInvoiceId = req.body.invoiceId;
-    
-    // 5. Réponse avec le vrai nom du fichier XML et l'URL basée sur invoiceId
+    // ========================================
+    // ÉTAPE 8: Retourner HTTP 200 (succès)
+    // ========================================
+    console.log('✅ [ANALYZE] Analyse réussie, retour HTTP 200');
     res.json({
       success: true,
-      score,
-      errors: validationResults.filter(v => v.severity === 'error'),
-      warnings: validationResults.filter(v => v.severity === 'warning'),
+      message: 'Analyse réussie',
+      score: scoreValue,
+      errors: validationErrors,
+      warnings: validationWarnings,
       xmlFilename: xmlFilename || null,
-      ublFileUrl: responseInvoiceId ? `/api/invoices/download-ubl/${responseInvoiceId}` : null,
-      extractedData: invoiceData
+      ublFileUrl: `/api/invoices/download-ubl/${invoiceId}`,
+      extractedData: invoiceData,
+      invoiceId: invoiceId
     });
     
   } catch (error: any) {
