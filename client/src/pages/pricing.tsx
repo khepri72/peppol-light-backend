@@ -8,7 +8,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Check, X, ArrowLeft, Gift } from "lucide-react";
+import { Check, X, ArrowLeft } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Link } from "wouter";
 
@@ -16,15 +16,15 @@ export default function PricingPage() {
   const { t } = useTranslation();
 
   const emailSubjects = {
-    starter: "Activation Plan STARTER - Early Bird",
-    pro: "Activation Plan PRO - Early Bird",
-    business: "Demande Partenariat BUSINESS",
+    starter: "Activation Plan STARTER - Peppol Light",
+    pro: "Activation Plan PRO - Peppol Light",
+    business: "Demande Partenariat BUSINESS - Peppol Light",
   };
 
   const emailBodies = {
-    starter: `Bonjour,%0D%0A%0D%0AJe souhaite activer le plan STARTER avec réduction Early Bird (-30% à vie).%0D%0A%0D%0AMon email : [VOTRE EMAIL]%0D%0AMon entreprise : [NOM]%0D%0ANuméro TVA : [BE0...]%0D%0A%0D%0AMerci !`,
-    pro: `Bonjour,%0D%0A%0D%0AJe souhaite activer le plan PRO avec réduction Early Bird (-30% à vie).%0D%0A%0D%0AMon email : [VOTRE EMAIL]%0D%0AMon entreprise : [NOM]%0D%0ANuméro TVA : [BE0...]%0D%0A%0D%0AMerci !`,
-    business: `Bonjour,%0D%0A%0D%0AJe suis intéressé par le plan BUSINESS et souhaiterais discuter d'un partenariat.%0D%0A%0D%0AMon email : [VOTRE EMAIL]%0D%0AMon entreprise : [NOM]%0D%0ANuméro TVA : [BE0...]%0D%0ANombre de dossiers clients estimé : [X]%0D%0A%0D%0AMerci !`,
+    starter: `Bonjour,%0D%0A%0D%0AJe souhaite activer le plan STARTER (14,90€/mois - 30 factures/mois).%0D%0A%0D%0AMon email : [VOTRE EMAIL]%0D%0AMon entreprise : [NOM]%0D%0ANuméro TVA : [BE0...]%0D%0A%0D%0AMerci !`,
+    pro: `Bonjour,%0D%0A%0D%0AJe souhaite activer le plan PRO (29,90€/mois - 200 factures/mois).%0D%0A%0D%0AMon email : [VOTRE EMAIL]%0D%0AMon entreprise : [NOM]%0D%0ANuméro TVA : [BE0...]%0D%0A%0D%0AMerci !`,
+    business: `Bonjour,%0D%0A%0D%0AJe suis intéressé par le plan BUSINESS (79,90€/mois - factures illimitées) et souhaiterais discuter d'un partenariat.%0D%0A%0D%0AMon email : [VOTRE EMAIL]%0D%0AMon entreprise : [NOM]%0D%0ANuméro TVA : [BE0...]%0D%0ANombre de dossiers clients estimé : [X]%0D%0A%0D%0AMerci !`,
   };
 
   return (
@@ -124,19 +124,6 @@ export default function PricingPage() {
               <p className="text-sm text-muted-foreground">
                 {t("pricing.yearlyDiscount", { price: t("pricing.plans.starter.priceYearly") })}
               </p>
-              
-              {/* Early Bird Badge */}
-              <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-md p-3 my-4">
-                <div className="flex items-center gap-2">
-                  <Gift className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-                  <span className="text-orange-600 dark:text-orange-400 font-semibold text-sm">
-                    {t("pricing.earlyBird.badge")}
-                  </span>
-                </div>
-                <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
-                  {t("pricing.earlyBird.text", { price: t("pricing.plans.starter.earlyBirdPrice") })}
-                </p>
-              </div>
             </CardHeader>
             
             <CardContent className="flex-1">
@@ -198,19 +185,6 @@ export default function PricingPage() {
               <p className="text-sm text-muted-foreground">
                 {t("pricing.yearlyDiscount", { price: t("pricing.plans.pro.priceYearly") })}
               </p>
-              
-              {/* Early Bird Badge */}
-              <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-md p-3 my-4">
-                <div className="flex items-center gap-2">
-                  <Gift className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-                  <span className="text-orange-600 dark:text-orange-400 font-semibold text-sm">
-                    {t("pricing.earlyBird.badge")}
-                  </span>
-                </div>
-                <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
-                  {t("pricing.earlyBird.text", { price: t("pricing.plans.pro.earlyBirdPrice") })}
-                </p>
-              </div>
             </CardHeader>
             
             <CardContent className="flex-1">
@@ -281,23 +255,14 @@ export default function PricingPage() {
               <p className="text-xs text-muted-foreground mt-1">
                 {t("pricing.plans.business.clientsIncluded")}
               </p>
-              
-              {/* Early Bird Badge */}
-              <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-md p-3 my-4">
-                <div className="flex items-center gap-2">
-                  <Gift className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-                  <span className="text-orange-600 dark:text-orange-400 font-semibold text-sm">
-                    {t("pricing.earlyBird.badge")}
-                  </span>
-                </div>
-                <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
-                  {t("pricing.earlyBird.text", { price: t("pricing.plans.business.earlyBirdPrice") })}
-                </p>
-              </div>
             </CardHeader>
             
             <CardContent className="flex-1">
               <ul className="space-y-3" data-testid="list-plan-business-features">
+                <li className="flex items-start gap-2">
+                  <Check className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm font-semibold">{t("pricing.plans.business.features.invoices")}</span>
+                </li>
                 <li className="flex items-start gap-2">
                   <Check className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
                   <span className="text-sm">{t("pricing.plans.business.features.clients")}</span>

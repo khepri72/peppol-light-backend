@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 
-export type Plan = 'FREE' | 'STARTER' | 'PRO' | 'BUSINESS';
+export type Plan = 'free' | 'starter' | 'pro' | 'business';
 
 interface QuotaLimits {
-  limit: number;
+  limit: number | null;
   used: number;
   remaining: number;
   isUnlimited: boolean;
@@ -18,13 +18,13 @@ interface QuotaLimits {
  */
 function getPlanName(plan: Plan): string {
   const names: Record<Plan, string> = {
-    FREE: 'Free',
-    STARTER: 'Starter',
-    PRO: 'Pro',
-    BUSINESS: 'Business',
+    free: 'Gratuit',
+    starter: 'Starter',
+    pro: 'Pro',
+    business: 'Business',
   };
   
-  return names[plan] || 'Free';
+  return names[plan] || 'Gratuit';
 }
 
 /**
@@ -32,10 +32,10 @@ function getPlanName(plan: Plan): string {
  */
 function getPlanPrice(plan: Plan): string {
   const prices: Record<Plan, string> = {
-    FREE: '0€',
-    STARTER: '29€',
-    PRO: '99€',
-    BUSINESS: '299€',
+    free: '0€',
+    starter: '14,90€',
+    pro: '29,90€',
+    business: '79,90€',
   };
   
   return prices[plan] || '0€';
@@ -43,6 +43,7 @@ function getPlanPrice(plan: Plan): string {
 
 /**
  * Hook to manage user quotas
+ * Uses the new Airtable field names: userPlan, invoicesThisMonth, maxInvoicesPerMonth
  */
 export function useQuotas() {
   const { data: profile, isLoading } = useQuery({
@@ -52,28 +53,31 @@ export function useQuotas() {
 
   if (isLoading || !profile) {
     return {
-      limit: 0,
+      limit: 3,
       used: 0,
-      remaining: 0,
+      remaining: 3,
       isUnlimited: false,
-      canUpload: false,
-      planName: 'Free',
+      canUpload: true,
+      planName: 'Gratuit',
       price: '0€',
       isLoading: true,
     };
   }
 
-  const plan = (profile.user.plan || 'FREE') as Plan;
-  const quotaLimit = profile.user.quotaLimit !== undefined ? profile.user.quotaLimit : 1;
-  const quotaUsed = profile.user.quotaUsed || 0;
-  const isUnlimited = quotaLimit === -1;
+  // Use new field names from backend
+  const plan = (profile.user.userPlan || 'free') as Plan;
+  const maxInvoicesPerMonth = profile.user.maxInvoicesPerMonth;
+  const invoicesThisMonth = profile.user.invoicesThisMonth || 0;
   
-  const remaining = isUnlimited ? Infinity : Math.max(0, quotaLimit - quotaUsed);
+  // null means unlimited (Business plan)
+  const isUnlimited = maxInvoicesPerMonth === null;
+  
+  const remaining = isUnlimited ? Infinity : Math.max(0, (maxInvoicesPerMonth || 3) - invoicesThisMonth);
   const canUpload = isUnlimited || remaining > 0;
 
   const quotaData: QuotaLimits = {
-    limit: quotaLimit,
-    used: quotaUsed,
+    limit: maxInvoicesPerMonth,
+    used: invoicesThisMonth,
     remaining,
     isUnlimited,
     canUpload,
