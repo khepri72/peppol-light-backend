@@ -24,7 +24,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { api, Invoice } from '@/lib/api';
+import { api, Invoice, isInvoiceIncompleteError } from '@/lib/api';
 import { authStorage, logout } from '@/lib/auth';
 import { Upload, FileText, Trash2, LogOut, Loader2, AlertCircle, AlertTriangle, Download } from 'lucide-react';
 import { queryClient } from '@/lib/queryClient';
@@ -141,25 +141,47 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Upload error:', error);
       
-      // Display user-friendly error message
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      
+      // Cas spécial: Facture incomplète (HTTP 422)
+      // La facture EST enregistrée dans Airtable mais sans XML
+      if (isInvoiceIncompleteError(error)) {
+        console.log('📋 [Dashboard] Facture incomplète détectée:', error.invoiceId);
+        
+        // Rafraîchir la liste des factures ET les quotas
+        await queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
+        await new Promise(resolve => setTimeout(resolve, 50));
+        await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+        
+        // Afficher un toast d'avertissement (pas d'erreur critique)
+        toast({
+          title: t('dashboard.uploadSection.invoiceIncomplete', 'Facture incomplète'),
+          description: t('dashboard.uploadSection.invoiceIncompleteDesc', 
+            'La facture est incomplète pour générer un XML Peppol conforme. Vérifiez les champs requis (TVA, numéro de facture, montants...) puis réessayez.'),
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // Autres erreurs
       toast({
         title: t('dashboard.uploadSection.uploadError'),
         description: error instanceof Error ? error.message : t('common.error'),
         variant: 'destructive',
       });
-      
-      // Reset file input even on error
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
     } finally {
       setIsUploading(false);
     }
   };
 
   const getStatusBadge = (status?: string) => {
-    switch (status?.toLowerCase()) {
+    const statusLower = status?.toLowerCase();
+    switch (statusLower) {
       case 'checked':
+      case 'analysée':
         return <Badge className="bg-green-100 text-green-800 hover:bg-green-100" data-testid={`badge-status-${status}`}>{t('status.checked')}</Badge>;
       case 'uploaded':
         return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100" data-testid={`badge-status-${status}`}>{t('status.uploaded')}</Badge>;
@@ -167,9 +189,17 @@ export default function Dashboard() {
         return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100" data-testid={`badge-status-${status}`}>{t('status.converted')}</Badge>;
       case 'sent':
         return <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100" data-testid={`badge-status-${status}`}>{t('status.sent')}</Badge>;
+      case 'incomplète':
+        return <Badge className="bg-red-100 text-red-800 hover:bg-red-100" data-testid={`badge-status-${status}`}>{t('status.incomplete', 'Incomplète')}</Badge>;
       default:
         return <Badge variant="outline" data-testid="badge-status-unknown">{status || t('status.pending')}</Badge>;
     }
+  };
+  
+  // Helper pour vérifier si une facture est incomplète (pas de XML généré)
+  const isInvoiceIncomplete = (invoice: Invoice): boolean => {
+    const statusLower = invoice.status?.toLowerCase();
+    return statusLower === 'incomplète';
   };
 
   const getScoreColor = (score?: number) => {
@@ -467,7 +497,12 @@ export default function Dashboard() {
                         })()}
                       </TableCell>
                       <TableCell className="text-center">
-                        {(invoice.xmlFilename || invoice.ublFileUrl || invoice.fileUrl) ? (
+                        {isInvoiceIncomplete(invoice) ? (
+                          // Facture incomplète → pas de XML généré
+                          <span className="text-red-500 text-sm">
+                            {t('dashboard.noUblIncomplete', 'Non disponible (facture incomplète)')}
+                          </span>
+                        ) : (invoice.xmlFilename || invoice.ublFileUrl) ? (
                           <Button
                             variant="outline"
                             size="sm"

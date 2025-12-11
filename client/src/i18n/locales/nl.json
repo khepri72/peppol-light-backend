@@ -24,7 +24,9 @@
       "uploading": "Uploaden en analyseren...",
       "uploadSuccess": "Factuur succesvol geüpload",
       "analysisComplete": "Peppol-analyse voltooid",
-      "uploadError": "Fout bij uploaden"
+      "uploadError": "Fout bij uploaden",
+      "invoiceIncomplete": "Onvolledige factuur",
+      "invoiceIncompleteDesc": "De factuur is onvolledig om een Peppol-conforme XML te genereren. Controleer de vereiste velden (BTW, factuurnummer, bedragen...) en probeer opnieuw."
     },
     "disclaimer": {
       "title": "Prototype in ontwikkeling",
@@ -51,6 +53,7 @@
     "ublColumn": "UBL/XML",
     "downloadUbl": "Download UBL",
     "noUbl": "Niet beschikbaar",
+    "noUblIncomplete": "Niet beschikbaar (onvolledige factuur)",
     "ublDownloaded": "UBL-bestand succesvol gedownload",
     "ublDownloadError": "Fout bij downloaden UBL"
   },
@@ -59,7 +62,8 @@
     "checked": "Geverifieerd",
     "converted": "Geconverteerd",
     "sent": "Verzonden",
-    "pending": "In afwachting"
+    "pending": "In afwachting",
+    "incomplete": "Onvolledig"
   },
   "hero": {
     "title": "Peppol Light",

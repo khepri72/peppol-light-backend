@@ -6,6 +6,27 @@ export interface ApiError {
   message: string;
 }
 
+export interface InvoiceIncompleteError {
+  success: false;
+  code: 'INVOICE_INCOMPLETE';
+  message: string;
+  errors: Array<{ field: string; message: string }>;
+  score: number;
+  validationResults: Array<{ field?: string; code: string; severity: string; message: string }>;
+  warnings: Array<{ field?: string; code: string; severity: string; message: string }>;
+  extractedData: Record<string, unknown>;
+  invoiceId: string;
+}
+
+export function isInvoiceIncompleteError(error: unknown): error is InvoiceIncompleteError {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as InvoiceIncompleteError).code === 'INVOICE_INCOMPLETE'
+  );
+}
+
 export interface RegisterData {
   email: string;
   password: string;
@@ -125,70 +146,66 @@ class ApiClient {
     });
   }
 
+  /**
+   * Upload et analyse une facture.
+   * - HTTP 200 → facture complète, XML généré
+   * - HTTP 422 INVOICE_INCOMPLETE → facture enregistrée mais incomplète (pas de XML)
+   * 
+   * Dans les DEUX cas, la facture est enregistrée dans Airtable par le backend.
+   */
   async uploadAndAnalyzeInvoice(file: File): Promise<Invoice> {
-    try {
-      // Step 1: Upload du fichier
-      const uploadFormData = new FormData();
-      uploadFormData.append('pdf', file);
-      
-      const uploadResponse = await this.request<{ url: string; filename: string }>('/api/upload/pdf', {
-        method: 'POST',
-        body: uploadFormData,
-      });
+    // Le backend gère maintenant la création de l'invoice ET l'analyse en une seule requête
+    const analyzeFormData = new FormData();
+    analyzeFormData.append('file', file);
 
-      // Step 2: Créer record Airtable IMMÉDIATEMENT → obtenir invoiceId
-      const initialInvoiceData = {
-        fileName: file.name,
-        fileUrl: uploadResponse.url,
-        status: 'uploaded',
-        conformityScore: 0,
-        errorsList: '',
-        errorsData: '',
-        xmlFilename: '',
-        ublFileUrl: '',
-      };
-
-      const createdInvoice = await this.request<Invoice>('/api/invoices', {
-        method: 'POST',
-        body: JSON.stringify(initialInvoiceData),
-      });
-
-      // Step 3: Analyser la facture EN PASSANT invoiceId au backend
-      const analyzeFormData = new FormData();
-      analyzeFormData.append('file', file);
-      analyzeFormData.append('invoiceId', createdInvoice.id); // AJOUT CRITIQUE
-
-      const analysisResult = await this.request<{
-        success: boolean;
-        score: number;
-        errors: Array<{ field?: string; code: string; severity: string; message: string }>;
-        warnings: Array<{ field?: string; code: string; severity: string; message: string }>;
-        xmlFilename: string | null;
-        ublFileUrl: string | null;
-      }>('/api/invoices/analyze', {
-        method: 'POST',
-        body: analyzeFormData,
-      });
-
-      // Step 4: Retourner l'invoice avec les données d'analyse
-      // Note: ublFileUrl utilise maintenant l'invoiceId (compatible Render)
-      return {
-        ...createdInvoice,
-        conformityScore: analysisResult.score,
-        status: analysisResult.score >= 80 ? 'checked' : 'uploaded',
-        xmlFilename: analysisResult.xmlFilename || '',
-        ublFileUrl: `/api/invoices/download-ubl/${createdInvoice.id}`,
-      };
-    } catch (error) {
-      console.error('uploadAndAnalyzeInvoice error:', error);
-      // Re-throw with more context if error message is generic
-      if (error instanceof Error) {
-        if (error.message === 'Request failed' || error.message === 'An error occurred') {
-          throw new Error('Failed to process invoice. Please ensure the file is a valid PDF or Excel invoice.');
-        }
-      }
-      throw error;
+    const token = authStorage.getToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
+
+    const response = await fetch(`${API_URL}/api/invoices/analyze`, {
+      method: 'POST',
+      headers,
+      body: analyzeFormData,
+    });
+
+    const responseData = await response.json();
+
+    // Cas 1: HTTP 422 - Facture incomplète (mais ENREGISTRÉE dans Airtable)
+    if (response.status === 422 && responseData.code === 'INVOICE_INCOMPLETE') {
+      console.log('📋 [API] Facture incomplète détectée, invoiceId:', responseData.invoiceId);
+      
+      // Throw une erreur spéciale avec les données de la facture
+      const incompleteError: InvoiceIncompleteError = {
+        success: false,
+        code: 'INVOICE_INCOMPLETE',
+        message: responseData.message,
+        errors: responseData.errors,
+        score: responseData.score,
+        validationResults: responseData.validationResults || [],
+        warnings: responseData.warnings || [],
+        extractedData: responseData.extractedData || {},
+        invoiceId: responseData.invoiceId,
+      };
+      throw incompleteError;
+    }
+
+    // Cas 2: Autre erreur HTTP
+    if (!response.ok) {
+      throw new Error(responseData.error || responseData.message || 'Request failed');
+    }
+
+    // Cas 3: HTTP 200 - Succès
+    return {
+      id: responseData.invoiceId,
+      fileName: file.name,
+      fileUrl: `/api/uploads/${file.name}`,
+      conformityScore: responseData.score,
+      status: 'Analysée',
+      xmlFilename: responseData.xmlFilename || '',
+      ublFileUrl: responseData.ublFileUrl || `/api/invoices/download-ubl/${responseData.invoiceId}`,
+    };
   }
 
   async deleteInvoice(id: string): Promise<{ message: string }> {

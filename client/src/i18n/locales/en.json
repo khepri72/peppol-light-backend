@@ -24,7 +24,9 @@
       "uploading": "Uploading and analyzing...",
       "uploadSuccess": "Invoice uploaded successfully",
       "analysisComplete": "Peppol analysis complete",
-      "uploadError": "Upload error"
+      "uploadError": "Upload error",
+      "invoiceIncomplete": "Incomplete invoice",
+      "invoiceIncompleteDesc": "The invoice is incomplete to generate a Peppol-compliant XML. Check the required fields (VAT, invoice number, amounts...) and try again."
     },
     "disclaimer": {
       "title": "Prototype in development",
@@ -51,6 +53,7 @@
     "ublColumn": "UBL/XML",
     "downloadUbl": "Download UBL",
     "noUbl": "Not available",
+    "noUblIncomplete": "Not available (incomplete invoice)",
     "ublDownloaded": "UBL file downloaded successfully",
     "ublDownloadError": "Error downloading UBL file"
   },
@@ -59,7 +62,8 @@
     "checked": "Verified",
     "converted": "Converted",
     "sent": "Sent",
-    "pending": "Pending"
+    "pending": "Pending",
+    "incomplete": "Incomplete"
   },
   "hero": {
     "title": "Peppol Light",

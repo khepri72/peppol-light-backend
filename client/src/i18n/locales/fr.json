@@ -24,7 +24,9 @@
       "uploading": "Envoi et analyse en cours...",
       "uploadSuccess": "Facture téléchargée avec succès",
       "analysisComplete": "Analyse Peppol terminée",
-      "uploadError": "Erreur lors du téléchargement"
+      "uploadError": "Erreur lors du téléchargement",
+      "invoiceIncomplete": "Facture incomplète",
+      "invoiceIncompleteDesc": "La facture est incomplète pour générer un XML Peppol conforme. Vérifiez les champs requis (TVA, numéro de facture, montants...) puis réessayez."
     },
     "disclaimer": {
       "title": "Prototype en développement",
@@ -49,8 +51,9 @@
       "deleteButton": "Supprimer"
     },
     "ublColumn": "UBL/XML",
-    "downloadUbl": "Telecharger UBL",
+    "downloadUbl": "Télécharger UBL",
     "noUbl": "Non disponible",
+    "noUblIncomplete": "Non disponible (facture incomplète)",
     "ublDownloaded": "Fichier UBL telecharge avec succes",
     "ublDownloadError": "Erreur lors du telechargement UBL"
   },
@@ -59,7 +62,8 @@
     "checked": "Vérifié",
     "converted": "Converti",
     "sent": "Envoyé",
-    "pending": "En attente"
+    "pending": "En attente",
+    "incomplete": "Incomplète"
   },
   "hero": {
     "title": "Peppol Light",
