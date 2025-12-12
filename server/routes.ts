@@ -67,6 +67,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Debug version endpoint
+  app.get('/api/debug/version', (req, res) => {
+    res.json({
+      service: 'peppol-light-backend',
+      env: process.env.NODE_ENV,
+      time: new Date().toISOString(),
+      commit: process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || 'unknown'
+    });
+  });
+
   // Authentication routes
   app.post('/api/auth/register', authController.register);
   app.post('/api/auth/login', authController.login);
