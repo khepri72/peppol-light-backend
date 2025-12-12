@@ -135,8 +135,14 @@ export const getInvoices = async (req: AuthRequest, res: Response) => {
       xmlFilename: record.fields['XML Filename'],
       ublFileUrl: record.fields['UBL File URL'],
       issueDate: record.fields['Invoice Date'],
-      createdAt: record.createdTime || (record.fields['Created At'] as string) || undefined,
+      createdAt: (record as any).createdTime || (record.fields['Created At'] as string) || undefined,
     }));
+
+    console.log('[DEBUG GET INVOICES]', invoices.map(i => ({
+      id: i.id,
+      fileName: i.fileName,
+      createdAt: i.createdAt
+    })));
 
     res.json({ invoices, count: invoices.length });
   } catch (error) {
