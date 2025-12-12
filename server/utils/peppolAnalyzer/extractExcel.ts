@@ -75,52 +75,133 @@ export function extractExcelData(filePath: string) {
         .replace(',', '.')
     ) || 0;
 
-  const invoiceNumber = norm(row['Numéro'] || row['Invoice'] || row['Facture']);
-  const issueDate = norm(row['Date'] || row['Invoice Date']);
-  const sellerName = norm(row['Fournisseur'] || row['Seller']);
-  const sellerVat = vat(row['TVA Fournisseur'] || row['Seller VAT']);
-  const buyerName = norm(row['Client'] || row['Buyer']);
-  const buyerVat = vat(row['TVA Client'] || row['Buyer VAT']);
+  // Fonction pour chercher une valeur avec plusieurs noms de colonnes possibles
+  const getVal = (...keys: string[]) => {
+    for (const k of keys) {
+      if (row[k] !== undefined && row[k] !== null && row[k] !== '') {
+        return row[k];
+      }
+    }
+    return '';
+  };
 
-  const netAmount = amt(row['Total HT'] || row['Net']);
-  const taxAmount = amt(row['TVA'] || row['Tax']);
-  const grossAmount =
-    amt(row['Total TTC'] || row['Total']) || netAmount + taxAmount;
+  // ========================================
+  // EXTRACTION CHAMPS (mapping étendu FR/EN)
+  // ========================================
+  const invoiceNumber = norm(getVal(
+    'InvoiceNumber', 'Invoice Number', 'Invoice', 'Numéro', 'Numero', 'Facture', 
+    'N° Facture', 'NumeroFacture', 'FactureNo'
+  ));
+  
+  const issueDate = norm(getVal(
+    'InvoiceDate', 'Invoice Date', 'Date', 'DateFacture', 'Date Facture', 
+    'IssueDate', 'Datum'
+  ));
+  
+  const sellerName = norm(getVal(
+    'SupplierName', 'Supplier Name', 'Supplier', 'SellerName', 'Seller Name', 'Seller',
+    'Fournisseur', 'Nom Fournisseur', 'NomFournisseur', 'Vendeur'
+  ));
+  
+  const sellerVat = vat(getVal(
+    'SupplierVAT', 'Supplier VAT', 'SupplierVatNumber', 'SellerVAT', 'Seller VAT',
+    'TVA Fournisseur', 'TVAFournisseur', 'VATFournisseur', 'NumeroTVA'
+  ));
+  
+  const sellerBce = norm(getVal(
+    'SupplierBCE', 'BCE', 'BCEFournisseur', 'CompanyNumber'
+  ));
+  
+  const buyerName = norm(getVal(
+    'CustomerName', 'Customer Name', 'Customer', 'BuyerName', 'Buyer Name', 'Buyer',
+    'Client', 'Nom Client', 'NomClient', 'Acheteur'
+  ));
+  
+  const buyerVat = vat(getVal(
+    'CustomerVAT', 'Customer VAT', 'CustomerVatNumber', 'BuyerVAT', 'Buyer VAT',
+    'TVA Client', 'TVAClient', 'VATClient'
+  ));
+  
+  const buyerReference = norm(getVal(
+    'BuyerReference', 'Buyer Reference', 'Reference', 'Référence', 'RefClient',
+    'CustomerReference', 'YourReference'
+  ));
+  
+  const orderReference = norm(getVal(
+    'OrderReference', 'Order Reference', 'PO', 'PurchaseOrder', 'Commande',
+    'NumeroCommande', 'OrderNumber'
+  ));
+  
+  const currency = norm(getVal(
+    'Currency', 'Devise', 'Valuta'
+  ));
+  
+  const netAmount = amt(getVal(
+    'NetAmount', 'Net Amount', 'Net', 'TotalHT', 'Total HT', 'HT',
+    'Subtotal', 'SubTotal', 'ExclVAT', 'ExclTax'
+  ));
+  
+  const taxAmount = amt(getVal(
+    'TaxAmount', 'Tax Amount', 'Tax', 'VAT', 'VATAmount', 'TVA', 
+    'MontantTVA', 'Montant TVA'
+  ));
+  
+  const grossAmount = amt(getVal(
+    'GrossAmount', 'Gross Amount', 'Gross', 'TotalTTC', 'Total TTC', 'TTC',
+    'Total', 'GrandTotal', 'InclVAT', 'InclTax'
+  )) || (netAmount + taxAmount);
 
-  return {
+  // ========================================
+  // LOGS DE DEBUG
+  // ========================================
+  console.log('[EXTRACT EXCEL] Extracted values:');
+  console.log('  invoiceNumber:', invoiceNumber);
+  console.log('  issueDate:', issueDate);
+  console.log('  sellerName:', sellerName);
+  console.log('  sellerVat:', sellerVat);
+  console.log('  buyerName:', buyerName);
+  console.log('  buyerVat:', buyerVat);
+  console.log('  netAmount:', netAmount);
+  console.log('  taxAmount:', taxAmount);
+  console.log('  grossAmount:', grossAmount);
+
+  // ========================================
+  // CONSTRUCTION STRUCTURE FINALE
+  // ========================================
+  const invoiceData = {
     invoiceNumber: invoiceNumber || `EXCEL-${Date.now()}`,
-    issueDate,
-    currency: 'EUR',
-
+    issueDate: issueDate || new Date().toISOString().slice(0, 10),
+    issueDateISO: issueDate || undefined,
+    currency: currency || 'EUR',
+    buyerReference: buyerReference || `AUTO-REF-${Date.now()}`,
+    orderReference: orderReference || undefined,
     seller: {
-      name: sellerName || '',
-      vatNumber: sellerVat || '',
+      name: sellerName,
+      vatNumber: sellerVat,
+      bceNumber: sellerBce || undefined,
       address: { country: 'BE' }
     },
-
     buyer: {
-      name: buyerName || '',
-      vatNumber: buyerVat || '',
+      name: buyerName,
+      vatNumber: buyerVat,
       address: { country: 'BE' }
     },
-
-    lines: netAmount
-      ? [
-          {
-            id: '1',
-            description: 'Import Excel',
-            quantity: 1,
-            unitPrice: netAmount,
-            vatRate: 21,
-            lineTotal: netAmount
-          }
-        ]
-      : [],
-
+    lines: [{
+      id: '1',
+      description: 'Articles/Services (Excel)',
+      quantity: 1,
+      unitPrice: netAmount > 0 ? netAmount : grossAmount,
+      vatRate: 21,
+      lineTotal: netAmount > 0 ? netAmount : grossAmount
+    }],
     totals: {
-      netAmount,
-      taxAmount,
-      grossAmount
+      netAmount: netAmount,
+      taxAmount: taxAmount,
+      grossAmount: grossAmount
     }
   };
+
+  console.log('[EXTRACT EXCEL] FINAL STRUCTURE', JSON.stringify(invoiceData, null, 2));
+
+  return invoiceData;
 }
