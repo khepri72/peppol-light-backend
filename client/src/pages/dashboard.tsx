@@ -24,7 +24,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { api, Invoice, isInvoiceIncompleteError } from '@/lib/api';
+import { api, Invoice, isIncompleteResult } from '@/lib/api';
 import { authStorage, logout } from '@/lib/auth';
 import { Upload, FileText, Trash2, LogOut, Loader2, AlertCircle, AlertTriangle, Download } from 'lucide-react';
 import { queryClient } from '@/lib/queryClient';
@@ -121,7 +121,8 @@ export default function Dashboard() {
     setIsUploading(true);
 
     try {
-      await api.uploadAndAnalyzeInvoice(file);
+      // L'API retourne TOUJOURS un résultat (jamais throw pour 422)
+      const result = await api.uploadAndAnalyzeInvoice(file);
       
       // Reset file input AVANT d'invalider les queries pour éviter conflits DOM
       if (fileInputRef.current) {
@@ -130,33 +131,27 @@ export default function Dashboard() {
       
       // Invalider les queries SEQUENTIELLEMENT pour éviter les conflits de rendu
       await queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
-      // Petit délai avant la deuxième invalidation pour éviter les conflits
       await new Promise(resolve => setTimeout(resolve, 50));
       await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       
-      toast({
-        title: t('dashboard.uploadSection.uploadSuccess'),
-        description: t('dashboard.uploadSection.analysisComplete'),
-      });
-    } catch (error) {
-      console.error('Upload error:', error);
-      
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+      // ========================================
+      // Cas 1: HTTP 200 - Facture complète
+      // ========================================
+      if (result.status === 200) {
+        console.log('✅ [Dashboard] Facture analysée avec succès');
+        toast({
+          title: t('dashboard.uploadSection.uploadSuccess'),
+          description: t('dashboard.uploadSection.analysisComplete'),
+        });
+        return;
       }
       
-      // Cas spécial: Facture incomplète (HTTP 422)
-      // La facture EST enregistrée dans Airtable mais sans XML
-      if (isInvoiceIncompleteError(error)) {
-        console.log('📋 [Dashboard] Facture incomplète détectée:', error.invoiceId);
-        
-        // Rafraîchir la liste des factures ET les quotas
-        await queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
-        await new Promise(resolve => setTimeout(resolve, 50));
-        await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
-        
-        // Afficher un toast d'avertissement (pas d'erreur critique)
+      // ========================================
+      // Cas 2: HTTP 422 - Facture incomplète
+      // ⚠️ Ce n'est PAS une erreur, juste un avertissement
+      // ========================================
+      if (isIncompleteResult(result)) {
+        console.log('📋 [Dashboard] Facture incomplète détectée:', result.invoice.id);
         toast({
           title: t('dashboard.uploadSection.invoiceIncomplete', 'Facture incomplète'),
           description: t('dashboard.uploadSection.invoiceIncompleteDesc', 
@@ -166,7 +161,18 @@ export default function Dashboard() {
         return;
       }
       
-      // Autres erreurs
+    } catch (error) {
+      // ========================================
+      // Cas 3: VRAIE erreur (500, réseau, 401, 403...)
+      // Seules les vraies erreurs arrivent ici
+      // ========================================
+      console.error('❌ [Dashboard] Upload error:', error);
+      
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      
       toast({
         title: t('dashboard.uploadSection.uploadError'),
         description: error instanceof Error ? error.message : t('common.error'),

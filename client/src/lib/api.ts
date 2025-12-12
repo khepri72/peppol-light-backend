@@ -6,25 +6,26 @@ export interface ApiError {
   message: string;
 }
 
-export interface InvoiceIncompleteError {
-  success: false;
-  code: 'INVOICE_INCOMPLETE';
-  message: string;
-  errors: Array<{ field: string; message: string }>;
-  score: number;
-  validationResults: Array<{ field?: string; code: string; severity: string; message: string }>;
-  warnings: Array<{ field?: string; code: string; severity: string; message: string }>;
-  extractedData: Record<string, unknown>;
-  invoiceId: string;
+/**
+ * Résultat d'upload de facture
+ * ⚠️ IMPORTANT: Cette interface représente TOUS les résultats possibles (200 ET 422)
+ * L'API ne throw JAMAIS pour un 422 - elle retourne toujours cet objet.
+ */
+export interface UploadResult {
+  status: 200 | 422;
+  invoice: Invoice;
+  isIncomplete: boolean;
+  incompleteErrors?: Array<{ field: string; message: string }>;
+  score?: number;
+  message?: string;
 }
 
-export function isInvoiceIncompleteError(error: unknown): error is InvoiceIncompleteError {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    (error as InvoiceIncompleteError).code === 'INVOICE_INCOMPLETE'
-  );
+/**
+ * Type guard pour vérifier si le résultat est une facture incomplète (422)
+ * Utiliser cette fonction au lieu de vérifier manuellement le status
+ */
+export function isIncompleteResult(result: UploadResult): boolean {
+  return result.status === 422 || result.isIncomplete === true;
 }
 
 export interface RegisterData {
@@ -45,10 +46,9 @@ export interface AuthResponse {
     email: string;
     companyName: string;
     googleId?: string;
-    plan?: 'FREE' | 'STARTER' | 'PRO' | 'BUSINESS';
-    quotaUsed?: number;
-    quotaLimit?: number;
-    quotaResetDate?: string;
+    userPlan?: string;
+    invoicesThisMonth?: number;
+    maxInvoicesPerMonth?: number | null;
     picture?: string;
   };
 }
@@ -60,9 +60,9 @@ export interface Invoice {
   status?: string;
   conformityScore?: number;
   errorsList?: string;
-  errorsData?: string; // JSON string containing { errors: [], warnings: [] }
-  xmlFilename?: string; // Real XML filename for UBL download
-  ublFileUrl?: string; // Direct URL for UBL download
+  errorsData?: string;
+  xmlFilename?: string;
+  ublFileUrl?: string;
 }
 
 export interface InvoicesResponse {
@@ -93,9 +93,7 @@ class ApiClient {
       headers,
     });
 
-    // Handle 401 errors differently based on endpoint
     if (response.status === 401) {
-      // Don't logout on login/register endpoints - these are auth attempts
       if (!endpoint.includes('/api/auth/login') && !endpoint.includes('/api/auth/register')) {
         logout();
         throw new Error('Session expired. Please login again.');
@@ -104,7 +102,6 @@ class ApiClient {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'An error occurred' }));
-      // Backend returns {error: "..."} not {message: "..."}
       throw new Error(error.error || error.message || 'Request failed');
     }
 
@@ -148,13 +145,16 @@ class ApiClient {
 
   /**
    * Upload et analyse une facture.
-   * - HTTP 200 → facture complète, XML généré
-   * - HTTP 422 INVOICE_INCOMPLETE → facture enregistrée mais incomplète (pas de XML)
    * 
-   * Dans les DEUX cas, la facture est enregistrée dans Airtable par le backend.
+   * ⚠️ RÈGLE CRITIQUE: Cette fonction NE THROW JAMAIS pour un HTTP 422.
+   * 
+   * - HTTP 200 → facture complète, XML généré → UploadResult { status: 200 }
+   * - HTTP 422 → facture incomplète, pas de XML → UploadResult { status: 422 }
+   * - Autres erreurs (400, 401, 403, 500...) → throw Error (géré par le catch)
+   * 
+   * Dans les cas 200 ET 422, la facture EST enregistrée dans Airtable.
    */
-  async uploadAndAnalyzeInvoice(file: File): Promise<Invoice> {
-    // Le backend gère maintenant la création de l'invoice ET l'analyse en une seule requête
+  async uploadAndAnalyzeInvoice(file: File): Promise<UploadResult> {
     const analyzeFormData = new FormData();
     analyzeFormData.append('file', file);
 
@@ -164,47 +164,77 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_URL}/api/invoices/analyze`, {
-      method: 'POST',
-      headers,
-      body: analyzeFormData,
-    });
+    let response: Response;
+    let responseData: any;
 
-    const responseData = await response.json();
+    try {
+      response = await fetch(`${API_URL}/api/invoices/analyze`, {
+        method: 'POST',
+        headers,
+        body: analyzeFormData,
+      });
 
-    // Cas 1: HTTP 422 - Facture incomplète (mais ENREGISTRÉE dans Airtable)
-    if (response.status === 422 && responseData.code === 'INVOICE_INCOMPLETE') {
-      console.log('📋 [API] Facture incomplète détectée, invoiceId:', responseData.invoiceId);
+      responseData = await response.json().catch(() => ({}));
+    } catch (networkError) {
+      // Erreur réseau
+      console.error('❌ [API] Network error:', networkError);
+      throw new Error('Erreur réseau. Vérifiez votre connexion internet.');
+    }
+
+    // ========================================
+    // CAS 1: HTTP 422 - Facture incomplète
+    // ⚠️ JAMAIS de throw ici - toujours return
+    // ========================================
+    if (response.status === 422) {
+      console.log('📋 [API] HTTP 422 - Facture incomplète');
+      console.log('📋 [API] Response data:', JSON.stringify(responseData).substring(0, 200));
       
-      // Throw une erreur spéciale avec les données de la facture
-      const incompleteError: InvoiceIncompleteError = {
-        success: false,
-        code: 'INVOICE_INCOMPLETE',
-        message: responseData.message,
-        errors: responseData.errors,
-        score: responseData.score,
-        validationResults: responseData.validationResults || [],
-        warnings: responseData.warnings || [],
-        extractedData: responseData.extractedData || {},
-        invoiceId: responseData.invoiceId,
+      // Construire un UploadResult valide même si les données sont partielles
+      return {
+        status: 422,
+        isIncomplete: true,
+        invoice: {
+          id: responseData.invoiceId || `temp-${Date.now()}`,
+          fileName: file.name,
+          fileUrl: `/api/uploads/${file.name}`,
+          conformityScore: responseData.score ?? 0,
+          status: 'Incomplète',
+          errorsList: responseData.errors?.map((e: any) => e.message).join(', ') || '',
+        },
+        incompleteErrors: responseData.errors || [],
+        score: responseData.score ?? 0,
+        message: responseData.message || 'Facture incomplète',
       };
-      throw incompleteError;
     }
 
-    // Cas 2: Autre erreur HTTP
+    // ========================================
+    // CAS 2: Autre erreur HTTP (400, 401, 403, 500...)
+    // → throw pour que le catch dans Dashboard le gère
+    // ========================================
     if (!response.ok) {
-      throw new Error(responseData.error || responseData.message || 'Request failed');
+      console.error('❌ [API] HTTP Error:', response.status, responseData);
+      throw new Error(responseData.error || responseData.message || `Erreur serveur (${response.status})`);
     }
 
-    // Cas 3: HTTP 200 - Succès
+    // ========================================
+    // CAS 3: HTTP 200 - Succès complet
+    // ========================================
+    console.log('✅ [API] HTTP 200 - Facture analysée avec succès');
+    console.log('✅ [API] Invoice ID:', responseData.invoiceId);
+    
     return {
-      id: responseData.invoiceId,
-      fileName: file.name,
-      fileUrl: `/api/uploads/${file.name}`,
-      conformityScore: responseData.score,
-      status: 'Analysée',
-      xmlFilename: responseData.xmlFilename || '',
-      ublFileUrl: responseData.ublFileUrl || `/api/invoices/download-ubl/${responseData.invoiceId}`,
+      status: 200,
+      isIncomplete: false,
+      invoice: {
+        id: responseData.invoiceId || `temp-${Date.now()}`,
+        fileName: file.name,
+        fileUrl: `/api/uploads/${file.name}`,
+        conformityScore: responseData.score ?? 100,
+        status: 'Analysée',
+        xmlFilename: responseData.xmlFilename || '',
+        ublFileUrl: responseData.ublFileUrl || `/api/invoices/download-ubl/${responseData.invoiceId}`,
+      },
+      score: responseData.score ?? 100,
     };
   }
 
