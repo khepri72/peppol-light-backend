@@ -63,6 +63,8 @@ export interface Invoice {
   errorsData?: string;
   xmlFilename?: string;
   ublFileUrl?: string;
+  issueDate?: string;
+  createdAt?: string;
 }
 
 export interface InvoicesResponse {

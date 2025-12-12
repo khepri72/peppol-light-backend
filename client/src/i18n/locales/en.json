@@ -39,6 +39,8 @@
       "empty": "No invoices yet",
       "columns": {
         "fileName": "File Name",
+        "invoiceDate": "Invoice Date",
+        "analysisDate": "Analysis Date",
         "status": "Status",
         "conformityScore": "Conformity Score",
         "errors": "Errors",

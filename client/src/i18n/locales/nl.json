@@ -39,6 +39,8 @@
       "empty": "Nog geen facturen",
       "columns": {
         "fileName": "Bestandsnaam",
+        "invoiceDate": "Factuurdatum",
+        "analysisDate": "Analysedatum",
         "status": "Status",
         "conformityScore": "Conformiteitsscore",
         "errors": "Fouten",

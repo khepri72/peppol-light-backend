@@ -445,6 +445,8 @@ export default function Dashboard() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t('dashboard.invoiceList.columns.fileName')}</TableHead>
+                    <TableHead>{t('dashboard.invoiceList.columns.invoiceDate', 'Date facture')}</TableHead>
+                    <TableHead>{t('dashboard.invoiceList.columns.analysisDate', "Date d'analyse")}</TableHead>
                     <TableHead>{t('dashboard.invoiceList.columns.status')}</TableHead>
                     <TableHead>{t('dashboard.invoiceList.columns.conformityScore')}</TableHead>
                     <TableHead>{t('dashboard.invoiceList.columns.errors')}</TableHead>
@@ -457,6 +459,16 @@ export default function Dashboard() {
                     <TableRow key={invoice.id} data-testid={`row-invoice-${invoice.id}`}>
                       <TableCell className="font-medium" data-testid={`text-filename-${invoice.id}`}>
                         {invoice.fileName}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {(invoice.issueDate || invoice.createdAt) 
+                          ? new Date(invoice.issueDate || invoice.createdAt!).toLocaleDateString('fr-FR')
+                          : '—'}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {invoice.createdAt 
+                          ? new Date(invoice.createdAt).toLocaleDateString('fr-FR')
+                          : '—'}
                       </TableCell>
                       <TableCell>
                         {getStatusBadge(invoice.status)}

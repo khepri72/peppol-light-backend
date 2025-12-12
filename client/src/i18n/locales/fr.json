@@ -39,6 +39,8 @@
       "empty": "Aucune facture pour le moment",
       "columns": {
         "fileName": "Nom de fichier",
+        "invoiceDate": "Date facture",
+        "analysisDate": "Date d'analyse",
         "status": "Statut",
         "conformityScore": "Score de conformité",
         "errors": "Erreurs",
