@@ -165,6 +165,8 @@
           "invoices": "3 invoices/month",
           "score": "Peppol score 0-100%",
           "pdf": "Downloadable PDF report",
+          "history": "1-month history",
+          "support": "Email support",
           "noUbl": "No UBL conversion"
         },
         "cta": "Start for free"

@@ -164,7 +164,9 @@
         "features": {
           "invoices": "3 factures/mois",
           "score": "Score Peppol 0-100%",
-          "pdf": "Rapport PDF téléchargeable",
+          "pdf": "Rapport PDF telechargeable",
+          "history": "Historique 1 mois",
+          "support": "Support par email",
           "noUbl": "Pas de conversion UBL"
         },
         "cta": "Commencer gratuitement"

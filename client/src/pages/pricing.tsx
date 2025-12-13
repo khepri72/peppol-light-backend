@@ -88,6 +88,14 @@ export default function PricingPage() {
                   <span className="text-sm">{t("pricing.plans.free.features.pdf")}</span>
                 </li>
                 <li className="flex items-start gap-2">
+                  <Check className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm">{t("pricing.plans.free.features.history")}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm">{t("pricing.plans.free.features.support")}</span>
+                </li>
+                <li className="flex items-start gap-2">
                   <X className="w-5 h-5 text-red-500 dark:text-red-400 flex-shrink-0 mt-0.5" />
                   <span className="text-sm text-muted-foreground">{t("pricing.plans.free.features.noUbl")}</span>
                 </li>

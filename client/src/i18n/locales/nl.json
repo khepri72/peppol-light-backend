@@ -165,6 +165,8 @@
           "invoices": "3 facturen/maand",
           "score": "Peppol-score 0-100%",
           "pdf": "Downloadbaar PDF-rapport",
+          "history": "Geschiedenis 1 maand",
+          "support": "E-mailondersteuning",
           "noUbl": "Geen UBL-conversie"
         },
         "cta": "Gratis beginnen"
