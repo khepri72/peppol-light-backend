@@ -88,23 +88,27 @@ export async function generatePdfReportBuffer(data: PdfReportData): Promise<Buff
 
       // === MESSAGE SELON LE PLAN ===
       doc.moveDown(1);
-      doc.fontSize(12).fillColor(primaryColor).text('─'.repeat(50), { align: 'center' });
+      // Ligne de séparation (sans caractères spéciaux)
+      doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke('#ddd');
       doc.moveDown(0.5);
 
       if (data.userPlan === 'free') {
-        doc.fontSize(12).fillColor(warningColor).text('🔒 Plan Gratuit', { align: 'center' });
+        doc.fontSize(12).fillColor(warningColor).text('Plan Gratuit (FREE)', { align: 'center' });
         doc.moveDown(0.3);
         doc.fontSize(10).fillColor('#333').text(
-          'Passez au plan Starter ou supérieur pour accéder au téléchargement du fichier UBL/XML Peppol conforme.',
+          'Passez au plan Starter ou superieur pour acceder au telechargement du fichier UBL/XML Peppol conforme.',
           { align: 'center' }
         );
         doc.moveDown(0.3);
-        doc.fontSize(10).fillColor(primaryColor).text('→ Upgrade sur peppollight.com/pricing', { align: 'center' });
+        doc.fontSize(10).fillColor(primaryColor).text(
+          'https://app.peppollight.com/pricing',
+          { link: 'https://app.peppollight.com/pricing', underline: true, align: 'center' }
+        );
       } else {
-        doc.fontSize(12).fillColor(successColor).text(`✓ Plan ${data.userPlan.toUpperCase()}`, { align: 'center' });
+        doc.fontSize(12).fillColor(successColor).text(`Plan ${data.userPlan.toUpperCase()}`, { align: 'center' });
         doc.moveDown(0.3);
         doc.fontSize(10).fillColor('#333').text(
-          'Le fichier UBL/XML Peppol conforme est disponible au téléchargement dans votre dashboard.',
+          'Le fichier UBL/XML Peppol conforme est disponible au telechargement dans votre dashboard.',
           { align: 'center' }
         );
       }
@@ -112,7 +116,7 @@ export async function generatePdfReportBuffer(data: PdfReportData): Promise<Buff
       // === PIED DE PAGE ===
       doc.moveDown(2);
       doc.fontSize(8).fillColor('#999').text(
-        `Rapport généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')} - Peppol Light © ${new Date().getFullYear()}`,
+        `Rapport genere le ${new Date().toLocaleDateString('fr-FR')} - Peppol Light ${new Date().getFullYear()}`,
         { align: 'center' }
       );
 
