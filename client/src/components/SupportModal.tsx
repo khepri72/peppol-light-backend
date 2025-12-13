@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
+import { authStorage } from '@/lib/auth';
 
 interface SupportModalProps {
   isOpen: boolean;
@@ -23,7 +24,7 @@ export default function SupportModal({ isOpen, onClose, userEmail, userName }: S
     setSending(true);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = authStorage.getToken();
       const response = await fetch(`${API_BASE_URL}/api/support`, {
         method: 'POST',
         headers: {
