@@ -177,24 +177,24 @@
         "features": {
           "invoices": "30 facturen/maand",
           "ubl": "Automatische UBL/XML-conversie",
-          "ai": "Standaard AI-extractie",
+          "ai": "Downloadbaar PDF-rapport",
           "history": "Geschiedenis 3 maanden",
-          "support": "E-mailondersteuning 48u"
+          "support": "E-mailondersteuning"
         },
         "cta": "Activeer dit plan"
       },
       "pro": {
         "name": "Pro",
-        "badge": "🔥 POPULAIR",
+        "badge": "POPULAIR",
         "price": "29,90€",
         "priceYearly": "287€",
         "features": {
           "invoices": "200 facturen/maand",
-          "aiAdvanced": "Geavanceerde AI-extractie",
-          "dashboard": "Volledig analytisch dashboard",
-          "autoSend": "Auto verzending boekhouding + Webhooks",
+          "aiAdvanced": "Alle Starter-functies",
+          "dashboard": "Analytisch dashboard (binnenkort)",
+          "autoSend": "Auto verzending boekhouding (binnenkort)",
           "history": "Geschiedenis 12 maanden",
-          "support": "Prioritaire ondersteuning 24u",
+          "support": "Prioritaire ondersteuning",
           "users": "Multi-gebruikers (1-3)"
         },
         "cta": "Activeer dit plan"
@@ -206,13 +206,13 @@
         "priceYearly": "767€",
         "clientsIncluded": "10 klantdossiers inbegrepen",
         "features": {
-          "invoices": "ONBEPERKTE facturen",
+          "invoices": "Onbeperkte facturen",
           "clients": "Multi-klanten (10 dossiers)",
           "addClients": "Pack +10 dossiers: +25€/maand",
           "api": "Premium API-toegang: +30€/maand",
           "whiteLabel": "White-label: +50€/maand",
           "phone": "Toegewijde telefonische ondersteuning",
-          "manager": "Accountmanager"
+          "manager": "Toegewijde accountmanager"
         },
         "cta": "Offerte aanvragen"
       }
