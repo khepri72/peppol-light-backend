@@ -424,7 +424,7 @@ export default function Dashboard() {
                       : `${used} / ${effectiveLimit}`
                     }
                   </Badge>
-                  {planId === 'free' && (
+                  {planId !== 'business' && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -432,7 +432,11 @@ export default function Dashboard() {
                       className="text-blue-600 border-blue-300 hover:bg-blue-50"
                       data-testid="button-upgrade"
                     >
-                      <Link href="/pricing">{t('dashboard.upgradeToStarter', 'Passer à Starter')}</Link>
+                      <Link href="/pricing">
+                        {planId === 'free' && t('dashboard.upgradeToStarter', 'Passer à Starter')}
+                        {planId === 'starter' && t('dashboard.upgradeToPro', 'Passer à Pro')}
+                        {planId === 'pro' && t('dashboard.upgradeToBusiness', 'Passer à Business')}
+                      </Link>
                     </Button>
                   )}
                 </div>

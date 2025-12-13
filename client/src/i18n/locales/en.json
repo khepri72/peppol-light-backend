@@ -64,6 +64,8 @@
     "reportDownloaded": "PDF report downloaded",
     "currentPlanLabel": "Plan",
     "upgradeToStarter": "Upgrade to Starter",
+    "upgradeToPro": "Upgrade to Pro",
+    "upgradeToBusiness": "Upgrade to Business",
     "monthlyUsage": "Invoices this month",
     "unlimited": "Unlimited"
   },

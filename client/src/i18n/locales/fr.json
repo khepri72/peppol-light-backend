@@ -64,6 +64,8 @@
     "reportDownloaded": "Rapport PDF téléchargé",
     "currentPlanLabel": "Plan",
     "upgradeToStarter": "Passer à Starter",
+    "upgradeToPro": "Passer à Pro",
+    "upgradeToBusiness": "Passer à Business",
     "monthlyUsage": "Factures ce mois",
     "unlimited": "Illimité"
   },

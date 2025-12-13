@@ -64,6 +64,8 @@
     "reportDownloaded": "PDF-rapport gedownload",
     "currentPlanLabel": "Plan",
     "upgradeToStarter": "Upgrade naar Starter",
+    "upgradeToPro": "Upgrade naar Pro",
+    "upgradeToBusiness": "Upgrade naar Business",
     "monthlyUsage": "Facturen deze maand",
     "unlimited": "Onbeperkt"
   },
