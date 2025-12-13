@@ -58,7 +58,10 @@
     "noUbl": "Niet beschikbaar",
     "noUblIncomplete": "Niet beschikbaar (onvolledige factuur)",
     "ublDownloaded": "UBL-bestand succesvol gedownload",
-    "ublDownloadError": "Fout bij downloaden UBL"
+    "ublDownloadError": "Fout bij downloaden UBL",
+    "reportColumn": "Rapport",
+    "downloadReport": "Rapport",
+    "reportDownloaded": "PDF-rapport gedownload"
   },
   "status": {
     "uploaded": "In afwachting",

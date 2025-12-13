@@ -243,6 +243,7 @@ export default function Dashboard() {
 
   // État pour gérer le téléchargement en cours
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [downloadingReportId, setDownloadingReportId] = useState<string | null>(null);
 
   /**
    * Téléchargement UBL - Version 100% sans manipulation DOM
@@ -312,6 +313,62 @@ export default function Dashboard() {
       });
     } finally {
       setDownloadingId(null);
+    }
+  };
+
+  /**
+   * Téléchargement du rapport PDF
+   */
+  const handleDownloadReport = async (invoiceId: string, fileName: string) => {
+    console.log('📄 [downloadReport] START - Invoice:', invoiceId);
+    setDownloadingReportId(invoiceId);
+    
+    try {
+      const token = authStorage.getToken();
+      const response = await fetch(`/api/invoices/report-pdf/${invoiceId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Download failed' }));
+        console.error('❌ [downloadReport] Failed:', response.status, errorData);
+        throw new Error(errorData.error || `Download failed: ${response.status}`);
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      
+      const newWindow = window.open(url, '_blank');
+      
+      if (!newWindow) {
+        toast({
+          title: t('common.warning', 'Attention'),
+          description: t('dashboard.popupBlocked', 'Autorisez les popups pour télécharger le fichier.'),
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: t('common.success'),
+          description: t('dashboard.reportDownloaded', 'Rapport PDF téléchargé'),
+        });
+      }
+      
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 10000);
+      
+      console.log('📄 [downloadReport] END');
+    } catch (error: any) {
+      console.error('❌ [downloadReport] ERROR:', error);
+      toast({
+        title: t('common.error'),
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setDownloadingReportId(null);
     }
   };
 
@@ -454,6 +511,7 @@ export default function Dashboard() {
                     <TableHead>{t('dashboard.invoiceList.columns.conformityScore')}</TableHead>
                     <TableHead>{t('dashboard.invoiceList.columns.errors')}</TableHead>
                     <TableHead className="text-center">{t('dashboard.ublColumn')}</TableHead>
+                    <TableHead className="text-center">{t('dashboard.reportColumn', 'Rapport')}</TableHead>
                     <TableHead className="text-right">{t('dashboard.invoiceList.columns.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -557,6 +615,29 @@ export default function Dashboard() {
                           <span className="text-muted-foreground text-sm">
                             {t('dashboard.noUbl')}
                           </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {/* Bouton Rapport PDF - disponible pour toutes les factures analysées */}
+                        {(invoice.status?.toLowerCase() === 'analysée' || 
+                          invoice.status?.toLowerCase() === 'incomplète' ||
+                          invoice.conformityScore !== undefined) ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDownloadReport(invoice.id, invoice.fileName)}
+                            disabled={downloadingReportId === invoice.id}
+                            data-testid={`button-download-report-${invoice.id}`}
+                          >
+                            {downloadingReportId === invoice.id ? (
+                              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                            ) : (
+                              <FileText className="mr-1 h-4 w-4" />
+                            )}
+                            📄 {t('dashboard.downloadReport', 'Rapport')}
+                          </Button>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">—</span>
                         )}
                       </TableCell>
                       <TableCell className="text-right">

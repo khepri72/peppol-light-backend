@@ -58,7 +58,10 @@
     "noUbl": "Non disponible",
     "noUblIncomplete": "Non disponible (facture incomplète)",
     "ublDownloaded": "Fichier UBL telecharge avec succes",
-    "ublDownloadError": "Erreur lors du telechargement UBL"
+    "ublDownloadError": "Erreur lors du telechargement UBL",
+    "reportColumn": "Rapport",
+    "downloadReport": "Rapport",
+    "reportDownloaded": "Rapport PDF téléchargé"
   },
   "status": {
     "uploaded": "En attente",

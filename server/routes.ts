@@ -211,6 +211,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Download PDF Report for an invoice
+  app.get('/api/invoices/report-pdf/:invoiceId', authenticateToken, async (req, res) => {
+    try {
+      const { invoiceId } = req.params;
+      const userId = (req as any).userId;
+      
+      console.log('📄 [REPORT-PDF] Request for invoiceId:', invoiceId);
+      
+      if (!invoiceId) {
+        return res.status(400).json({ error: 'Invoice ID required' });
+      }
+      
+      // Import dependencies
+      const { base, TABLES } = await import('./config/airtable');
+      const { generatePdfReportBuffer } = await import('./utils/pdfReport');
+      
+      // Get invoice from Airtable
+      let invoiceRecord;
+      try {
+        invoiceRecord = await base(TABLES.INVOICES).find(invoiceId);
+      } catch (findError: any) {
+        console.error('❌ [REPORT-PDF] Invoice not found:', findError.message);
+        return res.status(404).json({ error: 'Invoice not found' });
+      }
+      
+      // Check ownership
+      const userIds = invoiceRecord.fields['User'] as string[];
+      if (!userIds || !userIds.includes(userId)) {
+        console.error('❌ [REPORT-PDF] Access denied for user:', userId);
+        return res.status(403).json({ error: 'Access denied' });
+      }
+      
+      // Get user for plan info
+      let userRecord;
+      try {
+        userRecord = await base(TABLES.USERS).find(userId);
+      } catch (userError: any) {
+        console.error('❌ [REPORT-PDF] User not found:', userError.message);
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      const userPlan = String(userRecord.fields['userPlan'] || 'free').toLowerCase();
+      
+      // Parse errors
+      let errors: Array<{ message: string }> = [];
+      let warnings: Array<{ message: string }> = [];
+      
+      const errorsData = invoiceRecord.fields['Errors Data'] as string;
+      if (errorsData) {
+        try {
+          const parsed = JSON.parse(errorsData);
+          errors = (parsed.errors || []).map((e: any) => ({ message: e.message || String(e) }));
+          warnings = (parsed.warnings || []).map((w: any) => ({ message: w.message || String(w) }));
+        } catch (e) {
+          // Fallback to Errors List
+          const errorsList = invoiceRecord.fields['Errors List'] as string;
+          if (errorsList) {
+            errors = errorsList.split('\n').filter(Boolean).map(msg => ({ message: msg }));
+          }
+        }
+      }
+      
+      // Get createdAt
+      const createdAt = (invoiceRecord as any)._rawJson?.createdTime || 
+                        (invoiceRecord as any).createdTime || 
+                        new Date().toISOString();
+      
+      // Generate PDF
+      const pdfBuffer = await generatePdfReportBuffer({
+        fileName: invoiceRecord.fields['File Name'] as string || 'Unknown',
+        invoiceNumber: invoiceRecord.fields['Invoice Number'] as string || '',
+        invoiceDate: invoiceRecord.fields['Invoice Date'] as string || '',
+        analysisDate: new Date(createdAt).toLocaleDateString('fr-FR'),
+        score: Number(invoiceRecord.fields['Conformity Score']) || 0,
+        status: invoiceRecord.fields['Status'] as string || 'Unknown',
+        errors,
+        warnings,
+        userPlan
+      });
+      
+      const pdfFilename = `rapport-peppol-${invoiceId}.pdf`;
+      
+      console.log('✅ [REPORT-PDF] PDF generated, size:', pdfBuffer.length, 'bytes');
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${pdfFilename}"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+      return res.send(pdfBuffer);
+      
+    } catch (error) {
+      console.error('❌ [REPORT-PDF] Error:', error);
+      return res.status(500).json({ error: 'Failed to generate PDF report' });
+    }
+  });
+
   // Serve uploaded files with authentication (SECURE)
   app.get('/api/uploads/:filename', authenticateToken, (req, res) => {
     try {

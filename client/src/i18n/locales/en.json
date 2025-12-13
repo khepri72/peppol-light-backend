@@ -58,7 +58,10 @@
     "noUbl": "Not available",
     "noUblIncomplete": "Not available (incomplete invoice)",
     "ublDownloaded": "UBL file downloaded successfully",
-    "ublDownloadError": "Error downloading UBL file"
+    "ublDownloadError": "Error downloading UBL file",
+    "reportColumn": "Report",
+    "downloadReport": "Report",
+    "reportDownloaded": "PDF report downloaded"
   },
   "status": {
     "uploaded": "Pending",
