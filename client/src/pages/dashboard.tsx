@@ -46,6 +46,9 @@ export default function Dashboard() {
     queryFn: () => api.getProfile(),
   });
 
+  // Log temporaire pour debug plan utilisateur
+  console.log('[PROFILE PLAN]', profile?.user?.userPlan);
+
   const quotas = useQuotas();
 
   const { data: invoicesData, isLoading } = useQuery({
@@ -521,20 +524,35 @@ export default function Dashboard() {
                             {t('dashboard.noUblIncomplete', 'Non disponible (facture incomplète)')}
                           </span>
                         ) : (invoice.xmlFilename || invoice.ublFileUrl) ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => downloadUbl(invoice)}
-                            disabled={downloadingId === invoice.id}
-                            data-testid={`button-download-ubl-${invoice.id}`}
-                          >
-                            {downloadingId === invoice.id ? (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                              <Download className="mr-2 h-4 w-4" />
-                            )}
-                            {t('dashboard.downloadUbl')}
-                          </Button>
+                          // Vérifier le plan utilisateur
+                          profile?.user?.userPlan === 'free' ? (
+                            // Plan FREE → bouton verrouillé
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setLocation('/pricing')}
+                              className="text-amber-600 border-amber-300 hover:bg-amber-50"
+                              data-testid={`button-upgrade-ubl-${invoice.id}`}
+                            >
+                              🔒 {t('dashboard.upgradeRequired', 'Abonnement requis')}
+                            </Button>
+                          ) : (
+                            // Plan payant → bouton normal
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => downloadUbl(invoice)}
+                              disabled={downloadingId === invoice.id}
+                              data-testid={`button-download-ubl-${invoice.id}`}
+                            >
+                              {downloadingId === invoice.id ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                <Download className="mr-2 h-4 w-4" />
+                              )}
+                              {t('dashboard.downloadUbl')}
+                            </Button>
+                          )
                         ) : (
                           <span className="text-muted-foreground text-sm">
                             {t('dashboard.noUbl')}

@@ -6,6 +6,7 @@ import fs from "fs";
 import { fileURLToPath } from 'url';
 import { authenticateToken } from "./middlewares/auth";
 import { checkQuota } from "./middlewares/checkQuota";
+import { checkPlanFeature } from "./middlewares/checkPlanFeature";
 import * as authController from "./controllers/authController";
 import * as authGoogleController from "./controllers/authGoogleController";
 import * as invoiceController from "./controllers/invoiceController";
@@ -156,7 +157,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Download UBL/XML file from Airtable (compatible Render ephemeral filesystem)
-  app.get('/api/invoices/download-ubl/:invoiceId', authenticateToken, async (req, res) => {
+  // Protected: requires STARTER/PRO/BUSINESS plan (not FREE)
+  app.get('/api/invoices/download-ubl/:invoiceId', authenticateToken, checkPlanFeature('ubl-download'), async (req, res) => {
     try {
       const { invoiceId } = req.params;
       const userId = (req as any).userId;

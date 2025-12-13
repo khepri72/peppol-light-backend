@@ -54,6 +54,7 @@
     },
     "ublColumn": "UBL/XML",
     "downloadUbl": "Download UBL",
+    "upgradeRequired": "Abonnement vereist",
     "noUbl": "Niet beschikbaar",
     "noUblIncomplete": "Niet beschikbaar (onvolledige factuur)",
     "ublDownloaded": "UBL-bestand succesvol gedownload",
