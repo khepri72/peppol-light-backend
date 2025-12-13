@@ -448,6 +448,28 @@ export default function PricingPage() {
           </AccordionItem>
         </Accordion>
       </section>
+
+      <footer className="mt-16 border-t border-gray-200 py-8">
+        <div className="max-w-6xl mx-auto px-4 text-center text-sm text-gray-500">
+          <a
+            href="https://peppollight.com/privacy"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:underline"
+          >
+            Politique de confidentialité
+          </a>
+          <span className="mx-3">•</span>
+          <a
+            href="https://peppollight.com/terms"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:underline"
+          >
+            Conditions d'utilisation
+          </a>
+        </div>
+      </footer>
     </div>
   );
 }
