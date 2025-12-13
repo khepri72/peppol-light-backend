@@ -26,8 +26,9 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { api, Invoice, isIncompleteResult } from '@/lib/api';
 import { authStorage, logout } from '@/lib/auth';
-import { Upload, FileText, Trash2, LogOut, Loader2, AlertCircle, AlertTriangle, Download } from 'lucide-react';
+import { Upload, FileText, Trash2, LogOut, Loader2, AlertCircle, AlertTriangle, Download, MessageCircle } from 'lucide-react';
 import { queryClient } from '@/lib/queryClient';
+import SupportModal from '@/components/SupportModal';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { translateErrorsList, type ValidationError } from '@/utils/errorTranslations';
@@ -244,6 +245,7 @@ export default function Dashboard() {
   // État pour gérer le téléchargement en cours
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [downloadingReportId, setDownloadingReportId] = useState<string | null>(null);
+  const [supportOpen, setSupportOpen] = useState(false);
 
   /**
    * Téléchargement UBL - Version 100% sans manipulation DOM
@@ -442,6 +444,14 @@ export default function Dashboard() {
                 </div>
               );
             })()}
+            <button
+              onClick={() => setSupportOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-[#1E5AA8] hover:bg-gray-50 rounded-lg transition-colors"
+              data-testid="button-support"
+            >
+              <MessageCircle className="h-4 w-4" />
+              Support
+            </button>
             <Button
               variant="ghost"
               asChild
@@ -724,6 +734,13 @@ export default function Dashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <SupportModal
+        isOpen={supportOpen}
+        onClose={() => setSupportOpen(false)}
+        userEmail={profile?.user?.email || ''}
+        userName={profile?.user?.companyName || 'Utilisateur'}
+      />
     </div>
   );
 }

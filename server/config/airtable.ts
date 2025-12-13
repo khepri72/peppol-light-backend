@@ -18,4 +18,5 @@ export const TABLES = {
   USERS: 'Users',
   INVOICES: 'Invoices',
   USER_SETTINGS: 'UserSettings',
+  SUPPORT_TICKETS: 'Support Tickets',
 };

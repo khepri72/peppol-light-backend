@@ -335,6 +335,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Support ticket route
+  app.post('/api/support', authenticateToken, async (req, res) => {
+    try {
+      const { subject, message, priority } = req.body;
+      const userId = (req as any).userId;
+
+      if (!subject || !message) {
+        return res.status(400).json({ error: 'Sujet et message requis' });
+      }
+
+      // Import Airtable config
+      const { base, TABLES } = await import('./config/airtable');
+
+      // Load user
+      const user = await base(TABLES.USERS).find(userId);
+      const userEmail = user.fields.Email as string;
+      const userName = user.fields.Name as string || user.fields['Company Name'] as string || 'Inconnu';
+
+      // Create ticket in Airtable
+      await base(TABLES.SUPPORT_TICKETS).create({
+        User: [userId],
+        Email: userEmail,
+        Subject: subject,
+        Message: message,
+        Status: 'New',
+        Priority: priority || 'Medium',
+        'Created At': new Date().toISOString()
+      });
+
+      console.log(`[Support] Ticket créé - User: ${userName}, Subject: ${subject}`);
+
+      res.json({ 
+        success: true,
+        message: 'Ticket de support créé avec succès' 
+      });
+    } catch (error) {
+      console.error('[Support] Erreur:', error);
+      res.status(500).json({ error: 'Erreur lors de la création du ticket' });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
