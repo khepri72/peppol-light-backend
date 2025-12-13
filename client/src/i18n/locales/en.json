@@ -61,7 +61,17 @@
     "ublDownloadError": "Error downloading UBL file",
     "reportColumn": "Report",
     "downloadReport": "Report",
-    "reportDownloaded": "PDF report downloaded"
+    "reportDownloaded": "PDF report downloaded",
+    "currentPlanLabel": "Plan",
+    "upgradeToStarter": "Upgrade to Starter",
+    "monthlyUsage": "Invoices this month",
+    "unlimited": "Unlimited"
+  },
+  "plans": {
+    "free": "Free",
+    "starter": "Starter",
+    "pro": "Pro",
+    "business": "Business"
   },
   "status": {
     "uploaded": "Pending",

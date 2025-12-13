@@ -6,9 +6,9 @@ export const PLANS = {
     maxInvoicesPerMonth: 3, // 3 factures par mois
     description: '3 factures par mois pour tester Peppol Light',
     features: [
-      'Score Peppol 0-100%',
-      'Rapport PDF téléchargeable',
-      'Support email standard'
+      'Score Pe PDF téléchargeable',
+      'Supportppol 0-100%',
+      'Rapport email standard'
     ]
   },
   starter: {

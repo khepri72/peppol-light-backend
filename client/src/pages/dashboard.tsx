@@ -394,19 +394,50 @@ export default function Dashboard() {
               )}
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            {!quotas.isLoading && (
-              <Badge 
-                variant={quotas.canUpload ? "default" : "destructive"}
-                className="text-sm px-3 py-1.5"
-                data-testid="badge-quota"
-              >
-                {quotas.isUnlimited 
-                  ? t('quotas.unlimited')
-                  : t('quotas.used', { used: quotas.used, limit: quotas.limit })
-                }
-              </Badge>
-            )}
+          <div className="flex items-center gap-4 flex-wrap">
+            {/* Plan Badge avec couleur selon le plan */}
+            {profile && (() => {
+              const planId = (profile.user.userPlan || 'free').toLowerCase();
+              const planConfig: Record<string, { label: string; classes: string; limit: number | null }> = {
+                free: { label: t('plans.free', 'Gratuit'), classes: 'bg-gray-100 text-gray-700 hover:bg-gray-100', limit: 3 },
+                starter: { label: t('plans.starter', 'Starter'), classes: 'bg-blue-100 text-blue-700 hover:bg-blue-100', limit: 30 },
+                pro: { label: t('plans.pro', 'Pro'), classes: 'bg-orange-100 text-orange-700 hover:bg-orange-100', limit: 200 },
+                business: { label: t('plans.business', 'Business'), classes: 'bg-green-100 text-green-700 hover:bg-green-100', limit: null },
+              };
+              const config = planConfig[planId] || planConfig.free;
+              const used = Number(profile.user.invoicesThisMonth || 0);
+              const overrideLimit = profile.user.maxInvoicesPerMonth;
+              const effectiveLimit = overrideLimit !== undefined && overrideLimit !== null ? overrideLimit : config.limit;
+              
+              return (
+                <div className="flex items-center gap-2">
+                  <Badge className={`text-sm px-3 py-1.5 ${config.classes}`} data-testid="badge-plan">
+                    {t('dashboard.currentPlanLabel', 'Plan')} : {config.label}
+                  </Badge>
+                  <Badge 
+                    variant={effectiveLimit === null || used < effectiveLimit ? "outline" : "destructive"}
+                    className="text-sm px-3 py-1.5"
+                    data-testid="badge-quota"
+                  >
+                    {effectiveLimit === null 
+                      ? `${used} ${t('dashboard.unlimited', 'Illimité')}`
+                      : `${used} / ${effectiveLimit}`
+                    }
+                  </Badge>
+                  {planId === 'free' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      asChild
+                      className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                      data-testid="button-upgrade"
+                    >
+                      <Link href="/pricing">{t('dashboard.upgradeToStarter', 'Passer à Starter')}</Link>
+                    </Button>
+                  )}
+                </div>
+              );
+            })()}
             <Button
               variant="ghost"
               asChild

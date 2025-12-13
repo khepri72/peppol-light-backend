@@ -61,7 +61,17 @@
     "ublDownloadError": "Erreur lors du telechargement UBL",
     "reportColumn": "Rapport",
     "downloadReport": "Rapport",
-    "reportDownloaded": "Rapport PDF téléchargé"
+    "reportDownloaded": "Rapport PDF téléchargé",
+    "currentPlanLabel": "Plan",
+    "upgradeToStarter": "Passer à Starter",
+    "monthlyUsage": "Factures ce mois",
+    "unlimited": "Illimité"
+  },
+  "plans": {
+    "free": "Gratuit",
+    "starter": "Starter",
+    "pro": "Pro",
+    "business": "Business"
   },
   "status": {
     "uploaded": "En attente",

@@ -61,7 +61,17 @@
     "ublDownloadError": "Fout bij downloaden UBL",
     "reportColumn": "Rapport",
     "downloadReport": "Rapport",
-    "reportDownloaded": "PDF-rapport gedownload"
+    "reportDownloaded": "PDF-rapport gedownload",
+    "currentPlanLabel": "Plan",
+    "upgradeToStarter": "Upgrade naar Starter",
+    "monthlyUsage": "Facturen deze maand",
+    "unlimited": "Onbeperkt"
+  },
+  "plans": {
+    "free": "Gratis",
+    "starter": "Starter",
+    "pro": "Pro",
+    "business": "Business"
   },
   "status": {
     "uploaded": "In afwachting",
