@@ -245,6 +245,18 @@ class ApiClient {
       method: 'DELETE',
     });
   }
+
+  /**
+   * Create a Stripe Checkout Session for subscription
+   * @param plan - The plan to subscribe to (starter, pro, business)
+   * @returns The Stripe Checkout URL
+   */
+  async createCheckoutSession(plan: 'starter' | 'pro' | 'business'): Promise<{ url: string }> {
+    return this.request<{ url: string }>('/api/stripe/checkout', {
+      method: 'POST',
+      body: JSON.stringify({ plan }),
+    });
+  }
 }
 
 export const api = new ApiClient();
