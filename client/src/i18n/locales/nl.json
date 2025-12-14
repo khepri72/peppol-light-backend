@@ -158,6 +158,36 @@
   "pricing": {
     "title": "Kies uw Peppol Light-plan",
     "subtitle": "Eenvoudige, transparante en voorspelbare prijzen",
+    "why": {
+      "title": "Waarom Peppol Light kiezen?",
+      "subtitle": "Ontworpen voor Belgische zelfstandigen en kmo's: eenvoudig, duidelijk en klaar voor e-facturatie.",
+      "cards": {
+        "simple": {
+          "title": "Eenvoud eerst",
+          "desc": "Upload een factuur, ontvang een conformiteitsscore en download je rapport in enkele klikken."
+        },
+        "transparent": {
+          "title": "Transparante prijzen",
+          "desc": "Duidelijk abonnement met quota per plan. Geen moeilijk voorspelbaar model per transactie."
+        },
+        "compliance": {
+          "title": "Peppol-conformiteit",
+          "desc": "Score van 0–100% om snel verbeterpunten te vinden vóór verzending."
+        },
+        "ubl": {
+          "title": "UBL/XML (per plan)",
+          "desc": "UBL/XML-conversie is beschikbaar vanaf de geschikte plannen om stap voor stap naar e-facturatie te gaan."
+        },
+        "history": {
+          "title": "Historiek per plan",
+          "desc": "Historiek aangepast aan je abonnement (FREE/STARTER/PRO/BUSINESS) om een nuttig overzicht te bewaren."
+        },
+        "support": {
+          "title": "Support via e-mail",
+          "desc": "In het dashboard is een Support-knop beschikbaar om een verzoek (ticket) te versturen."
+        }
+      }
+    },
     "monthly": "maand",
     "yearly": "jaar",
     "yearlyDiscount": "of {{price}}/jaar (-20%)",

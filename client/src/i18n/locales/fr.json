@@ -158,6 +158,36 @@
   "pricing": {
     "title": "Choisissez votre plan Peppol Light",
     "subtitle": "Tarification simple, transparente et sans surprise",
+    "why": {
+      "title": "Pourquoi choisir Peppol Light ?",
+      "subtitle": "Une solution conçue pour les indépendants et PME belges : simple, claire, et prête pour l'e-facturation.",
+      "cards": {
+        "simple": {
+          "title": "Simplicité avant tout",
+          "desc": "Uploadez une facture, obtenez un score de conformité, puis téléchargez votre rapport en quelques clics."
+        },
+        "transparent": {
+          "title": "Prix transparent",
+          "desc": "Abonnement clair avec quotas par plan. Pas de modèle \"à la transaction\" difficile à prévoir."
+        },
+        "compliance": {
+          "title": "Conformité Peppol",
+          "desc": "Score 0–100% pour repérer rapidement les points à corriger avant envoi."
+        },
+        "ubl": {
+          "title": "UBL/XML (selon plan)",
+          "desc": "Conversion UBL/XML disponible à partir des plans concernés, pour avancer pas à pas vers l'e-facturation."
+        },
+        "history": {
+          "title": "Historique par plan",
+          "desc": "Un historique adapté à votre abonnement (FREE/STARTER/PRO/BUSINESS) pour garder une trace utile."
+        },
+        "support": {
+          "title": "Support par email",
+          "desc": "Un bouton Support est disponible dans le dashboard pour envoyer une demande (ticket)."
+        }
+      }
+    },
     "monthly": "mois",
     "yearly": "an",
     "yearlyDiscount": "ou {{price}}/an (-20%)",

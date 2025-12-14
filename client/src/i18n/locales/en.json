@@ -158,6 +158,36 @@
   "pricing": {
     "title": "Choose your Peppol Light plan",
     "subtitle": "Simple, transparent and predictable pricing",
+    "why": {
+      "title": "Why choose Peppol Light?",
+      "subtitle": "Built for Belgian freelancers and SMEs: simple, clear, and ready for e-invoicing.",
+      "cards": {
+        "simple": {
+          "title": "Simplicity first",
+          "desc": "Upload an invoice, get a compliance score, then download your report in a few clicks."
+        },
+        "transparent": {
+          "title": "Transparent pricing",
+          "desc": "Clear subscription with plan quotas. No hard-to-predict per-transaction model."
+        },
+        "compliance": {
+          "title": "Peppol compliance",
+          "desc": "A 0–100% score to quickly spot issues to fix before sending."
+        },
+        "ubl": {
+          "title": "UBL/XML (by plan)",
+          "desc": "UBL/XML conversion is available from eligible plans to move step by step toward e-invoicing."
+        },
+        "history": {
+          "title": "Plan-based history",
+          "desc": "History tailored to your plan (FREE/STARTER/PRO/BUSINESS) to keep a useful record."
+        },
+        "support": {
+          "title": "Email support",
+          "desc": "A Support button is available in the dashboard to send a request (ticket)."
+        }
+      }
+    },
     "monthly": "month",
     "yearly": "year",
     "yearlyDiscount": "or {{price}}/year (-20%)",
