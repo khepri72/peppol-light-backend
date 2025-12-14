@@ -6,18 +6,26 @@ import { stripe, isValidPlan, PlanType } from '../services/stripe';
 const APP_PUBLIC_URL = process.env.APP_PUBLIC_URL || 'https://app.peppollight.com';
 
 // Direct mapping from plan to Stripe Price ID from environment variables
+// Using .trim() to remove any whitespace/newlines from env vars
 const PRICE_IDS = {
-  starter: process.env.STRIPE_PRICE_STARTER!,
-  pro: process.env.STRIPE_PRICE_PRO!,
-  business: process.env.STRIPE_PRICE_BUSINESS!,
+  starter: (process.env.STRIPE_PRICE_STARTER || '').trim(),
+  pro: (process.env.STRIPE_PRICE_PRO || '').trim(),
+  business: (process.env.STRIPE_PRICE_BUSINESS || '').trim(),
 } as const;
 
 // Fallback Price IDs (temporary - for debugging env var issues)
 const PRICE_IDS_FALLBACK = {
-  starter: "price_1SeHjCExuJjiAL2Wk9gu6GGM",
-  pro: "price_1SeHxqExuJjiAL2WC5czZER3",
-  business: "price_1SeI2hExuJjiAL2WxSaDqW3z",
+  starter: "price_1SeHjCExuJjiAL2Wk9gu6GGM".trim(),
+  pro: "price_1SeHxqExuJjiAL2WC5czZER3".trim(),
+  business: "price_1SeI2hExuJjiAL2WxSaDqW3z".trim(),
 } as const;
+
+// Log loaded Price IDs for verification
+console.log('[STRIPE] Price IDs loaded:', {
+  starter: PRICE_IDS.starter,
+  pro: PRICE_IDS.pro,
+  business: PRICE_IDS.business,
+});
 
 /**
  * POST /api/stripe/checkout
