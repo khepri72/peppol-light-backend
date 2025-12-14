@@ -38,10 +38,12 @@ export async function createCheckoutSession(req: AuthRequest, res: Response) {
     // 2) Get price ID from environment
     const priceId = getPriceId(plan as PlanType);
     
-    if (!priceId) {
-      console.error(`❌ [STRIPE] Missing STRIPE_PRICE_${plan.toUpperCase()} env var`);
-      return res.status(500).json({ 
-        error: `Price ID for plan "${plan}" is not configured. Please set STRIPE_PRICE_${plan.toUpperCase()} environment variable.` 
+    // Validate priceId before proceeding
+    if (!priceId || priceId.trim() === '') {
+      console.error(`❌ [STRIPE] Missing or empty STRIPE_PRICE_${plan.toUpperCase()} env var`);
+      return res.status(400).json({ 
+        error: "Invalid plan",
+        plan 
       });
     }
 
@@ -71,19 +73,28 @@ export async function createCheckoutSession(req: AuthRequest, res: Response) {
       }
     }
 
-    console.log(`📦 [STRIPE] Creating checkout session for plan: ${plan}, priceId: ${priceId}`);
+    // 4) Prepare Stripe Checkout Session parameters
+    const mode = 'subscription';
+    const success_url = `${APP_PUBLIC_URL}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`;
+    const cancel_url = `${APP_PUBLIC_URL}/pricing?checkout=cancel`;
 
-    // 4) Create Stripe Checkout Session
+    // Log all parameters before calling Stripe
+    console.log('[STRIPE] plan =', plan);
+    console.log('[STRIPE] priceId =', priceId);
+    console.log('[STRIPE] mode =', mode);
+    console.log('[STRIPE] success_url =', success_url);
+    console.log('[STRIPE] cancel_url =', cancel_url);
+
     const sessionParams: any = {
-      mode: 'subscription',
+      mode,
       line_items: [
         {
           price: priceId,
           quantity: 1,
         },
       ],
-      success_url: `${APP_PUBLIC_URL}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${APP_PUBLIC_URL}/pricing?checkout=cancel`,
+      success_url,
+      cancel_url,
       metadata,
     };
 
@@ -105,19 +116,24 @@ export async function createCheckoutSession(req: AuthRequest, res: Response) {
     return res.json({ url: session.url });
 
   } catch (error: any) {
-    console.error('❌ [STRIPE] Error creating checkout session:', error);
+    // Log detailed Stripe error information
+    console.error('[STRIPE] ERROR type:', error?.type);
+    console.error('[STRIPE] ERROR message:', error?.message);
+    console.error('[STRIPE] ERROR param:', error?.param);
+    console.error('[STRIPE] ERROR code:', error?.code);
+    console.error('[STRIPE] ERROR raw:', error?.raw);
     
     // Handle Stripe-specific errors
-    if (error.type === 'StripeInvalidRequestError') {
+    if (error?.type === 'StripeInvalidRequestError') {
       return res.status(400).json({ 
         error: 'Invalid Stripe request',
-        details: error.message 
+        details: error?.message || 'unknown'
       });
     }
     
     return res.status(500).json({ 
       error: 'Failed to create checkout session',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NODE_ENV === 'development' ? error?.message : undefined
     });
   }
 }
