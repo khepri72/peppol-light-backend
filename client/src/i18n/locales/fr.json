@@ -198,6 +198,7 @@
       "payment": "Paiement sécurisé (bientôt via Stripe)",
       "cancel": "Annulation en 1 clic"
     },
+    "checkoutError": "Impossible de créer la session de paiement. Veuillez réessayer.",
     "monthly": "mois",
     "yearly": "an",
     "yearlyDiscount": "ou {{price}}/an (-20%)",

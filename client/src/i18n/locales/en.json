@@ -198,6 +198,7 @@
       "payment": "Secure payment (coming soon via Stripe)",
       "cancel": "Cancel with 1 click"
     },
+    "checkoutError": "Unable to create checkout session. Please try again.",
     "monthly": "month",
     "yearly": "year",
     "yearlyDiscount": "or {{price}}/year (-20%)",

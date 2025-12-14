@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,24 +9,44 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Check, X, ArrowLeft, Lock, Shield, CheckCircle } from "lucide-react";
+import { Check, X, ArrowLeft, Lock, Shield, CheckCircle, Loader2 } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Link } from "wouter";
+import { api } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 export default function PricingPage() {
   const { t } = useTranslation();
+  const { toast } = useToast();
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
-  const emailSubjects = {
-    starter: "Activation Plan STARTER - Peppol Light",
-    pro: "Activation Plan PRO - Peppol Light",
-    business: "Demande Partenariat BUSINESS - Peppol Light",
-  };
+  /**
+   * Handle Stripe checkout for a plan
+   */
+  async function handleCheckout(
+    plan: 'starter' | 'pro' | 'business',
+    e?: React.MouseEvent
+  ) {
+    e?.preventDefault();
+    e?.stopPropagation();
 
-  const emailBodies = {
-    starter: `Bonjour,%0D%0A%0D%0AJe souhaite activer le plan STARTER (14,90€/mois - 30 factures/mois).%0D%0A%0D%0AMon email : [VOTRE EMAIL]%0D%0AMon entreprise : [NOM]%0D%0ANuméro TVA : [BE0...]%0D%0A%0D%0AMerci !`,
-    pro: `Bonjour,%0D%0A%0D%0AJe souhaite activer le plan PRO (29,90€/mois - 200 factures/mois).%0D%0A%0D%0AMon email : [VOTRE EMAIL]%0D%0AMon entreprise : [NOM]%0D%0ANuméro TVA : [BE0...]%0D%0A%0D%0AMerci !`,
-    business: `Bonjour,%0D%0A%0D%0AJe suis intéressé par le plan BUSINESS (79,90€/mois - factures illimitées) et souhaiterais discuter d'un partenariat.%0D%0A%0D%0AMon email : [VOTRE EMAIL]%0D%0AMon entreprise : [NOM]%0D%0ANuméro TVA : [BE0...]%0D%0ANombre de dossiers clients estimé : [X]%0D%0A%0D%0AMerci !`,
-  };
+    setLoadingPlan(plan);
+
+    try {
+      const { url } = await api.createCheckoutSession(plan);
+      
+      // Redirect to Stripe Checkout
+      window.location.href = url;
+    } catch (error: any) {
+      console.error('❌ [STRIPE] Checkout error:', error);
+      toast({
+        title: t('common.error', 'Erreur'),
+        description: error.message || t('pricing.checkoutError'),
+        variant: 'destructive',
+      });
+      setLoadingPlan(null);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
@@ -176,12 +197,18 @@ export default function PricingPage() {
             <CardFooter className="flex flex-col">
               <Button 
                 className="w-full" 
-                asChild
+                onClick={(e) => handleCheckout('starter', e)}
+                disabled={loadingPlan !== null}
                 data-testid="button-plan-starter-cta"
               >
-                <a href={`mailto:contact@peppollight.com?subject=${emailSubjects.starter}&body=${emailBodies.starter}`}>
-                  {t("pricing.plans.starter.cta")}
-                </a>
+                {loadingPlan === 'starter' ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t('common.loading')}
+                  </>
+                ) : (
+                  t("pricing.plans.starter.cta")
+                )}
               </Button>
               <p className="text-xs text-gray-500 mt-2">
                 {t('pricing.trial.noCommitment')}
@@ -249,12 +276,18 @@ export default function PricingPage() {
               <Button 
                 variant="default"
                 className="w-full" 
-                asChild
+                onClick={(e) => handleCheckout('pro', e)}
+                disabled={loadingPlan !== null}
                 data-testid="button-plan-pro-cta"
               >
-                <a href={`mailto:contact@peppollight.com?subject=${emailSubjects.pro}&body=${emailBodies.pro}`}>
-                  {t("pricing.plans.pro.cta")}
-                </a>
+                {loadingPlan === 'pro' ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t('common.loading')}
+                  </>
+                ) : (
+                  t("pricing.plans.pro.cta")
+                )}
               </Button>
               <p className="text-xs text-gray-500 mt-2">
                 {t('pricing.trial.noCommitment')}
@@ -322,12 +355,18 @@ export default function PricingPage() {
               <Button 
                 variant="outline" 
                 className="w-full" 
-                asChild
+                onClick={(e) => handleCheckout('business', e)}
+                disabled={loadingPlan !== null}
                 data-testid="button-plan-business-cta"
               >
-                <a href={`mailto:contact@peppollight.com?subject=${emailSubjects.business}&body=${emailBodies.business}`}>
-                  {t("pricing.plans.business.cta")}
-                </a>
+                {loadingPlan === 'business' ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t('common.loading')}
+                  </>
+                ) : (
+                  t("pricing.plans.business.cta")
+                )}
               </Button>
               <p className="text-xs text-gray-500 mt-2">
                 {t('pricing.trial.noCommitment')}

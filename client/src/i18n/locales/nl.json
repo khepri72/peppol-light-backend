@@ -198,6 +198,7 @@
       "payment": "Veilige betaling (binnenkort via Stripe)",
       "cancel": "Opzeggen met 1 klik"
     },
+    "checkoutError": "Kan geen betaalsessie aanmaken. Probeer het opnieuw.",
     "monthly": "maand",
     "yearly": "jaar",
     "yearlyDiscount": "of {{price}}/jaar (-20%)",
