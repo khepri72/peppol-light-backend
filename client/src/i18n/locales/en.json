@@ -188,6 +188,16 @@
         }
       }
     },
+    "trial": {
+      "noCreditCard": "Free trial - No credit card required",
+      "cancelAnytime": "Cancel anytime with 1 click - GDPR compliant",
+      "noCommitment": "No commitment"
+    },
+    "security": {
+      "gdpr": "GDPR compliant - Data in Europe",
+      "payment": "Secure payment (coming soon via Stripe)",
+      "cancel": "Cancel with 1 click"
+    },
     "monthly": "month",
     "yearly": "year",
     "yearlyDiscount": "or {{price}}/year (-20%)",
@@ -303,5 +313,9 @@
         }
       }
     }
+  },
+  "footer": {
+    "terms": "Terms of Use",
+    "privacy": "Privacy Policy"
   }
 }

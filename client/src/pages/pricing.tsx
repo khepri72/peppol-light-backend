@@ -8,7 +8,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Check, X, ArrowLeft } from "lucide-react";
+import { Check, X, ArrowLeft, Lock, Shield, CheckCircle } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Link } from "wouter";
 
@@ -54,6 +54,17 @@ export default function PricingPage() {
 
       {/* Pricing Cards Grid */}
       <div className="max-w-7xl mx-auto px-4 pb-16">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 bg-green-50 border border-green-200 rounded-full px-6 py-3 mb-3">
+            <CheckCircle className="w-5 h-5 text-green-600" />
+            <span className="text-green-800 font-medium">
+              {t('pricing.trial.noCreditCard')}
+            </span>
+          </div>
+          <p className="text-gray-600 text-sm">
+            {t('pricing.trial.cancelAnytime')}
+          </p>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           
           {/* Plan GRATUIT */}
@@ -102,7 +113,7 @@ export default function PricingPage() {
               </ul>
             </CardContent>
             
-            <CardFooter>
+            <CardFooter className="flex flex-col">
               <Button 
                 variant="outline" 
                 className="w-full" 
@@ -111,6 +122,9 @@ export default function PricingPage() {
               >
                 <a href="/register">{t("pricing.plans.free.cta")}</a>
               </Button>
+              <p className="text-xs text-gray-500 mt-2">
+                {t('pricing.trial.noCommitment')}
+              </p>
             </CardFooter>
           </Card>
 
@@ -159,7 +173,7 @@ export default function PricingPage() {
               </ul>
             </CardContent>
             
-            <CardFooter>
+            <CardFooter className="flex flex-col">
               <Button 
                 className="w-full" 
                 asChild
@@ -169,6 +183,9 @@ export default function PricingPage() {
                   {t("pricing.plans.starter.cta")}
                 </a>
               </Button>
+              <p className="text-xs text-gray-500 mt-2">
+                {t('pricing.trial.noCommitment')}
+              </p>
             </CardFooter>
           </Card>
 
@@ -228,7 +245,7 @@ export default function PricingPage() {
               </ul>
             </CardContent>
             
-            <CardFooter>
+            <CardFooter className="flex flex-col">
               <Button 
                 variant="default"
                 className="w-full" 
@@ -239,6 +256,9 @@ export default function PricingPage() {
                   {t("pricing.plans.pro.cta")}
                 </a>
               </Button>
+              <p className="text-xs text-gray-500 mt-2">
+                {t('pricing.trial.noCommitment')}
+              </p>
             </CardFooter>
           </Card>
 
@@ -298,7 +318,7 @@ export default function PricingPage() {
               </ul>
             </CardContent>
             
-            <CardFooter>
+            <CardFooter className="flex flex-col">
               <Button 
                 variant="outline" 
                 className="w-full" 
@@ -309,9 +329,31 @@ export default function PricingPage() {
                   {t("pricing.plans.business.cta")}
                 </a>
               </Button>
+              <p className="text-xs text-gray-500 mt-2">
+                {t('pricing.trial.noCommitment')}
+              </p>
             </CardFooter>
           </Card>
 
+        </div>
+
+        <div className="bg-gray-50 border-t border-gray-200 py-8 mt-12 rounded-lg">
+          <div className="max-w-4xl mx-auto px-4">
+            <div className="flex flex-col md:flex-row items-center justify-center md:justify-between gap-6">
+              <div className="flex items-center gap-2">
+                <Lock className="w-5 h-5 text-green-600" />
+                <span className="text-sm text-gray-700">{t('pricing.security.gdpr')}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-blue-600" />
+                <span className="text-sm text-gray-700">{t('pricing.security.payment')}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-indigo-600" />
+                <span className="text-sm text-gray-700">{t('pricing.security.cancel')}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

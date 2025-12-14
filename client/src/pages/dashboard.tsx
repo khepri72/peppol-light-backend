@@ -791,6 +791,19 @@ export default function Dashboard() {
         userEmail={profile?.user?.email || ''}
         userName={profile?.user?.companyName || 'Utilisateur'}
       />
+
+      <footer className="border-t border-gray-200 py-6 mt-8">
+        <div className="max-w-7xl mx-auto px-8 flex justify-center">
+          <div className="flex gap-4 text-sm">
+            <a href="/terms" className="text-gray-600 hover:text-gray-900">
+              {t('footer.terms')}
+            </a>
+            <a href="/privacy" className="text-gray-600 hover:text-gray-900">
+              {t('footer.privacy')}
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -188,6 +188,16 @@
         }
       }
     },
+    "trial": {
+      "noCreditCard": "Essai gratuit - Pas de carte bancaire requise",
+      "cancelAnytime": "Annulation en 1 clic à tout moment - Conforme RGPD",
+      "noCommitment": "Sans engagement"
+    },
+    "security": {
+      "gdpr": "Conforme RGPD - Données en Europe",
+      "payment": "Paiement sécurisé (bientôt via Stripe)",
+      "cancel": "Annulation en 1 clic"
+    },
     "monthly": "mois",
     "yearly": "an",
     "yearlyDiscount": "ou {{price}}/an (-20%)",
@@ -303,5 +313,9 @@
         }
       }
     }
+  },
+  "footer": {
+    "terms": "Conditions d'utilisation",
+    "privacy": "Politique de confidentialité"
   }
 }
