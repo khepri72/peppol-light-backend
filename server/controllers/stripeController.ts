@@ -79,109 +79,53 @@ export async function createCheckoutSession(req: AuthRequest, res: Response) {
     console.log(`[STRIPE] plan received: "${plan}"`);
     console.log(`[STRIPE] priceId mapped: "${priceId}" (${usedFallback ? 'FALLBACK' : 'ENV'})`);
 
-    // 3) Build metadata
-    const metadata: Record<string, string> = { plan };
-    
-    // Add user info if authenticated
-    if (req.userId) {
-      metadata.userId = req.userId;
-    }
+    // 3) Prepare URLs
+    const success_url = `${process.env.APP_PUBLIC_URL || APP_PUBLIC_URL}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`;
+    const cancel_url = `${process.env.APP_PUBLIC_URL || APP_PUBLIC_URL}/pricing?checkout=cancel`;
 
-    // Try to get user email from Airtable if authenticated
-    let customerEmail: string | undefined;
-    
-    if (req.userId) {
-      try {
-        const { base, TABLES } = await import('../config/airtable');
-        const userRecord = await base(TABLES.USERS).find(req.userId);
-        const email = userRecord.fields['Email'] as string;
-        if (email) {
-          customerEmail = email;
-          metadata.email = email;
-        }
-      } catch (err) {
-        console.warn('⚠️ [STRIPE] Could not fetch user email:', err);
-        // Continue without email - not critical
-      }
-    }
-
-    // 4) Prepare Stripe Checkout Session parameters
-    const mode = 'subscription';
-    const success_url = `${APP_PUBLIC_URL}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`;
-    const cancel_url = `${APP_PUBLIC_URL}/pricing?checkout=cancel`;
-
-    // Log all parameters before calling Stripe
-    console.log('[STRIPE] plan =', plan);
-    console.log('[STRIPE] priceId =', priceId);
-    console.log('[STRIPE] mode =', mode);
-    console.log('[STRIPE] success_url =', success_url);
-    console.log('[STRIPE] cancel_url =', cancel_url);
-
-    const sessionParams: any = {
-      mode,
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
+    // Log all parameters before creating session
+    console.log('[STRIPE] Creating session with:', {
+      plan,
+      priceId,
+      APP_PUBLIC_URL: process.env.APP_PUBLIC_URL,
       success_url,
       cancel_url,
-      metadata,
-    };
-
-    // Add customer email if available
-    if (customerEmail) {
-      sessionParams.customer_email = customerEmail;
-    }
-
-    console.log('[STRIPE] Creating Stripe checkout session with params:', {
-      mode: sessionParams.mode,
-      price: sessionParams.line_items[0].price,
-      quantity: sessionParams.line_items[0].quantity,
-      success_url: sessionParams.success_url,
-      cancel_url: sessionParams.cancel_url,
-      has_customer_email: !!sessionParams.customer_email,
-      metadata: sessionParams.metadata,
     });
 
-    const session = await stripe.checkout.sessions.create(sessionParams);
+    // 4) Create Stripe Checkout Session (minimal structure)
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url,
+      cancel_url,
+      metadata: { plan },
+    });
 
     if (!session.url) {
       console.error('❌ [STRIPE] Checkout session created but no URL returned');
       return res.status(500).json({ error: 'Failed to create checkout session' });
     }
 
-    console.log(`✅ [STRIPE] Checkout session created successfully`);
-    console.log(`✅ [STRIPE] session.id = ${session.id}`);
-    console.log(`✅ [STRIPE] session.url = ${session.url}`);
+    console.log('[STRIPE] ✅ Session created:', { id: session.id, url: session.url });
 
     // 5) Return the checkout URL
     return res.json({ url: session.url });
 
   } catch (error: any) {
     // Log detailed Stripe error information
-    console.error('[STRIPE] ERROR type:', error?.type);
-    console.error('[STRIPE] ERROR message:', error?.message);
-    console.error('[STRIPE] ERROR param:', error?.param);
-    console.error('[STRIPE] ERROR code:', error?.code);
-    console.error('[STRIPE] ERROR raw:', error?.raw);
-    console.error('[STRIPE] ERROR context - plan:', plan);
-    console.error('[STRIPE] ERROR context - priceId:', priceId || 'undefined');
+    console.error('[STRIPE] ❌ Error details:', {
+      message: error?.message,
+      type: error?.type,
+      code: error?.code,
+      param: error?.param,
+      raw: error?.raw,
+    });
     
-    // Handle Stripe-specific errors
-    if (error?.type === 'StripeInvalidRequestError') {
-      return res.status(400).json({ 
-        error: 'Invalid Stripe request',
-        details: error?.message || 'unknown',
-        code: error?.code,
-        param: error?.param,
-      });
-    }
-    
-    return res.status(500).json({ 
-      error: 'Failed to create checkout session',
-      details: process.env.NODE_ENV === 'development' ? error?.message : undefined
+    // Return error response with Stripe details
+    return res.status(400).json({ 
+      error: error?.message || 'Failed to create checkout session',
+      code: error?.code,
+      param: error?.param,
     });
   }
 }
