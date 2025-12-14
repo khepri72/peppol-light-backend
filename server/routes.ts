@@ -11,6 +11,7 @@ import * as authController from "./controllers/authController";
 import * as authGoogleController from "./controllers/authGoogleController";
 import * as invoiceController from "./controllers/invoiceController";
 import * as userController from "./controllers/userController";
+import * as stripeController from "./controllers/stripeController";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -87,6 +88,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User routes
   app.get('/api/users/profile', authenticateToken, userController.getUserProfile);
   app.patch('/api/users/profile', authenticateToken, userController.updateUserProfile);
+
+  // Stripe routes (protected - requires authentication)
+  app.post('/api/stripe/checkout', authenticateToken, stripeController.createCheckoutSession);
 
   // Invoice routes
   app.post('/api/invoices', authenticateToken, invoiceController.registerUploadedInvoice);
