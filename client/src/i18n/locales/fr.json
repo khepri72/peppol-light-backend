@@ -252,8 +252,8 @@
       "title": "Questions fréquentes",
       "questions": {
         "why": {
-          "q": "Pourquoi Peppol Light plutôt qu'ABCinvoice ?",
-          "a": "Peppol Light se différencie par son score de conformité automatique, son modèle d'abonnement fixe simple, et son extraction IA avancée. ABCinvoice facture à la transaction, ce qui peut devenir coûteux."
+          "q": "Pourquoi choisir Peppol Light ?",
+          "a": "Peppol Light vous offre un score de conformité automatique, un modèle d'abonnement fixe et simple, et des rapports téléchargeables. Idéal pour les indépendants et PME belges."
         },
         "change": {
           "q": "Puis-je changer de plan plus tard ?",

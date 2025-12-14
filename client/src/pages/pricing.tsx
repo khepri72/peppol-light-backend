@@ -315,84 +315,95 @@ export default function PricingPage() {
         </div>
       </div>
 
-      {/* Comparison Table */}
-      <section className="max-w-5xl mx-auto my-16 px-4">
-        <h2 className="text-3xl font-bold text-center mb-8" data-testid="text-comparison-title">
-          {t("pricing.comparison.title")}
-        </h2>
-        <div className="overflow-x-auto">
-          <table className="w-full border border-border rounded-md">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="text-left p-4 border-b border-border font-semibold">
-                  {t("pricing.comparison.criteria.model")}
-                </th>
-                <th className="text-center p-4 border-b border-border font-semibold">
-                  ABCinvoice
-                </th>
-                <th className="text-center p-4 border-b border-border font-semibold bg-primary/10">
-                  Peppol Light
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="p-4 border-b border-border font-medium">
-                  {t("pricing.comparison.criteria.model")}
-                </td>
-                <td className="p-4 border-b border-border text-center">
-                  {t("pricing.comparison.abcinvoice.model")}
-                </td>
-                <td className="p-4 border-b border-border text-center bg-primary/5">
-                  {t("pricing.comparison.peppollight.model")}
-                </td>
-              </tr>
-              <tr>
-                <td className="p-4 border-b border-border font-medium">
-                  {t("pricing.comparison.criteria.unlimited")}
-                </td>
-                <td className="p-4 border-b border-border text-center">
-                  {t("pricing.comparison.abcinvoice.unlimited")}
-                </td>
-                <td className="p-4 border-b border-border text-center bg-primary/5">
-                  {t("pricing.comparison.peppollight.unlimited")}
-                </td>
-              </tr>
-              <tr>
-                <td className="p-4 border-b border-border font-medium">
-                  {t("pricing.comparison.criteria.score")}
-                </td>
-                <td className="p-4 border-b border-border text-center">
-                  {t("pricing.comparison.abcinvoice.score")}
-                </td>
-                <td className="p-4 border-b border-border text-center bg-primary/5">
-                  {t("pricing.comparison.peppollight.score")}
-                </td>
-              </tr>
-              <tr>
-                <td className="p-4 border-b border-border font-medium">
-                  {t("pricing.comparison.criteria.ai")}
-                </td>
-                <td className="p-4 border-b border-border text-center">
-                  {t("pricing.comparison.abcinvoice.ai")}
-                </td>
-                <td className="p-4 border-b border-border text-center bg-primary/5">
-                  {t("pricing.comparison.peppollight.ai")}
-                </td>
-              </tr>
-              <tr>
-                <td className="p-4 font-medium">
-                  {t("pricing.comparison.criteria.language")}
-                </td>
-                <td className="p-4 text-center">
-                  {t("pricing.comparison.abcinvoice.language")}
-                </td>
-                <td className="p-4 text-center bg-primary/5">
-                  {t("pricing.comparison.peppollight.language")}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+      {/* Section Pourquoi choisir Peppol Light */}
+      <section className="py-16 bg-gradient-to-br from-blue-50 to-white">
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-4">
+            Pourquoi choisir Peppol Light ?
+          </h2>
+          <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
+            Une solution conçue pour les indépendants et PME belges : simple, claire, et prête pour l'e-facturation.
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Avantage 1 */}
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-[#1E5AA8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Simplicité avant tout</h3>
+              <p className="text-gray-600">
+                Uploadez une facture, obtenez un score de conformité, puis téléchargez votre rapport en quelques clics.
+              </p>
+            </div>
+
+            {/* Avantage 2 */}
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-[#FF6B35]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Prix transparent</h3>
+              <p className="text-gray-600">
+                Abonnement clair avec quotas par plan. Pas de modèle "à la transaction" difficile à prévoir.
+              </p>
+            </div>
+
+            {/* Avantage 3 */}
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Conformité Peppol</h3>
+              <p className="text-gray-600">
+                Score 0–100% pour repérer rapidement les points à corriger avant envoi.
+              </p>
+            </div>
+
+            {/* Avantage 4 */}
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-[#1E5AA8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m0 0l2-2m-2 2V6m0 6h6" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">UBL/XML (selon plan)</h3>
+              <p className="text-gray-600">
+                Conversion UBL/XML disponible à partir des plans concernés, pour avancer pas à pas vers l'e-facturation.
+              </p>
+            </div>
+
+            {/* Avantage 5 */}
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Historique par plan</h3>
+              <p className="text-gray-600">
+                Un historique adapté à votre abonnement (FREE/STARTER/PRO/BUSINESS) pour garder une trace utile.
+              </p>
+            </div>
+
+            {/* Avantage 6 */}
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-[#FF6B35]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16h6m2 4H7a4 4 0 01-4-4V8a4 4 0 014-4h10a4 4 0 014 4v8a4 4 0 01-4 4z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Support par email</h3>
+              <p className="text-gray-600">
+                Un bouton Support est disponible dans le dashboard pour envoyer une demande (ticket).
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
