@@ -1,9 +1,23 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middlewares/auth';
-import { stripe, isValidPlan, getPriceId, PlanType } from '../services/stripe';
+import { stripe, isValidPlan, PlanType } from '../services/stripe';
 
 // Get APP_PUBLIC_URL with fallback
 const APP_PUBLIC_URL = process.env.APP_PUBLIC_URL || 'https://app.peppollight.com';
+
+// Direct mapping from plan to Stripe Price ID from environment variables
+const PRICE_IDS = {
+  starter: process.env.STRIPE_PRICE_STARTER!,
+  pro: process.env.STRIPE_PRICE_PRO!,
+  business: process.env.STRIPE_PRICE_BUSINESS!,
+} as const;
+
+// Fallback Price IDs (temporary - for debugging env var issues)
+const PRICE_IDS_FALLBACK = {
+  starter: "price_1SeHjCExuJjiAL2Wk9gu6GGM",
+  pro: "price_1SeHxqExuJjiAL2WC5czZER3",
+  business: "price_1SeI2hExuJjiAL2WxSaDqW3z",
+} as const;
 
 /**
  * POST /api/stripe/checkout
@@ -13,6 +27,9 @@ const APP_PUBLIC_URL = process.env.APP_PUBLIC_URL || 'https://app.peppollight.co
  * Response: { "url": "https://checkout.stripe.com/..." }
  */
 export async function createCheckoutSession(req: AuthRequest, res: Response) {
+  const { plan } = req.body;
+  let priceId: string | undefined;
+  
   try {
     // Check if Stripe is configured
     if (!stripe) {
@@ -21,8 +38,6 @@ export async function createCheckoutSession(req: AuthRequest, res: Response) {
         error: 'Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.' 
       });
     }
-
-    const { plan } = req.body;
 
     // 1) Validate plan
     if (!plan || typeof plan !== 'string') {
@@ -35,17 +50,34 @@ export async function createCheckoutSession(req: AuthRequest, res: Response) {
       });
     }
 
-    // 2) Get price ID from environment
-    const priceId = getPriceId(plan as PlanType);
+    // 2) Get price ID from environment with fallback
+    const planKey = plan as PlanType;
+    priceId = PRICE_IDS[planKey] || PRICE_IDS_FALLBACK[planKey];
+    
+    // Log environment variable presence
+    console.log('[STRIPE] Environment variables check:');
+    console.log('[STRIPE] STRIPE_PRICE_STARTER =', process.env.STRIPE_PRICE_STARTER ? 'SET' : 'MISSING');
+    console.log('[STRIPE] STRIPE_PRICE_PRO =', process.env.STRIPE_PRICE_PRO ? 'SET' : 'MISSING');
+    console.log('[STRIPE] STRIPE_PRICE_BUSINESS =', process.env.STRIPE_PRICE_BUSINESS ? 'SET' : 'MISSING');
     
     // Validate priceId before proceeding
     if (!priceId || priceId.trim() === '') {
-      console.error(`❌ [STRIPE] Missing or empty STRIPE_PRICE_${plan.toUpperCase()} env var`);
+      console.error(`❌ [STRIPE] Missing or empty priceId for plan: ${plan}`);
+      console.error(`❌ [STRIPE] PRICE_IDS[${plan}] =`, PRICE_IDS[planKey]);
+      console.error(`❌ [STRIPE] PRICE_IDS_FALLBACK[${plan}] =`, PRICE_IDS_FALLBACK[planKey]);
       return res.status(400).json({ 
-        error: "Invalid plan",
+        error: "Invalid plan - priceId not found",
         plan 
       });
     }
+    
+    // Log the mapping result
+    const usedFallback = !PRICE_IDS[planKey];
+    if (usedFallback) {
+      console.warn(`⚠️ [STRIPE] Using FALLBACK priceId for plan: ${plan}`);
+    }
+    console.log(`[STRIPE] plan received: "${plan}"`);
+    console.log(`[STRIPE] priceId mapped: "${priceId}" (${usedFallback ? 'FALLBACK' : 'ENV'})`);
 
     // 3) Build metadata
     const metadata: Record<string, string> = { plan };
@@ -103,6 +135,16 @@ export async function createCheckoutSession(req: AuthRequest, res: Response) {
       sessionParams.customer_email = customerEmail;
     }
 
+    console.log('[STRIPE] Creating Stripe checkout session with params:', {
+      mode: sessionParams.mode,
+      price: sessionParams.line_items[0].price,
+      quantity: sessionParams.line_items[0].quantity,
+      success_url: sessionParams.success_url,
+      cancel_url: sessionParams.cancel_url,
+      has_customer_email: !!sessionParams.customer_email,
+      metadata: sessionParams.metadata,
+    });
+
     const session = await stripe.checkout.sessions.create(sessionParams);
 
     if (!session.url) {
@@ -110,7 +152,9 @@ export async function createCheckoutSession(req: AuthRequest, res: Response) {
       return res.status(500).json({ error: 'Failed to create checkout session' });
     }
 
-    console.log(`✅ [STRIPE] Checkout session created: ${session.id}`);
+    console.log(`✅ [STRIPE] Checkout session created successfully`);
+    console.log(`✅ [STRIPE] session.id = ${session.id}`);
+    console.log(`✅ [STRIPE] session.url = ${session.url}`);
 
     // 5) Return the checkout URL
     return res.json({ url: session.url });
@@ -122,12 +166,16 @@ export async function createCheckoutSession(req: AuthRequest, res: Response) {
     console.error('[STRIPE] ERROR param:', error?.param);
     console.error('[STRIPE] ERROR code:', error?.code);
     console.error('[STRIPE] ERROR raw:', error?.raw);
+    console.error('[STRIPE] ERROR context - plan:', plan);
+    console.error('[STRIPE] ERROR context - priceId:', priceId || 'undefined');
     
     // Handle Stripe-specific errors
     if (error?.type === 'StripeInvalidRequestError') {
       return res.status(400).json({ 
         error: 'Invalid Stripe request',
-        details: error?.message || 'unknown'
+        details: error?.message || 'unknown',
+        code: error?.code,
+        param: error?.param,
       });
     }
     
