@@ -67,7 +67,10 @@
     "upgradeToPro": "Passer à Pro",
     "upgradeToBusiness": "Passer à Business",
     "monthlyUsage": "Factures ce mois",
-    "unlimited": "Illimité"
+    "unlimited": "Illimité",
+    "historyLabel": "Historique affiché",
+    "historyUnlimited": "illimité",
+    "historyMonths": "{{count}} mois"
   },
   "plans": {
     "free": "Gratuit",

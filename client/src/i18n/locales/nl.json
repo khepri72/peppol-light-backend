@@ -67,7 +67,10 @@
     "upgradeToPro": "Upgrade naar Pro",
     "upgradeToBusiness": "Upgrade naar Business",
     "monthlyUsage": "Facturen deze maand",
-    "unlimited": "Onbeperkt"
+    "unlimited": "Onbeperkt",
+    "historyLabel": "Getoonde geschiedenis",
+    "historyUnlimited": "onbeperkt",
+    "historyMonths": "{{count}} maanden"
   },
   "plans": {
     "free": "Gratis",

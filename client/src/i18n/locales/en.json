@@ -67,7 +67,10 @@
     "upgradeToPro": "Upgrade to Pro",
     "upgradeToBusiness": "Upgrade to Business",
     "monthlyUsage": "Invoices this month",
-    "unlimited": "Unlimited"
+    "unlimited": "Unlimited",
+    "historyLabel": "History shown",
+    "historyUnlimited": "unlimited",
+    "historyMonths": "{{count}} months"
   },
   "plans": {
     "free": "Free",

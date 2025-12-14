@@ -34,6 +34,24 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { translateErrorsList, type ValidationError } from '@/utils/errorTranslations';
 import { useQuotas } from '@/hooks/useQuotas';
 
+// Utility functions for history filtering by plan
+function getHistoryMonths(planId: string): number | null {
+  const p = (planId || 'free').toLowerCase();
+  if (p === 'business') return null; // unlimited
+  if (p === 'pro') return 12;
+  if (p === 'starter') return 3;
+  return 1; // free
+}
+
+function isWithinMonths(dateValue: any, months: number): boolean {
+  const d = new Date(dateValue);
+  if (Number.isNaN(d.getTime())) return true; // invalid date fallback
+  const now = new Date();
+  const cutoff = new Date(now);
+  cutoff.setMonth(cutoff.getMonth() - months);
+  return d >= cutoff;
+}
+
 export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -538,14 +556,42 @@ export default function Dashboard() {
             <CardTitle>{t('dashboard.invoiceList.title')}</CardTitle>
             <CardDescription>
               {invoicesData ? t('dashboard.invoiceList.total', { count: invoicesData.count }) : t('common.loading')}
+              {profile && (() => {
+                const planId = (profile.user.userPlan || 'free').toLowerCase();
+                const historyMonths = getHistoryMonths(planId);
+                return (
+                  <span className="ml-2 text-xs text-gray-500">
+                    ({t('dashboard.historyLabel')} : {historyMonths === null ? t('dashboard.historyUnlimited') : t('dashboard.historyMonths', { count: historyMonths })})
+                  </span>
+                );
+              })()}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
-            ) : invoicesData && invoicesData.invoices.length > 0 ? (
+            {(() => {
+              // Filter invoices based on plan history
+              const planId = (profile?.user?.userPlan || 'free').toLowerCase();
+              const historyMonths = getHistoryMonths(planId);
+              const visibleInvoices = Array.isArray(invoicesData?.invoices)
+                ? (historyMonths === null
+                    ? invoicesData.invoices
+                    : invoicesData.invoices.filter((inv: Invoice) => {
+                        const dt = inv.createdAt;
+                        if (!dt) return true;
+                        return isWithinMonths(dt, historyMonths);
+                      }))
+                : [];
+
+              if (isLoading) {
+                return (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                );
+              }
+
+              if (visibleInvoices.length > 0) {
+                return (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -561,7 +607,7 @@ export default function Dashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {invoicesData.invoices.map((invoice: Invoice) => (
+                  {visibleInvoices.map((invoice: Invoice) => (
                     <TableRow key={invoice.id} data-testid={`row-invoice-${invoice.id}`}>
                       <TableCell className="font-medium" data-testid={`text-filename-${invoice.id}`}>
                         {invoice.fileName}
@@ -699,7 +745,10 @@ export default function Dashboard() {
                   ))}
                 </TableBody>
               </Table>
-            ) : (
+                );
+              }
+
+              return (
               <div className="text-center py-12">
                 <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground mb-4" data-testid="text-no-invoices">
@@ -709,7 +758,8 @@ export default function Dashboard() {
                   {t('dashboard.uploadSection.subtitle')}
                 </p>
               </div>
-            )}
+              );
+            })()}
           </CardContent>
         </Card>
       </main>
