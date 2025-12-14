@@ -259,6 +259,10 @@
           "q": "Puis-je changer de plan plus tard ?",
           "a": "Oui, vous pouvez upgrader ou downgrader à tout moment. Le changement de plan est immédiat."
         },
+        "lifetime": {
+          "q": "Le plan Business est-il vraiment illimité ?",
+          "a": "Oui. Le plan Business n'applique pas de limite mensuelle sur le nombre de factures. Les options \"Pack +10 dossiers\", \"API Access\" et \"White-label\" restent disponibles en supplément."
+        },
         "payment": {
           "q": "Comment fonctionne le paiement ?",
           "a": "Pour activer un plan, envoyez-nous un email via le bouton du plan choisi. Nous vous enverrons un lien de paiement Stripe sécurisé. Votre abonnement démarre immédiatement après paiement."

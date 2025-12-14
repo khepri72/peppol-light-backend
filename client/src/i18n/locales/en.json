@@ -259,6 +259,10 @@
           "q": "Can I change plans later?",
           "a": "Yes, you can upgrade or downgrade at any time. Plan changes are immediate."
         },
+        "lifetime": {
+          "q": "Is the Business plan really unlimited?",
+          "a": "Yes. The Business plan has no monthly invoice limit. Optional add-ons such as \"+10 folders pack\", \"API Access\", and \"White-label\" are available as extras."
+        },
         "payment": {
           "q": "How does payment work?",
           "a": "To activate a plan, send us an email via the button of your chosen plan. We will send you a secure Stripe payment link. Your subscription starts immediately after payment."

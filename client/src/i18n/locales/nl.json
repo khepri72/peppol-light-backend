@@ -259,6 +259,10 @@
           "q": "Kan ik later van plan veranderen?",
           "a": "Ja, u kunt op elk moment upgraden of downgraden. Planwijzigingen zijn onmiddellijk."
         },
+        "lifetime": {
+          "q": "Is het Business-plan echt onbeperkt?",
+          "a": "Ja. Het Business-plan heeft geen maandelijkse limiet op het aantal facturen. Optionele add-ons zoals \"+10 dossiers pakket\", \"API Access\" en \"White-label\" blijven als extra beschikbaar."
+        },
         "payment": {
           "q": "Hoe werkt de betaling?",
           "a": "Om een plan te activeren, stuurt u ons een e-mail via de knop van het gekozen plan. Wij sturen u een beveiligde Stripe-betalingslink. Uw abonnement start onmiddellijk na betaling."
