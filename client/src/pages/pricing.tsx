@@ -353,7 +353,7 @@ export default function PricingPage() {
             
             <CardFooter className="flex flex-col">
               <Button 
-                variant="outline" 
+                variant="default"
                 className="w-full" 
                 onClick={(e) => handleCheckout('business', e)}
                 disabled={loadingPlan !== null}
