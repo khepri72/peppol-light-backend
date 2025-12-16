@@ -145,6 +145,10 @@
     }
   },
   "quotas": {
+    "title": "Quotum bereikt",
+    "descriptionUpgrade": "Maandelijks quotum bereikt ({{used}}/{{limit}}). Upgrade naar {{nextPlan}} om door te gaan.",
+    "descriptionReached": "Maandelijks quotum bereikt ({{used}}/{{limit}}).",
+    "cta": "Bekijk plannen",
     "used": "{{used}}/{{limit}} uploads gebruikt",
     "unlimited": "Onbeperkt",
     "exceeded": {

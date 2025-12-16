@@ -153,7 +153,11 @@
     },
     "upgradePlan": "Augmenter le forfait",
     "remainingUploads_one": "{{count}} envoi restant",
-    "remainingUploads_other": "{{count}} envois restants"
+    "remainingUploads_other": "{{count}} envois restants",
+    "title": "Quota atteint",
+    "descriptionUpgrade": "Quota mensuel atteint ({{used}}/{{limit}}). Passez au plan {{nextPlan}} pour continuer.",
+    "descriptionReached": "Quota mensuel atteint ({{used}}/{{limit}}).",
+    "cta": "Voir les plans"
   },
   "pricing": {
     "title": "Choisissez votre plan Peppol Light",

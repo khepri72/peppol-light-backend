@@ -183,7 +183,7 @@ export default function Dashboard() {
         return;
       }
       
-    } catch (error) {
+    } catch (error: any) {
       // ========================================
       // Cas 3: VRAIE erreur (500, réseau, 401, 403...)
       // Seules les vraies erreurs arrivent ici
@@ -195,6 +195,54 @@ export default function Dashboard() {
         fileInputRef.current.value = '';
       }
       
+      // ========================================
+      // Cas spécial: QUOTA_EXCEEDED avec suggestion d'upgrade
+      // ========================================
+      if (error?.isQuotaExceeded && error?.quotaData) {
+        const quotaData = error.quotaData;
+        const currentPlan = quotaData.plan || profile?.user?.userPlan?.toLowerCase() || 'free';
+        
+        // Mapping plan actuel -> plan suivant
+        const NEXT_PLAN: Record<string, string> = {
+          free: 'starter',
+          starter: 'pro',
+          pro: 'business',
+        };
+        
+        const nextPlan = NEXT_PLAN[currentPlan];
+        const { used, limit } = quotaData;
+        
+        let description: string;
+        if (nextPlan) {
+          description = t('quotas.descriptionUpgrade', {
+            used,
+            limit,
+            nextPlan: t(`plans.${nextPlan}`),
+          });
+        } else {
+          description = t('quotas.descriptionReached', { used, limit });
+        }
+        
+        toast({
+          title: t('quotas.title'),
+          description,
+          variant: 'destructive',
+          action: nextPlan ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setLocation('/pricing');
+              }}
+            >
+              {t('quotas.cta')}
+            </Button>
+          ) : undefined,
+        });
+        return;
+      }
+      
+      // Autres erreurs
       toast({
         title: t('dashboard.uploadSection.uploadError'),
         description: error instanceof Error ? error.message : t('common.error'),

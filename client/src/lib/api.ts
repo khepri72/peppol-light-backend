@@ -215,6 +215,20 @@ class ApiClient {
     // ========================================
     if (!response.ok) {
       console.error('❌ [API] HTTP Error:', response.status, responseData);
+      
+      // For QUOTA_EXCEEDED, preserve the full error data
+      if (response.status === 403 && responseData.code === 'QUOTA_EXCEEDED') {
+        const quotaError: any = new Error(responseData.error || responseData.message || 'Quota exceeded');
+        quotaError.isQuotaExceeded = true;
+        quotaError.quotaData = {
+          code: responseData.code,
+          limit: responseData.limit,
+          used: responseData.used,
+          plan: responseData.plan,
+        };
+        throw quotaError;
+      }
+      
       throw new Error(responseData.error || responseData.message || `Erreur serveur (${response.status})`);
     }
 

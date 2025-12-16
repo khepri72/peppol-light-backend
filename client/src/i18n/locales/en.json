@@ -153,7 +153,11 @@
     },
     "upgradePlan": "Upgrade plan",
     "remainingUploads_one": "{{count}} upload remaining",
-    "remainingUploads_other": "{{count}} uploads remaining"
+    "remainingUploads_other": "{{count}} uploads remaining",
+    "title": "Quota reached",
+    "descriptionUpgrade": "Monthly quota reached ({{used}}/{{limit}}). Upgrade to {{nextPlan}} to continue.",
+    "descriptionReached": "Monthly quota reached ({{used}}/{{limit}}).",
+    "cta": "View plans"
   },
   "pricing": {
     "title": "Choose your Peppol Light plan",
