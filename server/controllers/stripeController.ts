@@ -61,13 +61,21 @@ export async function createCheckoutSession(req: AuthRequest, res: Response) {
     const cancel_url = `${process.env.APP_PUBLIC_URL || APP_PUBLIC_URL}/pricing?checkout=cancel`;
 
     // 4) Create Stripe Checkout Session (minimal structure)
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: any = {
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
       success_url,
       cancel_url,
       metadata: { plan },
-    });
+    };
+
+    // Add userId to metadata and client_reference_id for webhook identification
+    if (req.userId) {
+      sessionParams.metadata = { ...sessionParams.metadata, userId: req.userId };
+      sessionParams.client_reference_id = req.userId;
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     if (!session.url) {
       return res.status(500).json({ error: 'Failed to create checkout session' });

@@ -62,6 +62,18 @@ export async function handleWebhook(req: Request, res: Response) {
   }
 
   try {
+    // Log event received
+    const eventData = event.data.object as any;
+    const customerId = eventData.customer || eventData.customer_details?.email || 'N/A';
+    const subscriptionId = eventData.id || eventData.subscription || 'N/A';
+    const sessionId = eventData.id && event.type === 'checkout.session.completed' ? eventData.id : 'N/A';
+    
+    console.log(`[STRIPE WEBHOOK] Event received: ${event.type}`, {
+      customerId: typeof customerId === 'string' ? customerId : customerId?.id || 'N/A',
+      subscriptionId: typeof subscriptionId === 'string' ? subscriptionId : subscriptionId?.id || 'N/A',
+      sessionId,
+    });
+
     // Handle different event types
     switch (event.type) {
       case 'checkout.session.completed':
@@ -98,6 +110,9 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   const subscriptionId = session.subscription as string;
   const metadata = session.metadata || {};
 
+  // Get userId from metadata or client_reference_id
+  let userId: string | null = metadata.userId || session.client_reference_id || null;
+
   // Get plan from metadata
   const planFromMetadata = metadata.plan as string;
   if (!planFromMetadata) {
@@ -112,57 +127,53 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     return;
   }
 
-  // Find user by userId in metadata or by customer email
-  let userId: string | null = null;
+  // If userId not found, try to find user by email
+  if (!userId) {
+    const customerEmail = session.customer_email || 
+                         (session.customer_details as any)?.email || 
+                         (session.customer_details as Stripe.Checkout.Session.CustomerDetails)?.email;
+    if (customerEmail) {
+      const users = await base(TABLES.USERS)
+        .select({
+          filterByFormula: buildSafeFilterFormula('email', customerEmail),
+          maxRecords: 1,
+        })
+        .firstPage();
 
-  if (metadata.userId) {
-    userId = metadata.userId;
-  } else if (session.customer_email) {
-    // Fallback: find user by email
-    const users = await base(TABLES.USERS)
-      .select({
-        filterByFormula: buildSafeFilterFormula('email', session.customer_email),
-        maxRecords: 1,
-      })
-      .firstPage();
-
-    if (users.length > 0) {
-      userId = users[0].id;
+      if (users.length > 0) {
+        userId = users[0].id;
+        console.log(`[STRIPE WEBHOOK] Found user by email: ${userId}`);
+      }
     }
   }
 
   if (!userId) {
-    console.error('[STRIPE WEBHOOK] Cannot find user for checkout session:', session.id);
+    console.error('[STRIPE WEBHOOK] Cannot find user for checkout session:', {
+      sessionId: session.id,
+      metadata,
+      clientReferenceId: session.client_reference_id,
+      customerEmail: session.customer_email,
+    });
     return;
   }
 
-  // Get subscription details if subscription ID exists
-  let subscription: Stripe.Subscription | null = null;
-  if (subscriptionId) {
-    try {
-      subscription = await stripe!.subscriptions.retrieve(subscriptionId);
-    } catch (err) {
-      console.error('[STRIPE WEBHOOK] Error retrieving subscription:', err);
-    }
+  console.log(`[STRIPE WEBHOOK] Updating user ${userId} with plan ${userPlan}`);
+
+  // Update user in Airtable with correct field names
+  try {
+    await base(TABLES.USERS).update(userId, {
+      userPlan,
+      'Stripe Customer ID': customerId,
+      'Stripe Subscription ID': subscriptionId || '',
+      // Update max invoices per month based on plan
+      maxInvoicesPerMonth: PLANS[userPlan].maxInvoicesPerMonth,
+    });
+
+    console.log(`[STRIPE WEBHOOK] Successfully activated subscription for user ${userId}: ${userPlan}`);
+  } catch (error: any) {
+    console.error(`[STRIPE WEBHOOK] Failed to update user ${userId}:`, error.message);
+    throw error;
   }
-
-  const subscriptionStatus = subscription?.status || 'active';
-  const currentPeriodEnd = subscription?.current_period_end 
-    ? new Date(subscription.current_period_end * 1000).toISOString()
-    : null;
-
-  // Update user in Airtable
-  await base(TABLES.USERS).update(userId, {
-    userPlan,
-    stripeCustomerId: customerId,
-    stripeSubscriptionId: subscriptionId,
-    subscriptionStatus,
-    currentPeriodEnd,
-    // Update max invoices per month based on plan
-    maxInvoicesPerMonth: PLANS[userPlan].maxInvoicesPerMonth,
-  });
-
-  console.log(`[STRIPE WEBHOOK] Activated subscription for user ${userId}: ${userPlan}`);
 }
 
 /**
@@ -174,10 +185,12 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const subscriptionId = subscription.id;
   const status = subscription.status;
 
-  // Find user by stripeCustomerId
+  console.log(`[STRIPE WEBHOOK] Processing subscription.updated for customer: ${customerId}, status: ${status}`);
+
+  // Find user by "Stripe Customer ID" field (exact name in Airtable)
   const users = await base(TABLES.USERS)
     .select({
-      filterByFormula: buildSafeFilterFormula('stripeCustomerId', customerId),
+      filterByFormula: buildSafeFilterFormula('Stripe Customer ID', customerId),
       maxRecords: 1,
     })
     .firstPage();
@@ -188,35 +201,36 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   }
 
   const userId = users[0].id;
-  const currentPeriodEnd = subscription.current_period_end
-    ? new Date(subscription.current_period_end * 1000).toISOString()
-    : null;
+  console.log(`[STRIPE WEBHOOK] Found user ${userId} for customer ${customerId}`);
 
   // Determine plan from subscription price
   const priceId = subscription.items.data[0]?.price?.id;
   const planFromPrice = mapPriceIdToPlan(priceId);
 
   const updateData: any = {
-    stripeSubscriptionId: subscriptionId,
-    subscriptionStatus: status,
-    currentPeriodEnd,
+    'Stripe Subscription ID': subscriptionId,
   };
 
-  // Update plan if it changed (and if we can determine it)
-  if (planFromPrice) {
-    updateData.userPlan = planFromPrice;
-    updateData.maxInvoicesPerMonth = PLANS[planFromPrice].maxInvoicesPerMonth;
-  }
-
-  // If subscription is canceled or past_due, reset to free plan
-  if (status === 'canceled' || status === 'past_due' || status === 'unpaid') {
+  // Update plan based on subscription status
+  if (status === 'active' || status === 'trialing') {
+    // Keep current plan or update if we can determine it from price
+    if (planFromPrice) {
+      updateData.userPlan = planFromPrice;
+      updateData.maxInvoicesPerMonth = PLANS[planFromPrice].maxInvoicesPerMonth;
+    }
+  } else if (status === 'canceled' || status === 'past_due' || status === 'unpaid') {
+    // Reset to free plan if subscription is canceled/unpaid
     updateData.userPlan = 'free';
     updateData.maxInvoicesPerMonth = PLANS.free.maxInvoicesPerMonth;
   }
 
-  await base(TABLES.USERS).update(userId, updateData);
-
-  console.log(`[STRIPE WEBHOOK] Updated subscription for user ${userId}: ${status}`);
+  try {
+    await base(TABLES.USERS).update(userId, updateData);
+    console.log(`[STRIPE WEBHOOK] Successfully updated subscription for user ${userId}: ${status}`);
+  } catch (error: any) {
+    console.error(`[STRIPE WEBHOOK] Failed to update user ${userId}:`, error.message);
+    throw error;
+  }
 }
 
 /**
@@ -225,11 +239,14 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
  */
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   const customerId = subscription.customer as string;
+  const subscriptionId = subscription.id;
 
-  // Find user by stripeCustomerId
+  console.log(`[STRIPE WEBHOOK] Processing subscription.deleted for customer: ${customerId}`);
+
+  // Find user by "Stripe Customer ID" field (exact name in Airtable)
   const users = await base(TABLES.USERS)
     .select({
-      filterByFormula: buildSafeFilterFormula('stripeCustomerId', customerId),
+      filterByFormula: buildSafeFilterFormula('Stripe Customer ID', customerId),
       maxRecords: 1,
     })
     .firstPage();
@@ -240,16 +257,22 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   }
 
   const userId = users[0].id;
+  console.log(`[STRIPE WEBHOOK] Found user ${userId} for customer ${customerId}`);
 
   // Reset to free plan
-  await base(TABLES.USERS).update(userId, {
-    userPlan: 'free',
-    subscriptionStatus: 'canceled',
-    maxInvoicesPerMonth: PLANS.free.maxInvoicesPerMonth,
-    // Keep stripeCustomerId and stripeSubscriptionId for reference
-  });
+  try {
+    await base(TABLES.USERS).update(userId, {
+      userPlan: 'free',
+      'Stripe Subscription ID': subscriptionId || '',
+      maxInvoicesPerMonth: PLANS.free.maxInvoicesPerMonth,
+      // Keep "Stripe Customer ID" for reference (not updating it)
+    });
 
-  console.log(`[STRIPE WEBHOOK] Canceled subscription for user ${userId}`);
+    console.log(`[STRIPE WEBHOOK] Successfully canceled subscription for user ${userId}`);
+  } catch (error: any) {
+    console.error(`[STRIPE WEBHOOK] Failed to update user ${userId}:`, error.message);
+    throw error;
+  }
 }
 
 /**
