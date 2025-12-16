@@ -199,6 +199,10 @@
       "cancel": "Opzeggen met 1 klik"
     },
     "checkoutError": "Kan geen betaalsessie aanmaken. Probeer het opnieuw.",
+    "currentPlanLabel": "Huidig plan",
+    "currentPlanCta": "Huidig plan",
+    "upgradeCta": "Overschakelen naar dit plan",
+    "downgradeDisabled": "Downgrade niet beschikbaar",
     "monthly": "maand",
     "yearly": "jaar",
     "yearlyDiscount": "of {{price}}/jaar (-20%)",

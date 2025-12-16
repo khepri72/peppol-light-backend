@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,10 +16,63 @@ import { Link } from "wouter";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
+type PlanType = 'free' | 'starter' | 'pro' | 'business';
+
+// Plan order for comparison (free < starter < pro < business)
+const PLAN_ORDER: Record<PlanType, number> = {
+  free: 0,
+  starter: 1,
+  pro: 2,
+  business: 3,
+};
+
 export default function PricingPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+
+  // Fetch current user plan
+  const { data: profile } = useQuery({
+    queryKey: ['/api/auth/me'],
+    queryFn: () => api.getProfile(),
+    retry: false, // Don't retry if not authenticated
+  });
+
+  const currentPlan: PlanType = (profile?.user?.userPlan?.toLowerCase() as PlanType) || 'free';
+
+  /**
+   * Get button text and state for a plan card
+   */
+  function getPlanButtonState(planCard: PlanType) {
+    if (planCard === 'free') {
+      // Free plan is always a link to register
+      return { text: t("pricing.plans.free.cta"), disabled: false, isLink: true };
+    }
+
+    const isCurrent = planCard === currentPlan;
+    const isDowngrade = PLAN_ORDER[planCard] < PLAN_ORDER[currentPlan];
+    const canUpgrade = PLAN_ORDER[planCard] > PLAN_ORDER[currentPlan];
+    const isLoading = loadingPlan === planCard;
+
+    if (isLoading) {
+      return { text: t('common.loading'), disabled: true, isLink: false };
+    }
+
+    if (isCurrent) {
+      return { text: t('pricing.currentPlanCta'), disabled: true, isLink: false };
+    }
+
+    if (isDowngrade) {
+      return { text: t('pricing.downgradeDisabled'), disabled: true, isLink: false };
+    }
+
+    if (canUpgrade) {
+      return { text: t('pricing.upgradeCta'), disabled: false, isLink: false };
+    }
+
+    // Default fallback
+    return { text: t(`pricing.plans.${planCard}.cta`), disabled: false, isLink: false };
+  }
 
   /**
    * Handle Stripe checkout for a plan
@@ -68,9 +122,16 @@ export default function PricingPage() {
         <h1 className="text-4xl font-bold mb-4" data-testid="text-pricing-title">
           {t("pricing.title")}
         </h1>
-        <p className="text-lg text-muted-foreground" data-testid="text-pricing-subtitle">
+        <p className="text-lg text-muted-foreground mb-4" data-testid="text-pricing-subtitle">
           {t("pricing.subtitle")}
         </p>
+        {profile?.user && (
+          <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-full px-6 py-2">
+            <span className="text-blue-800 font-medium">
+              {t('pricing.currentPlanLabel')}: <span className="capitalize">{t(`plans.${currentPlan}`) || currentPlan}</span>
+            </span>
+          </div>
+        )}
       </header>
 
       {/* Pricing Cards Grid */}
@@ -195,21 +256,38 @@ export default function PricingPage() {
             </CardContent>
             
             <CardFooter className="flex flex-col">
-              <Button 
-                className="w-full" 
-                onClick={(e) => handleCheckout('starter', e)}
-                disabled={loadingPlan !== null}
-                data-testid="button-plan-starter-cta"
-              >
-                {loadingPlan === 'starter' ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t('common.loading')}
-                  </>
-                ) : (
-                  t("pricing.plans.starter.cta")
-                )}
-              </Button>
+              {(() => {
+                const buttonState = getPlanButtonState('starter');
+                if (buttonState.isLink) {
+                  return (
+                    <Button 
+                      variant="outline" 
+                      className="w-full" 
+                      asChild
+                      data-testid="button-plan-starter-cta"
+                    >
+                      <a href="/register">{buttonState.text}</a>
+                    </Button>
+                  );
+                }
+                return (
+                  <Button 
+                    className="w-full" 
+                    onClick={buttonState.disabled ? undefined : (e) => handleCheckout('starter', e)}
+                    disabled={buttonState.disabled}
+                    data-testid="button-plan-starter-cta"
+                  >
+                    {buttonState.disabled && buttonState.text === t('common.loading') ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {buttonState.text}
+                      </>
+                    ) : (
+                      buttonState.text
+                    )}
+                  </Button>
+                );
+              })()}
               <p className="text-xs text-gray-500 mt-2">
                 {t('pricing.trial.noCommitment')}
               </p>
@@ -273,22 +351,39 @@ export default function PricingPage() {
             </CardContent>
             
             <CardFooter className="flex flex-col">
-              <Button 
-                variant="default"
-                className="w-full" 
-                onClick={(e) => handleCheckout('pro', e)}
-                disabled={loadingPlan !== null}
-                data-testid="button-plan-pro-cta"
-              >
-                {loadingPlan === 'pro' ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t('common.loading')}
-                  </>
-                ) : (
-                  t("pricing.plans.pro.cta")
-                )}
-              </Button>
+              {(() => {
+                const buttonState = getPlanButtonState('pro');
+                if (buttonState.isLink) {
+                  return (
+                    <Button 
+                      variant="default"
+                      className="w-full" 
+                      asChild
+                      data-testid="button-plan-pro-cta"
+                    >
+                      <a href="/register">{buttonState.text}</a>
+                    </Button>
+                  );
+                }
+                return (
+                  <Button 
+                    variant="default"
+                    className="w-full" 
+                    onClick={buttonState.disabled ? undefined : (e) => handleCheckout('pro', e)}
+                    disabled={buttonState.disabled}
+                    data-testid="button-plan-pro-cta"
+                  >
+                    {buttonState.disabled && buttonState.text === t('common.loading') ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {buttonState.text}
+                      </>
+                    ) : (
+                      buttonState.text
+                    )}
+                  </Button>
+                );
+              })()}
               <p className="text-xs text-gray-500 mt-2">
                 {t('pricing.trial.noCommitment')}
               </p>
@@ -352,22 +447,39 @@ export default function PricingPage() {
             </CardContent>
             
             <CardFooter className="flex flex-col">
-              <Button 
-                variant="default"
-                className="w-full" 
-                onClick={(e) => handleCheckout('business', e)}
-                disabled={loadingPlan !== null}
-                data-testid="button-plan-business-cta"
-              >
-                {loadingPlan === 'business' ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t('common.loading')}
-                  </>
-                ) : (
-                  t("pricing.plans.business.cta")
-                )}
-              </Button>
+              {(() => {
+                const buttonState = getPlanButtonState('business');
+                if (buttonState.isLink) {
+                  return (
+                    <Button 
+                      variant="default"
+                      className="w-full" 
+                      asChild
+                      data-testid="button-plan-business-cta"
+                    >
+                      <a href="/register">{buttonState.text}</a>
+                    </Button>
+                  );
+                }
+                return (
+                  <Button 
+                    variant="default"
+                    className="w-full" 
+                    onClick={buttonState.disabled ? undefined : (e) => handleCheckout('business', e)}
+                    disabled={buttonState.disabled}
+                    data-testid="button-plan-business-cta"
+                  >
+                    {buttonState.disabled && buttonState.text === t('common.loading') ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {buttonState.text}
+                      </>
+                    ) : (
+                      buttonState.text
+                    )}
+                  </Button>
+                );
+              })()}
               <p className="text-xs text-gray-500 mt-2">
                 {t('pricing.trial.noCommitment')}
               </p>

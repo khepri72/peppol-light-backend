@@ -199,6 +199,10 @@
       "cancel": "Cancel with 1 click"
     },
     "checkoutError": "Unable to create checkout session. Please try again.",
+    "currentPlanLabel": "Current plan",
+    "currentPlanCta": "Current plan",
+    "upgradeCta": "Switch to this plan",
+    "downgradeDisabled": "Downgrade unavailable",
     "monthly": "month",
     "yearly": "year",
     "yearlyDiscount": "or {{price}}/year (-20%)",

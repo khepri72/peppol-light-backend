@@ -199,6 +199,10 @@
       "cancel": "Annulation en 1 clic"
     },
     "checkoutError": "Impossible de créer la session de paiement. Veuillez réessayer.",
+    "currentPlanLabel": "Plan actuel",
+    "currentPlanCta": "Plan actuel",
+    "upgradeCta": "Passer à ce plan",
+    "downgradeDisabled": "Downgrade indisponible",
     "monthly": "mois",
     "yearly": "an",
     "yearlyDiscount": "ou {{price}}/an (-20%)",
