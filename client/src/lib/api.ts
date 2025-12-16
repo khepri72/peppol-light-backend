@@ -260,6 +260,12 @@ class ApiClient {
     });
   }
 
+  async createCustomerPortalSession(): Promise<{ url: string }> {
+    return this.request<{ url: string }>('/api/stripe/customer-portal', {
+      method: 'POST',
+    });
+  }
+
   /**
    * Create a Stripe Checkout Session for subscription
    * @param plan - The plan to subscribe to (starter, pro, business)

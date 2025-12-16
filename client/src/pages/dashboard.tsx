@@ -58,6 +58,7 @@ export default function Dashboard() {
   const { t } = useTranslation();
   const [isUploading, setIsUploading] = useState(false);
   const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null);
+  const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: profile } = useQuery({
@@ -525,6 +526,39 @@ export default function Dashboard() {
             >
               <Link href="/pricing">{t('nav.pricing')}</Link>
             </Button>
+            {/* Manage subscription button - visible only for paid plans */}
+            {profile && profile.user.userPlan && profile.user.userPlan.toLowerCase() !== 'free' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  setIsLoadingPortal(true);
+                  try {
+                    const { url } = await api.createCustomerPortalSession();
+                    window.location.href = url;
+                  } catch (error: any) {
+                    console.error('❌ [Dashboard] Customer portal error:', error);
+                    toast({
+                      title: t('common.error'),
+                      description: error instanceof Error ? error.message : t('common.error'),
+                      variant: 'destructive',
+                    });
+                    setIsLoadingPortal(false);
+                  }
+                }}
+                disabled={isLoadingPortal}
+                data-testid="button-manage-subscription"
+              >
+                {isLoadingPortal ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t('common.loading')}
+                  </>
+                ) : (
+                  t('dashboard.manageSubscription')
+                )}
+              </Button>
+            )}
             <LanguageSwitcher />
             <Button
               variant="outline"
