@@ -12,6 +12,7 @@ import * as authGoogleController from "./controllers/authGoogleController";
 import * as invoiceController from "./controllers/invoiceController";
 import * as userController from "./controllers/userController";
 import * as stripeController from "./controllers/stripeController";
+import * as stripeWebhookController from "./controllers/stripeWebhookController";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -88,6 +89,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User routes
   app.get('/api/users/profile', authenticateToken, userController.getUserProfile);
   app.patch('/api/users/profile', authenticateToken, userController.updateUserProfile);
+
+  // Stripe webhook route (must be before express.json to access raw body)
+  // Note: This route should be configured to receive RAW body for Stripe signature verification
+  app.post('/api/stripe/webhook', stripeWebhookController.handleWebhook);
 
   // Stripe routes (protected - requires authentication)
   app.post('/api/stripe/checkout', authenticateToken, stripeController.createCheckoutSession);
