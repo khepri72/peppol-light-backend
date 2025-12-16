@@ -98,7 +98,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/stripe/checkout', authenticateToken, stripeController.createCheckoutSession);
 
   // Invoice routes
-  app.post('/api/invoices', authenticateToken, invoiceController.registerUploadedInvoice);
+  // Note: registerUploadedInvoice is called after analyzeInvoice, so quota is already checked
+  // But we keep checkQuota here as a safety net in case it's called directly
+  app.post('/api/invoices', authenticateToken, checkQuota, invoiceController.registerUploadedInvoice);
   app.get('/api/invoices', authenticateToken, invoiceController.getInvoices);
   app.delete('/api/invoices/:id', authenticateToken, invoiceController.deleteInvoice);
   
