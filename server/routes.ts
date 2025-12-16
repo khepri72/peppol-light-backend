@@ -96,6 +96,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Stripe routes (protected - requires authentication)
   app.post('/api/stripe/checkout', authenticateToken, stripeController.createCheckoutSession);
+  app.post('/api/stripe/customer-portal', authenticateToken, stripeController.createCustomerPortalSession);
 
   // Invoice routes
   // Note: registerUploadedInvoice is called after analyzeInvoice, so quota is already checked

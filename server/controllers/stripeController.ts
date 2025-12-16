@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middlewares/auth';
 import { stripe, isValidPlan, PlanType } from '../services/stripe';
+import { base, TABLES } from '../config/airtable';
 
 // Get APP_PUBLIC_URL with fallback
 const APP_PUBLIC_URL = process.env.APP_PUBLIC_URL || 'https://app.peppollight.com';
@@ -93,6 +94,70 @@ export async function createCheckoutSession(req: AuthRequest, res: Response) {
       error: error?.message || 'Failed to create checkout session',
       code: error?.code,
       param: error?.param,
+    });
+  }
+}
+
+/**
+ * POST /api/stripe/customer-portal
+ * Create a Stripe Customer Portal session for managing subscription
+ * 
+ * Response: { "url": "https://billing.stripe.com/p/session/..." }
+ */
+export async function createCustomerPortalSession(req: AuthRequest, res: Response) {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Check if Stripe is configured
+    if (!stripe) {
+      console.error('[STRIPE] STRIPE_SECRET_KEY not configured');
+      return res.status(500).json({ 
+        error: 'Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.' 
+      });
+    }
+
+    const userId = req.userId;
+
+    // Get user from Airtable
+    let userRecord;
+    try {
+      userRecord = await base(TABLES.USERS).find(userId);
+    } catch (error) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Get Stripe Customer ID from Airtable
+    const stripeCustomerId = userRecord.fields['Stripe Customer ID'] as string | undefined;
+
+    if (!stripeCustomerId || stripeCustomerId.trim() === '') {
+      return res.status(400).json({ 
+        error: 'No Stripe customer',
+        message: 'You do not have an active Stripe subscription. Please subscribe to a plan first.'
+      });
+    }
+
+    // Create Customer Portal session
+    const session = await stripe.billingPortal.sessions.create({
+      customer: stripeCustomerId,
+      return_url: `${process.env.APP_PUBLIC_URL || APP_PUBLIC_URL}/dashboard`,
+    });
+
+    console.log('[STRIPE] Customer portal session created:', {
+      userId,
+      customerId: stripeCustomerId,
+      sessionId: session.id,
+    });
+
+    return res.json({ url: session.url });
+
+  } catch (error: any) {
+    console.error('[STRIPE] Customer portal error:', error?.message, error?.code || '');
+    
+    return res.status(400).json({ 
+      error: error?.message || 'Failed to create customer portal session',
+      code: error?.code,
     });
   }
 }
